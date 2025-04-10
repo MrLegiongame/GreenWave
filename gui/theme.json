@@ -1,0 +1,33 @@
+{
+    "#title_label":
+    {
+        "colours":
+        {   "normal_text": "#000000"
+        },
+        "misc":
+        {
+            "text_shadow_size": "0"
+        }
+    },
+
+    "#black_label":
+    {
+        "colours":
+        {   "normal_text": "#000000"
+        },
+        "misc":
+        {
+            "text_shadow_size": "0"
+        }
+    },
+    "#error_label":
+    {
+        "colours":
+        {   "normal_text": "#b81c2b"
+        },
+        "misc":
+        {
+            "text_shadow_size": "0"
+        }
+    }
+}
