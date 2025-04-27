@@ -1,0 +1,6 @@
+from classes.Entities.Vehicles.Vehicle import Vehicle
+
+
+class Car(Vehicle):
+    def __init__(self, length, engine, weight, start_road, end_road, image):
+        super().__init__(length, engine, weight, start_road, end_road, image)
