@@ -1,3 +1,5 @@
+from collections import deque
+
 import pygame
 
 from classes.Enums.Color import Color
@@ -47,3 +49,27 @@ class Graph:
             if src is node:
                 neighbors.append((dst, edge.length))  # include weight
         return neighbors if neighbors else default
+
+    def get_path(self, start_road, end_road):
+        start_junction = start_road.first_direction.parent_junction
+        end_junction = end_road.second_direction.parent_junction
+
+        queue = deque([(start_junction, [start_junction])])
+        visited = set()
+
+        while queue:
+            current_junction, path = queue.popleft()
+
+            if current_junction == end_junction:
+                return path  # return list of junctions
+
+            visited.add(current_junction)
+
+            for road in self.edges:
+                src = road.first_direction.parent_junction
+                dst = road.second_direction.parent_junction
+
+                if src == current_junction and dst not in visited:
+                    queue.append((dst, path + [dst]))
+
+        return []  # No path found

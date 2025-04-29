@@ -40,7 +40,7 @@ def bfs_shortest_path(graph, start, end):
 
 class Vehicle(ABC):
     def __init__(self, length, engine, weight, start_road, end_road, image):
-        self.velocity = 0
+        self.velocity = 100
         self.length = length
         self.engine = engine
         self.weight = weight
@@ -61,6 +61,7 @@ class Vehicle(ABC):
         self.distance_on_road_lane = 0
         self.angle = 0  # Default to 0 if angle is not used yet
 
+        self.nodes_path_index = 0
         self.__next_junction_point = None
         self.__junctions_passed = 0
         self.__last_distance_to_next_junction = None
@@ -71,6 +72,10 @@ class Vehicle(ABC):
         self.total_energy_consumed = 0
         self.total_pollution = 0
         self.total_distance = 0
+
+        print(f"[Vehicle Init] Vehicle created from {start_road.first_direction.parent_junction.point} "
+              f"to {end_road.second_direction.parent_junction.point}")
+        print(f"[Vehicle Init] cur_point: {self.cur_point}")
 
     def cross_junction(self):
         # TODO
@@ -92,12 +97,30 @@ class Vehicle(ABC):
         self.cur_point = point
 
     def set_path(self, graph):
-        self.nodes_path, self.edges_path = bfs_shortest_path(graph, self.start_road.first_direction.parent_junction, self.end_road.second_direction.parent_junction)
+        self.nodes_path = graph.get_path(self.start_road, self.end_road)
+
+        if not self.nodes_path:
+            print(f"[set_path] No path found for vehicle from {self.start_road} to {self.end_road}")
+            self.nodes_path = []
+            self.nodes_path_index = 0
+            self.__next_junction_point = None
+            return
+
+        print(f"[set_path] Path set for vehicle from {self.start_road} to {self.end_road}")
+        print(f"[set_path] Path contains {len(self.nodes_path)} steps.")
+
+        self.nodes_path_index = 1 if len(self.nodes_path) > 1 else 0
+
+        if self.nodes_path_index < len(self.nodes_path):
+            self.__next_junction_point = self.nodes_path[self.nodes_path_index].point
+        else:
+            self.__next_junction_point = None
 
     def __is_passed_junction(self):
         return self.__last_distance_to_next_junction < self.cur_point.get_distance_from_point(self.__next_junction_point)
 
     def move(self):
+        #print(f"[move] Vehicle at {self.cur_point} on road {self.start_road}")
         if None is self.__last_move_time_stamp:
             self.__last_move_time_stamp = time.time()
 
@@ -112,19 +135,44 @@ class Vehicle(ABC):
 
         dt = time.time() - self.__last_move_time_stamp
         distance = self.velocity * dt + self.engine.calculate_acceleration() * (dt ** 2) / 2
-        angle_in_rad = self.cur_road.get_slope_angle_in_rad()
+        dx = self.__next_junction_point.x - self.cur_point.x
+        dy = self.__next_junction_point.y - self.cur_point.y
+        length = math.hypot(dx, dy)
 
-        new_x = distance * math.cos(angle_in_rad)
-        new_y = distance * math.sin(angle_in_rad)
+        # Normalize the direction vector
+        if length != 0:
+            dx /= length
+            dy /= length
 
-        if (self.__is_passed_junction()):
-            self.cross_junction()
+        # Move in that direction
+        new_x = self.cur_point.x + dx * distance
+        new_y = self.cur_point.y + dy * distance
+
+        # Check if we passed the junction
+        if self.__is_passed_junction() or self.cur_point.get_distance_from_point(self.__next_junction_point) < 5:
+            # Move to the next point in the path
+            if self.nodes_path_index < len(self.nodes_path) - 1:
+                self.nodes_path_index += 1
+                self.__next_junction_point = self.nodes_path[self.nodes_path_index].point
+                self.__last_distance_to_next_junction = self.cur_point.get_distance_from_point(
+                    self.__next_junction_point)
+            else:
+                print(f"[Vehicle] Reached final junction.")
+                return  # or stop movement / set a flag
 
         self.cur_point = Point(new_x, new_y)
+
+
+        # self.cur_point = Point(
+        #     self.cur_point.x + new_x,
+        #     self.cur_point.y + new_y
+        # )
+        print(f"[move] Vehicle new position: {self.cur_point.x:.2f}, {self.cur_point.y:.2f}")
         self.__last_move_time_stamp = time.time()
 
         self.__last_distance_to_next_junction = self.cur_point.get_distance_from_point(self.__next_junction_point)
         self.velocity = self.velocity + self.engine.calculate_acceleration() * dt
+        #print(f"[move] Vehicle moved to {self.cur_point}")
 
     def __str__(self):
         return f"(x, y) = {self.get_cur_point()}"

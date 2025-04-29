@@ -29,8 +29,7 @@ class SimulationScreen:
 
         root = tk.Tk()
         root.withdraw()
-        self.WINDOW_WIDTH = root.winfo_screenwidth() - 100
-        self.WINDOW_HEIGHT = root.winfo_screenheight() - 100
+        self.WINDOW_WIDTH, self.WINDOW_HEIGHT = self.screen.get_size()
         self.MAIN_WIDTH = (2 * self.WINDOW_WIDTH) // 3
         self.MAIN_HEIGHT = (9 * self.WINDOW_HEIGHT) // 10
         self.SIDE_WIDTH = self.WINDOW_WIDTH - self.MAIN_WIDTH
@@ -57,21 +56,38 @@ class SimulationScreen:
 
     def handle_events(self, event):
         if event.type == pygame.QUIT:
+            print("[EVENT] Quit event received.")
             self.running = False
             pygame.quit()
             sys.exit()
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            print("[EVENT] Mouse click at", pygame.mouse.get_pos())
             if self.is_cursor_in_circle(self.BUTTON_CENTER, self.BUTTON_RADIUS):
                 self.is_stopped = not self.is_stopped
+                print(f"[EVENT] Simulation {'stopped' if self.is_stopped else 'resumed'}")
             else:
                 for junction in self.sim.graph.nodes:
                     if self.is_cursor_in_circle(junction.point, 6):
                         self.sim.set_current_junction(junction)
+                        print(f"[EVENT] Junction selected at {junction.point}")
                         return
                 for vehicle in self.sim.graph.vehicles:
-                    if self.is_cursor_in_circle(vehicle.cur_point, 5):
-                        self.sim.set_current_vehicle(vehicle)
-                        return
+                    if vehicle.cur_point:
+                        x, y = int(vehicle.cur_point.x), int(vehicle.cur_point.y)
+                        print(f"[DRAW] Vehicle at ({x}, {y})")
+                        # Draw vehicle as a red dot
+                        pygame.draw.circle(
+                            self.screen,
+                            Color.RED,  # Assuming CAR_COLOR = Color.RED
+                            (x, y),
+                            5  # e.g., 5
+                        )
+                    else:
+                        print("[DRAW] Vehicle has no cur_point!")
+                    # if self.is_cursor_in_circle(vehicle.cur_point, 5):
+                    #     self.sim.set_current_vehicle(vehicle)
+                    #     print(f"[EVENT] Vehicle selected at {vehicle.cur_point}")
+                    #     return
 
     def is_cursor_in_circle(self, center_point, radius):
         mouse_pos = pygame.mouse.get_pos()
@@ -81,10 +97,12 @@ class SimulationScreen:
 
     def update(self, delta_time):
         if not self.is_stopped:
-            # (Add your vehicle logic here if needed)
-            pass
+            print("[UPDATE] Simulation running.")
+        else:
+            print("[UPDATE] Simulation paused.")
 
     def draw(self):
+        print("[DRAW] Redrawing screen...")
         self.screen.fill(Color.WHITE.value)
 
         pygame.draw.rect(self.screen, Color.VERY_DARK_GREY.value, self.SIMULATION_SCREEN)
