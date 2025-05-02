@@ -146,6 +146,7 @@ class SettingsScreen:
                 self.upload_json()
             elif event.ui_element == self.save_button:
                 self.save_to_json()
+                print("[DEBUG] Settings saved!")
             elif event.ui_element == self.cancel_button:
                 self.next_screen = "main_menu"  # This returns to main screen
 
@@ -187,11 +188,14 @@ class SettingsScreen:
         root.withdraw()
         file_path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
         if file_path:
+            self.loaded_from_file = True
             self.load_from_json(file_path)
 
     def save_to_json(self):
         if self.loaded_from_file:
+            print("[DEBUG] Settings already loaded from file.")
             return  # Do not overwrite manually loaded settings
+        print("[DEBUG] Saving settings...")
         data = {
             "Time to shutdown simulation": {"value": self.time_input.get_text()},
             "Map for simulation": {"value": self.map_dropdown.selected_option},
@@ -217,7 +221,6 @@ class SettingsScreen:
                 self.electric_input.set_text(data.get("Electric", {}).get("value", ""))
                 self.gasoline_input.set_text(data.get("Gasoline", {}).get("value", ""))
                 self.gas_input.set_text(data.get("Gas", {}).get("value", ""))
-                self.loaded_from_file = True
                 print(f"[DEBUG] Loaded settings from {file_path}")
         except Exception as e:
             print(f"[ERROR] Failed to load JSON: {e}")

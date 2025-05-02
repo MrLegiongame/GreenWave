@@ -26,7 +26,7 @@ class SimulationScreen:
         self.running = True
         self.is_stopped = False
         self.clock = pygame.time.Clock()
-        self.dt = 0
+
         root = tk.Tk()
         root.withdraw()
         self.WINDOW_WIDTH, self.WINDOW_HEIGHT = self.screen.get_size()
@@ -108,7 +108,6 @@ class SimulationScreen:
 
     def update(self, delta_time):
         print(f"[DEBUG] update() called. is_stopped = {self.is_stopped}")
-        self.dt = delta_time
         if not self.is_stopped:
             print("[UPDATE] Simulation running.")
             for vehicle in self.sim.graph.vehicles:
@@ -304,7 +303,7 @@ class SimulationScreen:
                     acceleration=3  # or adjust per type if needed
                 ))
 
-        self.sim.graph = Graph(junctions, edges, vehicles, self.dt)
+        self.sim.graph = Graph(junctions, edges, vehicles)
 
         for vehicle in vehicles:
             vehicle.set_path(self.sim.graph)
