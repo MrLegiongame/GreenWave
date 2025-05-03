@@ -78,11 +78,19 @@ def load_graph_from_json(sim, json_data):
 
 class Graph:
     def __init__(self, nodes, edges, vehicles):
+=======
+from classes.Enums.Color import Color
+
+
+class Graph:
+    def __init__(self, nodes, edges, vehicles,dt=0):
+      
         self.nodes = None
         self.nodes_size = None
         self.edges = None
         self.edges_size = None
         self.vehicles = None
+        self.dt = dt
         self.vehicles_size = None
         if True:  # TODO change boolean statement
             self.nodes = nodes
@@ -109,7 +117,7 @@ class Graph:
 
         # Draw vehicles
         for vehicle in self.vehicles:
-            vehicle.move()
+            vehicle.move(self.dt)
             pygame.draw.circle(screen, Color.RED.value, vehicle.get_cur_point().get_point(), 6)
 
     def get(self, node, default=None):
