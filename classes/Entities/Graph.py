@@ -19,7 +19,7 @@ def find_out_lane_by_index_in_junction(junction, out_lane_index):
     return None
 
 
-def load_graph_from_json(sim, json_data):
+def load_graph_from_json(sim, json_data , dt):
     directions_in_map = []  # sorted by indexes in map
 
     # Extract junctions as nodes
@@ -72,19 +72,12 @@ def load_graph_from_json(sim, json_data):
 
     sim.force_directed_layout(nodes, edges)
     # Create and return Graph instance
-    return Graph(nodes=nodes, edges=edges, vehicles=vehicles)
-
-
-
-class Graph:
-    def __init__(self, nodes, edges, vehicles):
-=======
-from classes.Enums.Color import Color
+    return Graph(nodes=nodes, edges=edges, vehicles=vehicles , dt=dt)
 
 
 class Graph:
     def __init__(self, nodes, edges, vehicles,dt=0):
-      
+
         self.nodes = None
         self.nodes_size = None
         self.edges = None
@@ -150,5 +143,7 @@ class Graph:
 
                 if src == current_junction and dst not in visited:
                     queue.append((dst, path + [dst]))
+    def get_edge_list(self):
+        return self.edges
 
         return []  # No path found

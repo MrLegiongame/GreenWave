@@ -112,8 +112,8 @@ class SimulationScreen:
         self.dt = delta_time
         if not self.is_stopped:
             print("[UPDATE] Simulation running.")
-            for vehicle in self.sim.graph.vehicles:
-                vehicle.move(delta_time)
+            # for vehicle in self.sim.graph.vehicles:
+            #     vehicle.move(delta_time)
         else:
             print("[UPDATE] Simulation paused.")
 
@@ -274,60 +274,60 @@ class SimulationScreen:
         try:
             with open("map1.json", 'r') as f:
                 data = json.load(f)
-                self.sim.graph = load_graph_from_json(self, data)
+                self.sim.graph = load_graph_from_json(self, data,dt=self.dt)
         except Exception as e:
             print(f"[ERROR] Failed to load JSON: {e}")
 
-        # Step 4: Apply Layout
-        self.force_directed_layout(junctions, edges)
-
-        # Step 5: Vehicle creation with correct energy type distribution
-        vehicle_stats = self.vehicle_stats
-        total_vehicles = vehicle_stats["Private car amount"] + vehicle_stats["Buses amount"] + vehicle_stats[
-            "Trucks amount"]
-        energy_types = ["Electric", "Gasoline", "Gas"]
-        energy_distribution = []
-
-        for energy in energy_types:
-            count = int((vehicle_stats[energy] / 100) * total_vehicles)
-            energy_distribution.extend([energy] * count)
-
-        # In case rounding left out some slots
-        while len(energy_distribution) < total_vehicles:
-            energy_distribution.append(random.choice(energy_types))
-
-        random.shuffle(energy_distribution)
-
-        vehicle_types = (
-            ("Car", vehicle_stats["Private car amount"]),
-            ("Bus", vehicle_stats["Buses amount"]),
-            ("Truck", vehicle_stats["Trucks amount"])
-        )
-
-        for v_type, amount in vehicle_types:
-            for _ in range(amount):
-                if not energy_distribution:
-                    break
-                src_road = random.choice(edges)
-                dst_road = random.choice([e for e in edges if e != src_road])
-                weight = random.randint(1200, 2400)
-                energy = energy_distribution.pop()
-                image = random.choice(get_image_list("assets/vehicles/cars"))
-                vehicles.append(Vehicle(
-                    length=2,
-                    weight=weight,
-                    start_road=src_road,
-                    end_road=dst_road,
-                    image=image,
-                    vehicle_type=v_type,
-                    energy_type=energy,
-                    acceleration=3  # or adjust per type if needed
-                ))
-
-        self.sim.graph = Graph(junctions, edges, vehicles, self.dt)
-
-        for vehicle in vehicles:
-            vehicle.set_path(self.sim.graph)
+        # # Step 4: Apply Layout
+        # self.force_directed_layout(junctions, edges)
+        #
+        # # Step 5: Vehicle creation with correct energy type distribution
+        # vehicle_stats = self.vehicle_stats
+        # total_vehicles = vehicle_stats["Private car amount"] + vehicle_stats["Buses amount"] + vehicle_stats[
+        #     "Trucks amount"]
+        # energy_types = ["Electric", "Gasoline", "Gas"]
+        # energy_distribution = []
+        #
+        # for energy in energy_types:
+        #     count = int((vehicle_stats[energy] / 100) * total_vehicles)
+        #     energy_distribution.extend([energy] * count)
+        #
+        # # In case rounding left out some slots
+        # while len(energy_distribution) < total_vehicles:
+        #     energy_distribution.append(random.choice(energy_types))
+        #
+        # random.shuffle(energy_distribution)
+        #
+        # vehicle_types = (
+        #     ("Car", vehicle_stats["Private car amount"]),
+        #     ("Bus", vehicle_stats["Buses amount"]),
+        #     ("Truck", vehicle_stats["Trucks amount"])
+        # )
+        #
+        # for v_type, amount in vehicle_types:
+        #     for _ in range(amount):
+        #         if not energy_distribution:
+        #             break
+        #         src_road = random.choice(edges)
+        #         dst_road = random.choice([e for e in edges if e != src_road])
+        #         weight = random.randint(1200, 2400)
+        #         energy = energy_distribution.pop()
+        #         image = random.choice(get_image_list("assets/vehicles/cars"))
+        #         vehicles.append(Vehicle(
+        #             length=2,
+        #             weight=weight,
+        #             start_road=src_road,
+        #             end_road=dst_road,
+        #             image=image,
+        #             vehicle_type=v_type,
+        #             energy_type=energy,
+        #             acceleration=3  # or adjust per type if needed
+        #         ))
+        #
+        # self.sim.graph = Graph(junctions, edges, vehicles, self.dt)
+        #
+        # for vehicle in vehicles:
+        #     vehicle.set_path(self.sim.graph)
 
     def force_directed_layout(self, nodes, edges):
         G = nx.Graph()

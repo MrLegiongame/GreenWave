@@ -25,7 +25,7 @@ class Lane:
     Value n-1 means our own Direction (we came from), which means a U-Turn.
     """
 
-    def __init__(self, facing, to_lanes=None):  # to_lanes: list[Lane]
+    def __init__(self, facing, to_lanes=None ,index_in_junction=None):  # to_lanes: list[Lane]
         self.to_lanes = []
         self.size = 0
         self.parent_direction = None
@@ -63,12 +63,12 @@ class Lane:
             self.size += 1
             self.facing = LaneFacing.IN
 
-    def __str__(self):
-        if None is self.index_in_direction:
-            return None
-        res = f"Lane {self.index_in_direction}: "
-        for to_direction in self.directions[:-1]:
-            if None is not to_direction.index_in_junction:
-                res += f"{to_direction.index_in_junction}, "
-
-        return res + f"{self.directions[-1].index_in_junction}"
+    # def __str__(self):
+    #     if None is self.index_in_direction:
+    #         return None
+    #     res = f"Lane {self.index_in_direction}: "
+    #     for to_direction in self.directions[:-1]:
+    #         if None is not to_direction.index_in_junction:
+    #             res += f"{to_direction.index_in_junction}, "
+    #
+    #     return res + f"{self.directions[-1].index_in_junction}"
