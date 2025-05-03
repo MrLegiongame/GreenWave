@@ -1,5 +1,8 @@
 <<<<<<< Updated upstream:gui/screens/simulation/GreenWave/classes/Nodes/Lane.py
+<<<<<<< Updated upstream:gui/screens/simulation/GreenWave/classes/Nodes/Lane.py
 from functions import sort_and_remove_duplicates_in_tuple
+=======
+>>>>>>> Stashed changes:classes/Nodes/Lane.py
 =======
 >>>>>>> Stashed changes:classes/Nodes/Lane.py
 from classes.Enums.State import State
