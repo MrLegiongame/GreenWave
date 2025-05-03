@@ -27,14 +27,14 @@ def check_direction_validity(lanes):  # lanes: list[Lane]
 
 class Direction:
 
-    def __init__(self, in_lanes=None, out_lanes=None):  # in_lanes: list[Lane], out_lanes: list[Lane]
+    def __init__(self, index_in_map, in_lanes=None, out_lanes=None):  # in_lanes: list[Lane], out_lanes: list[Lane]
         self.in_lanes = []  # the logical order is from the right to the left
         self.out_lanes = []  # the logical order is from the right to the left
         self.in_size = 0
         self.out_size = 0
         self.size = 0
         self.parent_junction = None
-        self.index_in_junction = None
+        self.index_in_map = index_in_map
 
         if None is not in_lanes:
             try:
@@ -62,23 +62,30 @@ class Direction:
 
     def set_parent_junction(self, parent_junction):  # parent_junction: Junction
         self.parent_junction = parent_junction
-        self.index_in_junction = find_obj_index_in_array(self, parent_junction.directions)
 
     def add_to_left(self, lane):  # lane: Lane
         if LaneFacing.IN == lane.facing:
             self.in_lanes.append(lane)
+            self.in_size += 1
+            self.size += 1
             return True
         elif LaneFacing.OUT == lane.facing:
             self.out_lanes.append(lane)
+            self.out_size += 1
+            self.size += 1
             return True
         return False
 
     def add_to_right(self, lane):  # lane: Lane
         if LaneFacing.IN == lane.type:
             self.in_lanes.insert(0, lane)
+            self.in_size += 1
+            self.size += 1
             return True
         elif LaneFacing.OUT == lane.type:
             self.out_lanes.insert(0, lane)
+            self.out_size += 1
+            self.size += 1
             return True
         return False
 
@@ -111,10 +118,8 @@ class Direction:
         """
         res = f"Direction:\nIn Lanes:\n"
         for lane in self.in_lanes:
-            if isinstance(lane, Lane):
-                res += f"\t\t{lane}\n"
+            res += f"\t\t{lane}\n"
         res += "\nOut Lanes:\n"
         for lane in self.out_lanes:
-            if isinstance(lane, Lane):
-                res += f"\t\t{lane}\n"
+            res += f"\t\t{lane}\n"
         return res

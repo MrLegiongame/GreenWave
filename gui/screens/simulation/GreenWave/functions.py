@@ -56,26 +56,19 @@ def create_state_from_flow(flow_dict, junction):
     return tuple(state)
 
 
-def sort_and_remove_duplicates_in_tuple(tup): # tup: tuple
-    if not isinstance(tup, tuple):
+def sort_and_remove_duplicates_in_list(lst):  # lst: list
+    if not isinstance(lst, list):
+        raise TypeError("lst is invalid: Not a list")
+    return remove_duplicates_in_list(lst)  # TODO lst.sort()
+
+
+def remove_duplicates_in_list(lst):  # lst: list (sorted)
+    if not isinstance(lst, list):
         raise TypeError("tup is invalid: Not a tuple")
-    return remove_duplicates_in_tuple(sort_tuple(tup))
-
-
-def sort_tuple(tup): # tup: tuple
-    if not isinstance(tup, tuple):
-        raise TypeError("tup is invalid: Not a tuple")
-    return tuple(sorted(tup))
-
-
-def remove_duplicates_in_tuple(tup): # tup: tuple (sorted)
-    if not isinstance(tup, tuple):
-        raise TypeError("tup is invalid: Not a tuple")
-    size = len(tup)
+    size = len(lst)
     if size < 2:
-        return tup
+        return lst
 
-    lst = list(tup)
     i = 0
     condition = True
     while condition:
@@ -85,4 +78,4 @@ def remove_duplicates_in_tuple(tup): # tup: tuple (sorted)
         else:
             i += 1
         condition = i < size - 1
-    return tuple(lst)
+    return lst
