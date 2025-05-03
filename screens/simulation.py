@@ -1,14 +1,14 @@
+import json
 import math
 import random
 import networkx as nx
 import pygame
 import sys
 import tkinter as tk
-import json
 from enum import Enum
 
 from classes.Edges.Road import Road
-from classes.Entities.Graph import Graph
+from classes.Entities.Graph import Graph, load_graph_from_json
 from classes.Entities.Point import Point
 from classes.Entities.Vehicles.Vehicle import Vehicle, get_image_list
 from classes.Enums.Color import Color
@@ -27,6 +27,7 @@ class SimulationScreen:
         self.is_stopped = False
         self.clock = pygame.time.Clock()
         self.dt = 0
+
         root = tk.Tk()
         root.withdraw()
         self.WINDOW_WIDTH, self.WINDOW_HEIGHT = self.screen.get_size()
@@ -229,6 +230,7 @@ class SimulationScreen:
                 pygame.draw.line(surface, Color.WHITE.value, (mid_x, mid_y), (end_x, end_y), 2)
 
     def set_graph(self):
+        """
         junctions, edges, vehicles = [], [], []
         roads_amount, name = 3, 1
 
@@ -257,6 +259,24 @@ class SimulationScreen:
                 edges.append(Road(str(name), direction, destination, length))
                 edges.append(Road(str(name), destination, direction, length))
                 name += 1
+
+        self.force_directed_layout(junctions, edges)
+
+        for _ in range(self.NUM_CARS):
+            src_road = random.choice(edges)
+            dst_road = random.choice([e for e in edges if e != src_road])
+            weight = random.randint(1200, 2400)
+            image = random.choice(get_image_list("assets/vehicles/cars"))
+            vehicles.append(Car(2, Engine(3, "Gas"), weight, src_road, dst_road, image))
+        """
+
+        # self.sim.graph = Graph(junctions, edges, vehicles)
+        try:
+            with open("map1.json", 'r') as f:
+                data = json.load(f)
+                self.sim.graph = load_graph_from_json(self, data)
+        except Exception as e:
+            print(f"[ERROR] Failed to load JSON: {e}")
 
         # Step 4: Apply Layout
         self.force_directed_layout(junctions, edges)
@@ -324,6 +344,7 @@ class SimulationScreen:
         for node_id, (x, y) in pos.items():
             id_node_map[node_id].point = Point(int(padding + (x + 1) / 2 * area_width),
                                                int(padding + (y + 1) / 2 * area_height))
+
 
     def load_vehicle_data_from_json(self, file_path="settings.json"):
         try:

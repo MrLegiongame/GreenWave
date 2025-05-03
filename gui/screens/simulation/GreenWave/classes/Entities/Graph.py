@@ -1,6 +1,9 @@
+<<<<<<< Updated upstream:gui/screens/simulation/GreenWave/classes/Entities/Graph.py
+=======
 import json
 from collections import deque
 
+>>>>>>> Stashed changes:classes/Entities/Graph.py
 import pygame
 
 from classes.Edges.Road import Road
@@ -78,19 +81,11 @@ def load_graph_from_json(sim, json_data):
 
 class Graph:
     def __init__(self, nodes, edges, vehicles):
-=======
-from classes.Enums.Color import Color
-
-
-class Graph:
-    def __init__(self, nodes, edges, vehicles,dt=0):
-      
         self.nodes = None
         self.nodes_size = None
         self.edges = None
         self.edges_size = None
         self.vehicles = None
-        self.dt = dt
         self.vehicles_size = None
         if True:  # TODO change boolean statement
             self.nodes = nodes
@@ -117,7 +112,7 @@ class Graph:
 
         # Draw vehicles
         for vehicle in self.vehicles:
-            vehicle.move(self.dt)
+            vehicle.move()
             pygame.draw.circle(screen, Color.RED.value, vehicle.get_cur_point().get_point(), 6)
 
     def get(self, node, default=None):
@@ -128,6 +123,8 @@ class Graph:
             if src is node:
                 neighbors.append((dst, edge.length))  # include weight
         return neighbors if neighbors else default
+<<<<<<< Updated upstream:gui/screens/simulation/GreenWave/classes/Entities/Graph.py
+=======
 
     def get_path(self, start_road, end_road):
         start_junction = start_road.first_direction.parent_junction
@@ -152,3 +149,4 @@ class Graph:
                     queue.append((dst, path + [dst]))
 
         return []  # No path found
+>>>>>>> Stashed changes:classes/Entities/Graph.py
