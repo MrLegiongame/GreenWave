@@ -23,22 +23,37 @@ def check_road_validity(name, first_direction, second_direction, length):  # nam
 
 class Road:
 
-    # for one way road
-
-    def __init__(self, name, first_direction, second_direction, length):
-        check_road_validity(name, first_direction, second_direction, length)
-
-        self.name = name
-        self.first_direction = first_direction
-        self.second_direction = second_direction
-        self.length = length
+    def __init__(self, name, first_direction, second_direction, length, maximum_speed):
+        self.name = None
+        self.first_direction = None
+        self.second_direction = None
+        self.length = None
+        self.maximum_speed = None
         self.road_lanes_first_direction = []
         self.road_lanes_second_direction = []
-        self.lanes_first_direction_size = first_direction.out_size
-        self.lanes_second_direction_size = second_direction.out_size
+        self.lanes_first_direction_size = 0
+        self.lanes_second_direction_size = 0
 
-        for lane in range(self.lanes_first_direction_size):
-            self.road_lanes_first_direction.append(RoadLane(self, first_direction, second_direction, length))
+        try:
+            check_road_validity(name, first_direction, second_direction, length)
+
+            self.name = name
+            self.first_direction = first_direction
+            self.second_direction = second_direction
+            self.length = length
+            self.maximum_speed = maximum_speed
+            self.road_lanes_first_direction = []
+            self.road_lanes_second_direction = []
+            self.lanes_first_direction_size = first_direction.in_size
+            self.lanes_second_direction_size = second_direction.in_size
+
+            for lane in range(self.lanes_first_direction_size):
+                self.road_lanes_first_direction.append(RoadLane(self, first_direction.in_lanes[lane], second_direction.out_lanes[lane], length))
+            for lane in range(self.lanes_second_direction_size):
+                self.road_lanes_second_direction.append(RoadLane(self, second_direction.in_lanes[lane], first_direction.out_lanes[lane], length))
+
+        except TypeError as e:
+            print(f"RoadLane couldn't be created due to this error: {e}")
 
     def get_slope(self):
         dy = self.first_direction.parent_junction.point.get_point()[1] - self.second_direction.parent_junction.point.get_point()[1]

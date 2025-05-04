@@ -29,14 +29,15 @@ def check_direction_validity(lanes):  # lanes: list[Lane]
 
 class Direction:
 
-    def __init__(self, in_lanes=None, out_lanes=None):  # in_lanes: list[Lane], out_lanes: list[Lane]
+    def __init__(self, index_in_map, road=None, in_lanes=None, out_lanes=None):  # in_lanes: list[Lane], out_lanes: list[Lane]
         self.in_lanes = []  # the logical order is from the right to the left
         self.out_lanes = []  # the logical order is from the right to the left
         self.in_size = 0
         self.out_size = 0
         self.size = 0
         self.parent_junction = None
-        self.index_in_junction = None
+        self.index_in_map = index_in_map
+        self.road = road
 
         if None is not in_lanes:
             try:
@@ -64,7 +65,14 @@ class Direction:
 
     def set_parent_junction(self, parent_junction):  # parent_junction: Junction
         self.parent_junction = parent_junction
-        self.index_in_junction = find_obj_index_in_array(self, parent_junction.directions)
+        # self.index_in_junction = find_obj_index_in_array(self, parent_junction.directions)
+
+    def set_road(self, road):
+        from classes.Edges.Road import Road
+        if isinstance(road, Road):
+            self.road = road
+            return True
+        return False
 
     def add_to_left(self, lane):  # lane: Lane
         if LaneFacing.IN == lane.facing:

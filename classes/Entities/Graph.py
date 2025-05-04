@@ -19,64 +19,9 @@ def find_out_lane_by_index_in_junction(junction, out_lane_index):
     return None
 
 
-def load_graph_from_json(sim, json_data , dt):
-    directions_in_map = []  # sorted by indexes in map
-
-    # Extract junctions as nodes
-    nodes = []
-    junctions = json_data.get("Junctions", {})
-    junction_index = 0
-    for junction_name, junction_data in junctions.items():
-        nodes.append(Junction())
-        direction_index = 0
-        for direction_name, direction_data in junction_data.items():
-            direction = Direction(direction_data["Index_in_map"])
-            direction.set_parent_junction(nodes[junction_index])
-            nodes[junction_index].add_direction(direction)
-            directions_in_map.append(direction)
-            for out_lane_name, out_lane_index_in_junction in direction_data.get("Out_Lanes", {}).items():
-                out_lane = Lane(LaneFacing.OUT, index_in_junction=out_lane_index_in_junction)
-                out_lane.set_parent_direction(direction)
-                nodes[junction_index].directions[direction_index].add_to_left(out_lane)
-            direction_index += 1
-        junction_index += 1
-
-
-    junction_index = 0
-    for junction_name, junction_data in junctions.items():
-        direction_index = 0
-        for direction_name, direction_data in junction_data.items():
-            direction = nodes[junction_index].directions[direction_index]
-            for in_lane_name, in_lane_data in direction_data.get("In_Lanes", {}).items():
-                to_lanes = []
-                for to_lane_name, to_lane_index_in_junction in in_lane_data.get("To_Lanes", {}).items():
-                    out_lane = find_out_lane_by_index_in_junction(nodes[junction_index], to_lane_index_in_junction)
-                    to_lanes.append(out_lane)
-                in_lane = Lane(LaneFacing.IN, to_lanes=to_lanes)
-                in_lane.set_parent_direction(direction)
-                nodes[junction_index].directions[direction_index].add_to_left(in_lane)
-            direction_index += 1
-        junction_index += 1
-
-    # Extract roads as edges
-    edges = []
-    roads = json_data.get("Roads", {})
-    for road_name, road_data in roads.items():
-        first_direction = directions_in_map[road_data["direction1_index_in_map"]]
-        second_direction = directions_in_map[road_data["direction2_index_in_map"]]
-        length = road_data["length"]
-        edges.append(Road(road_name, first_direction, second_direction, length))
-
-    # Assume no vehicle data yet
-    vehicles = []
-
-    sim.force_directed_layout(nodes, edges)
-    # Create and return Graph instance
-    return Graph(nodes=nodes, edges=edges, vehicles=vehicles , dt=dt)
-
 
 class Graph:
-    def __init__(self, nodes, edges, vehicles,dt=0):
+    def __init__(self, nodes, edges, vehicles, dt=0):
 
         self.nodes = None
         self.nodes_size = None
@@ -122,9 +67,42 @@ class Graph:
                 neighbors.append((dst, edge.length))  # include weight
         return neighbors if neighbors else default
 
+    def get_path(self, start, end):
+
+        # setup algorithm
+        for node in self.nodes:
+            node.distance = float('inf')  # infinity
+            node.source_junction = None
+
+        queue = deque()  # (current_node, path_nodes, path_edges)
+        queue.append(start)
+        start.distance = 0
+
+        while queue:
+            current_node = queue.popleft()
+            for neighbor, edge in current_node.get_neighbors_junctions():
+                if neighbor.distance > current_node.distance + edge.length:
+                    neighbor.distance = current_node.distance + edge.length
+                    neighbor.source_junction = current_node
+                    queue.append(neighbor)
+
+        current_node = end
+        path_nodes = []
+        path_edges = []
+        while start is not current_node:
+            path_nodes.insert(0, current_node)
+            path_edges.insert(0, current_node.get_road_by_neighbor(current_node.source_junction))
+            current_node = current_node.source_junction
+
+        return path_nodes, path_edges
+
+"""
     def get_path(self, start_road, end_road):
         start_junction = start_road.first_direction.parent_junction
         end_junction = end_road.second_direction.parent_junction
+
+        if start_junction is end_junction:
+            end_junction = end_road.first_direction.parent_junction
 
         queue = deque([(start_junction, [start_junction])])
         visited = set()
@@ -143,7 +121,10 @@ class Graph:
 
                 if src == current_junction and dst not in visited:
                     queue.append((dst, path + [dst]))
+
+
     def get_edge_list(self):
         return self.edges
 
         return []  # No path found
+"""

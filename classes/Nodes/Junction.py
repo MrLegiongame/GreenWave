@@ -37,6 +37,10 @@ class Junction:
         self.available_states = None
         self.states_size = None
         self.point = None
+
+        self.distance = None  # for bfs use only
+        self.source_junction = None # for bfs use only
+
         if None is not directions:
             try:
                 check_junction_validity(directions)
@@ -74,6 +78,26 @@ class Junction:
             self.available_states = self.create_states()  # tuple[tuple[Lane]]
             self.states_size = len(self.available_states)
             """
+
+    def get_neighbors_junctions(self):
+        neighbors = []
+        for direction in self.directions:
+            edge = direction.road
+            neighbor = edge.first_direction.parent_junction
+            if self is neighbor:
+                neighbor = edge.second_direction.parent_junction
+            neighbors.append([neighbor, edge])
+        return neighbors
+
+    def get_road_by_neighbor(self, junction):
+        for direction in self.directions:
+            neighbor = direction.road.first_direction.parent_junction
+            if self is neighbor:
+                neighbor = direction.road.second_direction.parent_junction
+            if junction is neighbor:
+                return direction.road
+        return None
+
 
     def remove_direction(self, direction):
         for direction_index in range(self.directions):

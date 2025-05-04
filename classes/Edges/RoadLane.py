@@ -1,38 +1,36 @@
 from classes.Entities.Vehicles.Vehicle import Vehicle
-from classes.Nodes.Direction import Direction
 
 
-def check_road_lane_validity(parent_road, source_direction, destination_direction, length):
+def check_road_lane_validity(parent_road, source_lane, destination_lane, length):
+    from classes.Nodes.Lane import Lane
     from classes.Edges.Road import Road  # Add it here inside the function!
     if not isinstance(parent_road, Road):
         raise TypeError("RoadLane is invalid: Non-Road value was given")
-    if not isinstance(source_direction, Direction):
+    if not isinstance(source_lane, Lane):
         raise TypeError("RoadLane is invalid: Non-Direction value was given")
-    if not isinstance(destination_direction, Direction):
+    if not isinstance(destination_lane, Lane):
         raise TypeError("RoadLane is invalid: Non-Direction value was given")
     if not isinstance(length, int):
         raise TypeError("RoadLane is invalid: Non-int value was given")
     if not (length > 0):
         raise TypeError("RoadLane is invalid: length with non-positive value")
-    if not (source_direction.out_size == destination_direction.in_size):
-        raise TypeError("RoadLane is invalid: Not equal number of lanes")
     return True
 
 
 class RoadLane:
-    def __init__(self, parent_road, source_direction, destination_direction, length):
+    def __init__(self, parent_road, source_lane, destination_lane, length):
         self.parent_road = None
-        self.source_direction = None
-        self.destination_direction = None
+        self.source_lane = None
+        self.destination_lane = None
         self.length = None
         self.vehicles = []
         self.vehicles_size = 0
 
         try:
-            check_road_lane_validity(parent_road, source_direction, destination_direction, length)
+            check_road_lane_validity(parent_road, source_lane, destination_lane, length)
             self.parent_road = parent_road
-            self.source_direction = source_direction
-            self.destination_direction = destination_direction
+            self.source_lane = source_lane
+            self.destination_lane = destination_lane
             self.length = length
         except TypeError as e:
             print(f"RoadLane couldn't be created due to this error: {e}")

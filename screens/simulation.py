@@ -8,21 +8,26 @@ import tkinter as tk
 from enum import Enum
 
 from classes.Edges.Road import Road
-from classes.Entities.Graph import Graph, load_graph_from_json
+from classes.Entities.Graph import Graph, find_out_lane_by_index_in_junction
 from classes.Entities.Point import Point
 from classes.Entities.Vehicles.Vehicle import Vehicle, get_image_list
 from classes.Enums.Color import Color
 from classes.Entities.Simulation import Simulation
 from classes.Enums.EdgeDensity import EdgeDensity
+from classes.Enums.LaneFacing import LaneFacing
 from classes.Nodes.Direction import Direction
 from classes.Nodes.Junction import Junction
+from classes.Nodes.Lane import Lane
+
 
 class SimulationScreen:
     def __init__(self, screen, ui_manager):
         self.screen = screen
         self.ui_manager = ui_manager
         self.next_screen = None
-        self.sim = Simulation(None)
+        # self.sim = Simulation(None)
+        self.graph = None
+        self.current_junction = None
         self.running = True
         self.is_stopped = False
         self.clock = pygame.time.Clock()
@@ -59,7 +64,8 @@ class SimulationScreen:
             "Trucks amount": 0
         }
         self.load_vehicle_data_from_json()
-        self.set_graph()
+        json_data = json.load(open("map1.json", "r"))
+        self.set_graph(json_data, 0.01)
 
     def get_next_screen(self):
         return self.next_screen
@@ -78,12 +84,12 @@ class SimulationScreen:
                 self.is_stopped = not self.is_stopped
                 print(f"[DEBUG] is_stopped is now: {self.is_stopped}")
             else:
-                for junction in self.sim.graph.nodes:
+                for junction in self.graph.nodes:
                     if self.is_cursor_in_circle(junction.point, 6):
-                        self.sim.set_current_junction(junction)
+                        self.current_junction = junction
                         print(f"[EVENT] Junction selected at {junction.point}")
                         return
-                for vehicle in self.sim.graph.vehicles:
+                for vehicle in self.graph.vehicles:
                     if vehicle.cur_point:
                         x, y = int(vehicle.cur_point.x), int(vehicle.cur_point.y)
                         print(f"[DRAW] Vehicle at ({x}, {y})")
@@ -112,8 +118,8 @@ class SimulationScreen:
         self.dt = delta_time
         if not self.is_stopped:
             print("[UPDATE] Simulation running.")
-            # for vehicle in self.sim.graph.vehicles:
-            #     vehicle.move(delta_time)
+            for vehicle in self.graph.vehicles:
+                vehicle.move(delta_time)
         else:
             print("[UPDATE] Simulation paused.")
 
@@ -152,23 +158,23 @@ class SimulationScreen:
         self.draw_vehicle()
 
     def draw_graph(self):
-        if self.sim.graph is None:
+        if self.graph is None:
             return
-        self.sim.graph.draw(self.screen, self.sim)
+        self.graph.draw(self.screen, self)
 
     def draw_junction(self):
-        if self.sim.current_junction is None:
+        if self.current_junction is None:
             return
         center = (self.WINDOW_WIDTH - (self.SIDE_WIDTH // 2), self.SIDE_HEIGHT // 2)
-        num_sides = self.sim.current_junction.size
+        num_sides = self.current_junction.size
         self.draw_regular_polygon(self.screen, center, 90, num_sides, draw_normals=True)
 
     def draw_vehicle(self):
-        if not self.sim or not self.sim.graph or not self.sim.graph.vehicles:
+        if not self.graph or not self.graph.vehicles:
             print("[DRAW] No vehicle data to display.")
             return
 
-        print(f"[DEBUG] Found {len(self.sim.graph.vehicles)} vehicles in the graph.")
+        print(f"[DEBUG] Found {len(self.graph.vehicles)} vehicles in the graph.")
 
         font = pygame.font.SysFont("Arial", 18)
         x_start = self.MAIN_WIDTH + 20
@@ -194,7 +200,7 @@ class SimulationScreen:
             "Truck": {"Gas": 0, "Gasoline": 0, "Electric": 0},
         }
 
-        for v in self.sim.graph.vehicles:
+        for v in self.graph.vehicles:
             v_type = getattr(v, "vehicle_type", "Unknown")
             energy = getattr(v, "energy_type", "Unknown")
 
@@ -229,105 +235,110 @@ class SimulationScreen:
                 end_x, end_y = mid_x + ortho_dx * normal_length, mid_y + ortho_dy * normal_length
                 pygame.draw.line(surface, Color.WHITE.value, (mid_x, mid_y), (end_x, end_y), 2)
 
-    def set_graph(self):
-        """
-        junctions, edges, vehicles = [], [], []
-        roads_amount, name = 3, 1
+    def set_graph(self, json_data, dt):
+        directions_in_map = []  # sorted by indexes in map
 
-        # Step 1: Create Junctions
-        for _ in range(self.NUM_NODES):
-            junctions.append(Junction())
+        # Extract junctions as nodes
+        nodes = []
+        junctions = json_data.get("Junctions", {})
+        junction_index = 0
+        for junction_name, junction_data in junctions.items():
+            nodes.append(Junction())
+            direction_index = 0
+            for direction_name, direction_data in junction_data.items():
+                direction = Direction(direction_data["Index_in_map"])
+                direction.set_parent_junction(nodes[junction_index])
+                nodes[junction_index].add_direction(direction)
+                directions_in_map.append(direction)
+                for out_lane_name, out_lane_index_in_junction in direction_data.get("Out_Lanes", {}).items():
+                    out_lane = Lane(LaneFacing.OUT, index_in_junction=out_lane_index_in_junction)
+                    out_lane.set_parent_direction(direction)
+                    nodes[junction_index].directions[direction_index].add_to_left(out_lane)
+                direction_index += 1
+            junction_index += 1
 
-        # Step 2: Assign Directions to Junctions
-        for junction in junctions:
-            chance = random.random()
-            roads_amount = 2 if chance < 0.1 else 3 if chance < 0.85 else 4
-            if self.EDGES_DENSITY == EdgeDensity.MEDIUM:
-                roads_amount = 2 if chance < 0.02 else 3 if chance < 0.47 else 4
-            if self.EDGES_DENSITY == EdgeDensity.HIGH:
-                roads_amount = 3 if chance < 0.15 else 4
-            for _ in range(roads_amount):
-                junction.add_direction(Direction())
-                junction.directions[-1].set_parent_junction(junction)
 
-        # Step 3: Create Edges (Roads)
-        for junction in junctions:
-            filtered_list = [x for x in junctions if x != junction]
-            for direction in junction.directions:
-                destination = random.choice(random.choice(filtered_list).directions)
-                length = random.randint(100, 800)
-                edges.append(Road(str(name), direction, destination, length))
-                edges.append(Road(str(name), destination, direction, length))
-                name += 1
+        junction_index = 0
+        for junction_name, junction_data in junctions.items():
+            direction_index = 0
+            for direction_name, direction_data in junction_data.items():
+                direction = nodes[junction_index].directions[direction_index]
+                for in_lane_name, in_lane_data in direction_data.get("In_Lanes", {}).items():
+                    to_lanes = []
+                    for to_lane_name, to_lane_index_in_junction in in_lane_data.get("To_Lanes", {}).items():
+                        out_lane = find_out_lane_by_index_in_junction(nodes[junction_index], to_lane_index_in_junction)
+                        to_lanes.append(out_lane)
+                    in_lane = Lane(LaneFacing.IN, to_lanes=to_lanes)
+                    in_lane.set_parent_direction(direction)
+                    nodes[junction_index].directions[direction_index].add_to_left(in_lane)
+                direction_index += 1
+            junction_index += 1
 
-        self.force_directed_layout(junctions, edges)
+        # Extract roads as edges
+        edges = []
+        roads = json_data.get("Roads", {})
+        for road_name, road_data in roads.items():
+            first_direction = directions_in_map[road_data["direction1_index_in_map"]]
+            second_direction = directions_in_map[road_data["direction2_index_in_map"]]
+            length = road_data["length"]
+            max_speed = road_data["max_speed"]
+            road = Road(road_name, first_direction, second_direction, length, max_speed)
+            first_direction.set_road(road)
+            second_direction.set_road(road)
+            edges.append(road)
 
-        for _ in range(self.NUM_CARS):
-            src_road = random.choice(edges)
-            dst_road = random.choice([e for e in edges if e != src_road])
-            weight = random.randint(1200, 2400)
-            image = random.choice(get_image_list("assets/vehicles/cars"))
-            vehicles.append(Car(2, Engine(3, "Gas"), weight, src_road, dst_road, image))
-        """
+        # Step 4: Apply Layout
+        self.force_directed_layout(nodes, edges)
 
-        # self.sim.graph = Graph(junctions, edges, vehicles)
-        try:
-            with open("map1.json", 'r') as f:
-                data = json.load(f)
-                self.sim.graph = load_graph_from_json(self, data,dt=self.dt)
-        except Exception as e:
-            print(f"[ERROR] Failed to load JSON: {e}")
+        # Step 5: Vehicle creation with correct energy type distribution
+        vehicles = []
+        vehicle_stats = self.vehicle_stats
+        total_vehicles = vehicle_stats["Private car amount"] + vehicle_stats["Buses amount"] + vehicle_stats[
+            "Trucks amount"]
+        energy_types = ["Electric", "Gasoline", "Gas"]
+        energy_distribution = []
 
-        # # Step 4: Apply Layout
-        # self.force_directed_layout(junctions, edges)
-        #
-        # # Step 5: Vehicle creation with correct energy type distribution
-        # vehicle_stats = self.vehicle_stats
-        # total_vehicles = vehicle_stats["Private car amount"] + vehicle_stats["Buses amount"] + vehicle_stats[
-        #     "Trucks amount"]
-        # energy_types = ["Electric", "Gasoline", "Gas"]
-        # energy_distribution = []
-        #
-        # for energy in energy_types:
-        #     count = int((vehicle_stats[energy] / 100) * total_vehicles)
-        #     energy_distribution.extend([energy] * count)
-        #
-        # # In case rounding left out some slots
-        # while len(energy_distribution) < total_vehicles:
-        #     energy_distribution.append(random.choice(energy_types))
-        #
-        # random.shuffle(energy_distribution)
-        #
-        # vehicle_types = (
-        #     ("Car", vehicle_stats["Private car amount"]),
-        #     ("Bus", vehicle_stats["Buses amount"]),
-        #     ("Truck", vehicle_stats["Trucks amount"])
-        # )
-        #
-        # for v_type, amount in vehicle_types:
-        #     for _ in range(amount):
-        #         if not energy_distribution:
-        #             break
-        #         src_road = random.choice(edges)
-        #         dst_road = random.choice([e for e in edges if e != src_road])
-        #         weight = random.randint(1200, 2400)
-        #         energy = energy_distribution.pop()
-        #         image = random.choice(get_image_list("assets/vehicles/cars"))
-        #         vehicles.append(Vehicle(
-        #             length=2,
-        #             weight=weight,
-        #             start_road=src_road,
-        #             end_road=dst_road,
-        #             image=image,
-        #             vehicle_type=v_type,
-        #             energy_type=energy,
-        #             acceleration=3  # or adjust per type if needed
-        #         ))
-        #
-        # self.sim.graph = Graph(junctions, edges, vehicles, self.dt)
-        #
-        # for vehicle in vehicles:
-        #     vehicle.set_path(self.sim.graph)
+        for energy in energy_types:
+            count = int((vehicle_stats[energy] / 100) * total_vehicles)
+            energy_distribution.extend([energy] * count)
+
+        # In case rounding left out some slots
+        while len(energy_distribution) < total_vehicles:
+            energy_distribution.append(random.choice(energy_types))
+
+        random.shuffle(energy_distribution)
+
+        vehicle_types = (
+            ("Car", vehicle_stats["Private car amount"]),
+            ("Bus", vehicle_stats["Buses amount"]),
+            ("Truck", vehicle_stats["Trucks amount"])
+        )
+
+        for v_type, amount in vehicle_types:
+            for _ in range(amount):
+                if not energy_distribution:
+                    break
+                src_road = random.choice(edges)
+                dst_road = random.choice([e for e in edges if e != src_road])
+                weight = random.randint(1200, 2400)
+                energy = energy_distribution.pop()
+                image = random.choice(get_image_list("assets/vehicles/cars"))
+                vehicles.append(Vehicle(
+                    length=2,
+                    weight=weight,
+                    start_road=src_road,
+                    end_road=dst_road,
+                    image=image,
+                    vehicle_type=v_type,
+                    energy_type=energy,
+                    acceleration=3,  # or adjust per type if needed
+                    maximum_speed=100
+                ))
+
+        self.graph = Graph(nodes, edges, vehicles, dt)
+
+        for vehicle in self.graph.vehicles:
+            vehicle.set_path(self.graph)
 
     def force_directed_layout(self, nodes, edges):
         G = nx.Graph()
