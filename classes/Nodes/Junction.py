@@ -37,6 +37,7 @@ class Junction:
         self.available_states = None
         self.states_size = None
         self.point = None
+        self.junction_index = None
 
         self.distance = None  # for bfs use only
         self.source_junction = None # for bfs use only
@@ -65,6 +66,8 @@ class Junction:
                     new_lane[index] = self.directions[(to_direction + direction + 1) % self.size]
                     index += 1
                 self.directions[direction].set_lane_as_direction_tuple(tuple(new_lane), lane)
+
+
 
     def set_point(self, point):
         if isinstance(point, Point):

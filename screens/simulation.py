@@ -114,17 +114,17 @@ class SimulationScreen:
         return (dx ** 2 + dy ** 2) <= radius ** 2
 
     def update(self, delta_time):
-        print(f"[DEBUG] update() called. is_stopped = {self.is_stopped}")
+        #print(f"[DEBUG] update() called. is_stopped = {self.is_stopped}")
         self.dt = delta_time
         if not self.is_stopped:
-            print("[UPDATE] Simulation running.")
+            #print("[UPDATE] Simulation running.")
             for vehicle in self.graph.vehicles:
                 vehicle.move(delta_time)
         else:
             print("[UPDATE] Simulation paused.")
 
     def draw(self):
-        print("[DRAW] Redrawing screen...")
+        #print("[DRAW] Redrawing screen...")
         self.screen.fill(Color.WHITE.value)
 
         pygame.draw.rect(self.screen, Color.VERY_DARK_GREY.value, self.SIMULATION_SCREEN)
@@ -165,16 +165,19 @@ class SimulationScreen:
     def draw_junction(self):
         if self.current_junction is None:
             return
+
         center = (self.WINDOW_WIDTH - (self.SIDE_WIDTH // 2), self.SIDE_HEIGHT // 2)
         num_sides = self.current_junction.size
-        self.draw_regular_polygon(self.screen, center, 90, num_sides, draw_normals=True)
+        #lanes_per_direction = [len(direction.in_lanes) + len(direction.out_lanes) for direction in self.current_junction.directions]
+        #print("Lanes per direction:" , lanes_per_direction)
+        self.draw_regular_polygon(self.screen, center, 90, self.current_junction, self.current_junction.directions)
 
     def draw_vehicle(self):
         if not self.graph or not self.graph.vehicles:
             print("[DRAW] No vehicle data to display.")
             return
 
-        print(f"[DEBUG] Found {len(self.graph.vehicles)} vehicles in the graph.")
+        #print(f"[DEBUG] Found {len(self.graph.vehicles)} vehicles in the graph.")
 
         font = pygame.font.SysFont("Arial", 18)
         x_start = self.MAIN_WIDTH + 20
@@ -219,21 +222,56 @@ class SimulationScreen:
                 self.screen.blit(text, (rect.x + 5, rect.y + 5))
             y += line_height
 
-    def draw_regular_polygon(self, surface, center, radius, num_sides, width=0, draw_normals=False, normal_length=40):
+    def draw_regular_polygon(self, surface, center, radius, current_junction, directions, width=0, lane_spacing=10,
+                             lane_length=40):
+
+        num_sides = current_junction.size
+        #junction_index = current_junction.junction_index if hasattr(current_junction, "index_in_map") else "?"
+        #print(current_junction.junction_index)
+        label_text = f"Junction {current_junction.junction_index}"
+        label_surface = pygame.font.SysFont("arial", 20).render(label_text, True, (255, 255, 255))  # white color
+
+        text_rect = label_surface.get_rect(center=(center[0], center[1] - radius - 20))
+        surface.blit(label_surface, text_rect)
+
         if num_sides == 2:
             num_sides = 4
+
         angle_step = 2 * math.pi / num_sides
         points = [(center[0] + radius * math.cos(i * angle_step - math.pi / 2),
                    center[1] + radius * math.sin(i * angle_step - math.pi / 2)) for i in range(num_sides)]
+
         pygame.draw.polygon(surface, Color.GREY.value, points, width)
-        if draw_normals:
-            for i in range(0, num_sides, 1 if num_sides != 4 else 2):
-                p1, p2 = points[i], points[(i + 1) % num_sides]
-                mid_x, mid_y = (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2
-                dx, dy = p2[0] - p1[0], p2[1] - p1[1]
-                ortho_dx, ortho_dy = dy / math.hypot(dx, dy), -dx / math.hypot(dx, dy)
-                end_x, end_y = mid_x + ortho_dx * normal_length, mid_y + ortho_dy * normal_length
-                pygame.draw.line(surface, Color.WHITE.value, (mid_x, mid_y), (end_x, end_y), 2)
+
+        for i in range(num_sides):
+            p1, p2 = points[i], points[(i + 1) % num_sides]
+            direction = directions[i]
+
+            dx, dy = p2[0] - p1[0], p2[1] - p1[1]
+            edge_length = math.hypot(dx, dy)
+            dir_x, dir_y = dx / edge_length, dy / edge_length
+            ortho_x, ortho_y = dir_y, -dir_x  # perpendicular outward
+
+            total_lanes = len(direction.in_lanes) + len(direction.out_lanes)
+            lane_step = edge_length / (total_lanes + 1)
+
+            # Draw OUT lanes
+            for lane_index, lane in enumerate(direction.out_lanes):
+                offset = lane_step * (lane_index + 1)
+                start_x = p1[0] + dir_x * offset
+                start_y = p1[1] + dir_y * offset
+                end_x = start_x + ortho_x * lane_length
+                end_y = start_y + ortho_y * lane_length
+                pygame.draw.line(surface, Color.WHITE.value, (start_x, start_y), (end_x, end_y), 2)
+
+            # Draw IN lanes (same x offset, but direction reversed)
+            for lane_index, lane in enumerate(direction.in_lanes):
+                offset = lane_step * (lane_index + 1 + len(direction.out_lanes))
+                start_x = p1[0] + dir_x * offset
+                start_y = p1[1] + dir_y * offset
+                end_x = start_x + ortho_x * lane_length
+                end_y = start_y + ortho_y * lane_length
+                pygame.draw.line(surface, (100, 180, 255), (start_x, start_y), (end_x, end_y), 2)
 
     def set_graph(self, json_data, dt):
         directions_in_map = []  # sorted by indexes in map
@@ -271,6 +309,7 @@ class SimulationScreen:
                     in_lane = Lane(LaneFacing.IN, to_lanes=to_lanes)
                     in_lane.set_parent_direction(direction)
                     nodes[junction_index].directions[direction_index].add_to_left(in_lane)
+                    nodes[junction_index].junction_index = junction_index
                 direction_index += 1
             junction_index += 1
 
@@ -384,3 +423,4 @@ class SimulationScreen:
 
     class Color(Enum):
         RED = (255, 0, 0)
+        LIGHT_BLUE = (100, 180, 255)
