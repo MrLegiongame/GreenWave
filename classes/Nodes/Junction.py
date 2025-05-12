@@ -1,7 +1,6 @@
 from classes.Entities.Point import Point
 from classes.Nodes.Direction import Direction
-from classes.Nodes.Lane import Lane
-from screens.functions import create_state_from_flow, create_flow_with_lane
+from screens.functions import create_state_from_flow, create_flow_with_lanes_group
 
 
 def check_junction_validity(directions):  # directions: tuple[Direction]
@@ -22,6 +21,7 @@ def check_junction_validity(directions):  # directions: tuple[Direction]
 
 
 class Junction:
+
     """
     We assume each Junction's inside (of size n; directions) is circular, which means that inside[0] is next to
     both inside[n-1] and inside[1]. The same goes for inside[k] (0<k<n-1) which is next to
@@ -98,7 +98,6 @@ class Junction:
                 return direction.road
         return None
 
-
     def remove_direction(self, direction):
         for direction_index in range(self.directions):
             if self.directions[direction_index] is direction:
@@ -109,20 +108,46 @@ class Junction:
                 self.states_size = len(self.available_states)
                 """
 
-    def create_states(self):
-        states = []
-        if not isinstance(self.directions, tuple):
-            return None
-        for direction in range(self.size):
-            if not isinstance(self.directions[direction], Direction):
-                return None
-            for lane in range(self.directions[direction].size):
-                if not isinstance(self.directions[direction].direction[lane], Lane):
-                    return None
-                state = create_state_from_flow(create_flow_with_lane(self.inside, self.outside, direction, lane), self)
-                states.append(state)
+    def get_in_lanes_groups(self):
+        res = set()
+        lanes_group = set()
 
-        return tuple(states)
+        for direction in self.directions:
+            lanes_group = set()
+            directions_group = set()
+            for lane in direction.in_lanes:
+                if 0 == len(directions_group):
+                    lanes_group.add(lane)
+                    directions_group.update(to_lane.parent_junction for to_lane in lane.to_lanes)
+                else:
+                    directions_check_group = set()
+                    directions_check_group.update(to_lane.parent_junction for to_lane in lane.to_lanes)
+                    if not (directions_check_group & directions_group):  # if the intersection of the sets is empty
+                        res.add(lanes_group)
+                        lanes_group.clear()
+                        lanes_group.add(lane)
+                        directions_group = directions_check_group
+                    else:
+                        lanes_group.add(lane)
+                        directions_group = directions_check_group | directions_group  # updates the group to be the union of both of them
+
+        res.add(lanes_group)
+        return res
+
+    def create_states(self):
+        states = set()
+        if not self.size >= 2:
+            return None
+
+        for lanes_group in self.get_in_lanes_groups():
+            state = create_state_from_flow(create_flow_with_lanes_group(self, lanes_group))
+            states.add(state)
+
+        return states
+
+    def set_states(self):
+        self.available_states = self.create_states()
+        self.states_size = len(self.available_states)
 
     def __str__(self):
         res = f"Junction has {self.size} directions:\n\n"

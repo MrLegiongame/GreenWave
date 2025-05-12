@@ -318,16 +318,16 @@ class SimulationScreen:
             for _ in range(amount):
                 if not energy_distribution:
                     break
-                src_road = random.choice(edges)
-                dst_road = random.choice([e for e in edges if e != src_road])
+                src_node = random.choice(nodes)
+                dst_node = random.choice([n for n in nodes if n != src_node])
                 weight = random.randint(1200, 2400)
                 energy = energy_distribution.pop()
                 image = random.choice(get_image_list("assets/vehicles/cars"))
                 vehicles.append(Vehicle(
                     length=2,
                     weight=weight,
-                    start_road=src_road,
-                    end_road=dst_road,
+                    start_node=src_node,
+                    end_node=dst_node,
                     image=image,
                     vehicle_type=v_type,
                     energy_type=energy,

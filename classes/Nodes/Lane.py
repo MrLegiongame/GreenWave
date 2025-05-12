@@ -18,6 +18,7 @@ def check_lane_validity(to_lanes):  # to_lanes: list[Lane]
 
 
 class Lane:
+    static_index = 0
 
     """
     Each value in lane(tuple: int) is ment to represent a Direction this lane leads to (at least 1)
@@ -28,6 +29,9 @@ class Lane:
     """
 
     def __init__(self, facing, to_lanes=None, index_in_junction=None):  # to_lanes: list[Lane]
+        self.index_in_map = self.static_index
+        self.static_index += 1
+
         self.to_lanes = []
         self.size = 0
         self.parent_direction = None
@@ -36,7 +40,7 @@ class Lane:
         self.facing = facing
         self.cur_state = None
         self.road_lane = None
-        self.vehicles_queue = []
+        self.vehicles_queue = []  # used as in FIFO (index 0 is head)
 
         if None is not to_lanes:
             try:

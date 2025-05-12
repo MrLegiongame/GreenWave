@@ -44,6 +44,9 @@ def create_flow_with_lane(inside, outside, direction_index, lane_index): # insid
         G["S"][f"I{direction_index}:{lane_index}"]["flow"] = G["S"][f"I{direction_index}:{lane_index}"]["capacity"]  # sets the flow for edge S -> I
     return nx.maximum_flow(G, "S", "T", flow_func=capacity_scaling)
 
+def create_flow_with_lanes_group(junction, lanes_group):
+    pass
+
 
 def create_state_from_flow(flow_dict, junction):
     state = []
