@@ -19,7 +19,6 @@ def find_out_lane_by_index_in_junction(junction, out_lane_index):
     return None
 
 
-
 class Graph:
     def __init__(self, nodes, edges, vehicles, dt=0):
 
@@ -30,6 +29,7 @@ class Graph:
         self.vehicles = None
         self.dt = dt
         self.vehicles_size = None
+        self.graph = None  # used for path finding logic
         if True:  # TODO change boolean statement
             self.nodes = nodes
             self.nodes_size = len(nodes)
@@ -37,6 +37,7 @@ class Graph:
             self.edges_size = len(edges)
             self.vehicles = vehicles
             self.vehicles_size = len(vehicles)
+            self.set_graph_for_path()
 
     def draw(self, screen, sim):
         # Draw edges
@@ -67,8 +68,104 @@ class Graph:
                 neighbors.append((dst, edge.length))  # include weight
         return neighbors if neighbors else default
 
-    def get_path(self, start, end):
+    def set_graph_for_path(self):
+        import networkx as nx
 
+        # Create a directed graph
+        G = nx.DiGraph()  # use nx.DiGraph() for directed graphs
+
+        # Add edges (automatically adds nodes too)
+        for junction in self.nodes:
+            for direction in junction.directions:
+                for in_lane in direction.in_lanes:
+                    in_lane_name = "InLane" + str(in_lane.index_in_map)
+                    for to_lane in in_lane.to_lanes:
+                        out_lane_name = "OutLane" + str(to_lane.index_in_map)
+                        G.add_edge(in_lane_name, out_lane_name, weight=0)
+
+        for road in self.edges:
+            length = road.length
+            for source_road_lane in road.road_lanes_first_direction:
+                for destination_road_lane in road.road_lanes_first_direction:
+                    out_lane_name = "OutLane" + str(source_road_lane.source_lane.index_in_map)
+                    in_lane_name = "InLane" + str(destination_road_lane.destination_lane.index_in_map)
+                    G.add_edge(out_lane_name, in_lane_name, weight=length)
+            for source_road_lane in road.road_lanes_second_direction:
+                for destination_road_lane in road.road_lanes_second_direction:
+                    out_lane_name = "OutLane" + str(source_road_lane.source_lane.index_in_map)
+                    in_lane_name = "InLane" + str(destination_road_lane.destination_lane.index_in_map)
+                    G.add_edge(out_lane_name, in_lane_name, weight=length)
+
+        self.graph = G
+        return G
+
+    def find_lane_by_index_in_map_str(self, lane_str):
+        is_in_lane = lane_str.startswith("InLane")
+
+        prefixes = ("InLane", "OutLane")
+        matching_prefix = next((p for p in prefixes if lane_str.startswith(p)), None)
+        index = int(lane_str[len(matching_prefix):])
+
+        for junction in self.nodes:
+            for direction in junction.directions:
+                if is_in_lane:
+                    for in_lane in direction.in_lanes:
+                        if index == in_lane.index_in_map:
+                            return in_lane
+                else:
+                    for out_lane in direction.out_lanes:
+                        if index == out_lane.index_in_map:
+                            return out_lane
+
+        return None
+
+    def get_path(self, start, end):
+        import networkx as nx
+
+        source = "OutLane" + str(start.index_in_map)
+        target = "InLane" + str(end.index_in_map)
+
+        # Get node path
+        try:
+            lane_path = nx.shortest_path(self.graph, source=source, target=target, weight="weight")
+        except nx.exception.NetworkXNoPath as e:
+            print("No path available between " + source + " and " + target + ", due to this error: " + str(e))
+            return None, None
+
+        # Convert to list of edges (as tuples)
+        for lane_str_index in range(len(lane_path)):
+            lane_path[lane_str_index] = self.find_lane_by_index_in_map_str(lane_path[lane_str_index])
+        edge_path = list(zip(lane_path[:-1], lane_path[1:]))
+        print(edge_path)
+
+        return lane_path, edge_path
+
+    def find_road_lanes_by_lanes(self, out_lane, in_lane):
+        for road in self.edges:
+            out_lane_found = False
+            in_lane_found = False
+            for road_lane in road.road_lanes_first_direction:
+                if out_lane is road_lane.source_lane:
+                    out_lane_found = True
+                if in_lane is road_lane.destination_lane:
+                    in_lane_found = True
+            if out_lane_found and in_lane_found:
+                return road.road_lanes_first_direction
+
+            out_lane_found = False
+            in_lane_found = False
+            for road_lane in road.road_lanes_second_direction:
+                if out_lane is road_lane.source_lane:
+                    out_lane_found = True
+                if in_lane is road_lane.destination_lane:
+                    in_lane_found = True
+            if out_lane_found and in_lane_found:
+                return road.road_lanes_second_direction
+
+        return None
+
+
+"""
         # setup algorithm
         for node in self.nodes:
             node.distance = float('inf')  # infinity
@@ -95,6 +192,7 @@ class Graph:
             current_node = current_node.source_junction
 
         return path_nodes, path_edges
+"""
 
 """
     def get_path(self, start_road, end_road):

@@ -276,7 +276,7 @@ class SimulationScreen:
     def set_graph(self, json_data, dt):
         directions_in_map = []  # sorted by indexes in map
 
-        # Extract junctions as nodes
+        # Extract junctions as nodes (focus on out lanes)
         nodes = []
         junctions = json_data.get("Junctions", {})
         junction_index = 0
@@ -295,7 +295,7 @@ class SimulationScreen:
                 direction_index += 1
             junction_index += 1
 
-
+        # (focus on in lanes and their to-lanes)
         junction_index = 0
         for junction_name, junction_data in junctions.items():
             direction_index = 0
@@ -357,20 +357,20 @@ class SimulationScreen:
             for _ in range(amount):
                 if not energy_distribution:
                     break
-                src_road = random.choice(edges)
-                dst_road = random.choice([e for e in edges if e != src_road])
+                src_node = random.choice(nodes)
+                dst_node = random.choice([n for n in nodes if n != src_node])
                 weight = random.randint(1200, 2400)
                 energy = energy_distribution.pop()
                 image = random.choice(get_image_list("assets/vehicles/cars"))
                 vehicles.append(Vehicle(
                     length=2,
                     weight=weight,
-                    start_road=src_road,
-                    end_road=dst_road,
+                    start_node=src_node,
+                    end_node=dst_node,
                     image=image,
                     vehicle_type=v_type,
                     energy_type=energy,
-                    acceleration=3,  # or adjust per type if needed
+                    acceleration=0,  # or adjust per type if needed
                     maximum_speed=100
                 ))
 

@@ -3,7 +3,7 @@ from classes.Entities.Vehicles.Vehicle import Vehicle
 
 def check_road_lane_validity(parent_road, source_lane, destination_lane, length):
     from classes.Nodes.Lane import Lane
-    from classes.Edges.Road import Road  # Add it here inside the function!
+    from classes.Edges.Road import Road
     if not isinstance(parent_road, Road):
         raise TypeError("RoadLane is invalid: Non-Road value was given")
     if not isinstance(source_lane, Lane):
@@ -30,7 +30,9 @@ class RoadLane:
             check_road_lane_validity(parent_road, source_lane, destination_lane, length)
             self.parent_road = parent_road
             self.source_lane = source_lane
+            self.source_lane.road_lane = self
             self.destination_lane = destination_lane
+            self.destination_lane.road_lane = self
             self.length = length
         except TypeError as e:
             print(f"RoadLane couldn't be created due to this error: {e}")

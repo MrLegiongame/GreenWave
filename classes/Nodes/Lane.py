@@ -1,3 +1,5 @@
+from itertools import count
+
 from classes.Edges.RoadLane import RoadLane
 from classes.Entities.Vehicles.Vehicle import Vehicle
 from screens.functions import sort_and_remove_duplicates_in_tuple
@@ -14,10 +16,13 @@ def check_lane_validity(to_lanes):  # to_lanes: list[Lane]
     for to_lane in to_lanes:
         if not isinstance(to_lane, Lane):
             raise TypeError("Lane is invalid: Non-Lane value")
+        if not LaneFacing.OUT == to_lane.facing:
+            raise TypeError("Lane is invalid: Non-Out_Lane value")
     return True
 
 
 class Lane:
+    static_index = count(0)
 
     """
     Each value in lane(tuple: int) is ment to represent a Direction this lane leads to (at least 1)
@@ -28,6 +33,8 @@ class Lane:
     """
 
     def __init__(self, facing, to_lanes=None, index_in_junction=None):  # to_lanes: list[Lane]
+        self.index_in_map = next(self.static_index)
+
         self.to_lanes = []
         self.size = 0
         self.parent_direction = None
@@ -36,7 +43,7 @@ class Lane:
         self.facing = facing
         self.cur_state = None
         self.road_lane = None
-        self.vehicles_queue = []
+        self.vehicles_queue = []  # used as in FIFO (index 0 is head)
 
         if None is not to_lanes:
             try:
@@ -45,10 +52,11 @@ class Lane:
                 print(f"Lane couldn't be created due to this error: {e}")
 
     def set_to_lanes(self, to_lanes):  # only for in-facing lanes
-        if LaneFacing.IN == self.facing:
+        if LaneFacing.OUT == self.facing:
             return False
         check_lane_validity(to_lanes)
         # self.to_lanes = sort_and_remove_duplicates_in_tuple(to_lanes)
+        self.to_lanes = to_lanes
         self.size = len(self.to_lanes)
         return True
 

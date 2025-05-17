@@ -48,29 +48,12 @@ class Road:
             self.lanes_second_direction_size = second_direction.in_size
 
             for lane in range(self.lanes_first_direction_size):
-                self.road_lanes_first_direction.append(RoadLane(self, first_direction.in_lanes[lane], second_direction.out_lanes[lane], length))
+                self.road_lanes_first_direction.append(RoadLane(self, source_lane=second_direction.out_lanes[lane], destination_lane=first_direction.in_lanes[lane], length=length))
             for lane in range(self.lanes_second_direction_size):
-                self.road_lanes_second_direction.append(RoadLane(self, second_direction.in_lanes[lane], first_direction.out_lanes[lane], length))
+                self.road_lanes_second_direction.append(RoadLane(self, source_lane=first_direction.out_lanes[lane], destination_lane=second_direction.in_lanes[lane], length=length))
 
         except TypeError as e:
             print(f"RoadLane couldn't be created due to this error: {e}")
-
-    def get_slope(self):
-        dy = self.first_direction.parent_junction.point.get_point()[1] - self.second_direction.parent_junction.point.get_point()[1]
-        dx = self.first_direction.parent_junction.point.get_point()[0] - self.second_direction.parent_junction.point.get_point()[0]
-        if 0 == dx:  # the slope is vertical
-            return None
-        return dy / dx
-
-    def get_slope_angle_in_rad(self):
-        slope = self.get_slope()
-        if None is slope:
-            return math.pi / 2
-        return math.atan(slope)
-
-    def get_slope_angle_in_deg(self):
-        rad = self.get_slope_angle_in_rad()
-        return rad * 180 / math.pi
 
     def get_first_point(self):
         if None is not self.first_direction:
