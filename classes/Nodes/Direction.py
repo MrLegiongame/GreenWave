@@ -77,18 +77,22 @@ class Direction:
     def add_to_left(self, lane):  # lane: Lane
         if LaneFacing.IN == lane.facing:
             self.in_lanes.append(lane)
+            self.in_size += 1
             return True
         elif LaneFacing.OUT == lane.facing:
             self.out_lanes.append(lane)
+            self.out_size += 1
             return True
         return False
 
     def add_to_right(self, lane):  # lane: Lane
         if LaneFacing.IN == lane.type:
             self.in_lanes.insert(0, lane)
+            self.in_size += 1
             return True
         elif LaneFacing.OUT == lane.type:
             self.out_lanes.insert(0, lane)
+            self.out_size += 1
             return True
         return False
 

@@ -238,7 +238,7 @@ class SimulationScreen:
     def set_graph(self, json_data, dt):
         directions_in_map = []  # sorted by indexes in map
 
-        # Extract junctions as nodes
+        # Extract junctions as nodes (focus on out lanes)
         nodes = []
         junctions = json_data.get("Junctions", {})
         junction_index = 0
@@ -257,7 +257,7 @@ class SimulationScreen:
                 direction_index += 1
             junction_index += 1
 
-
+        # (focus on in lanes and their to-lanes)
         junction_index = 0
         for junction_name, junction_data in junctions.items():
             direction_index = 0
@@ -331,7 +331,7 @@ class SimulationScreen:
                     image=image,
                     vehicle_type=v_type,
                     energy_type=energy,
-                    acceleration=3,  # or adjust per type if needed
+                    acceleration=0,  # or adjust per type if needed
                     maximum_speed=100
                 ))
 

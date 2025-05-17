@@ -55,23 +55,6 @@ class Road:
         except TypeError as e:
             print(f"RoadLane couldn't be created due to this error: {e}")
 
-    def get_slope(self):
-        dy = self.first_direction.parent_junction.point.get_point()[1] - self.second_direction.parent_junction.point.get_point()[1]
-        dx = self.first_direction.parent_junction.point.get_point()[0] - self.second_direction.parent_junction.point.get_point()[0]
-        if 0 == dx:  # the slope is vertical
-            return None
-        return dy / dx
-
-    def get_slope_angle_in_rad(self):
-        slope = self.get_slope()
-        if None is slope:
-            return math.pi / 2
-        return math.atan(slope)
-
-    def get_slope_angle_in_deg(self):
-        rad = self.get_slope_angle_in_rad()
-        return rad * 180 / math.pi
-
     def get_first_point(self):
         if None is not self.first_direction:
             if None is not self.first_direction.parent_junction:
