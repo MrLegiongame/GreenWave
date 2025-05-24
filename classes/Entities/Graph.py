@@ -54,9 +54,8 @@ class Graph:
             else:
                 pygame.draw.circle(screen, Color.LIGHT_GREY.value, pos, 10)
 
-        # Draw vehicles
+        # Draw vehicles (without moving them)
         for vehicle in self.vehicles:
-            vehicle.move(self.dt)
             pygame.draw.circle(screen, Color.RED.value, vehicle.get_cur_point().get_point(), 6)
 
     def get(self, node, default=None):

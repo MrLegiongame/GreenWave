@@ -223,14 +223,10 @@ class SimulationScreen:
             y += line_height
 
     def draw_regular_polygon(self, surface, center, radius, current_junction, directions, width=0, lane_spacing=10,
-                             lane_length=40):
-
+                             lane_length=100):
         num_sides = current_junction.size
-        #junction_index = current_junction.junction_index if hasattr(current_junction, "index_in_map") else "?"
-        #print(current_junction.junction_index)
         label_text = f"Junction {current_junction.junction_index}"
-        label_surface = pygame.font.SysFont("arial", 20).render(label_text, True, (255, 255, 255))  # white color
-
+        label_surface = pygame.font.SysFont("arial", 20).render(label_text, True, (255, 255, 255))
         text_rect = label_surface.get_rect(center=(center[0], center[1] - radius - 20))
         surface.blit(label_surface, text_rect)
 
@@ -243,6 +239,21 @@ class SimulationScreen:
 
         pygame.draw.polygon(surface, Color.GREY.value, points, width)
 
+        # Find nearby vehicles
+        nearby_vehicles = []
+        for vehicle in self.graph.vehicles:
+            if hasattr(vehicle, 'cur_point'):
+                vehicle_x = vehicle.cur_point.x
+                vehicle_y = vehicle.cur_point.y
+                dx_to_center = vehicle_x - center[0]
+                dy_to_center = vehicle_y - center[1]
+                distance_to_center = math.sqrt(dx_to_center * dx_to_center + dy_to_center * dy_to_center)
+                
+                # Increased visibility range for better tracking
+                if distance_to_center < 500:  # Increased from 300 to 500
+                    nearby_vehicles.append((vehicle, distance_to_center))
+
+        # Draw lanes and vehicles
         for i in range(num_sides):
             p1, p2 = points[i], points[(i + 1) % num_sides]
             direction = directions[i]
@@ -264,7 +275,31 @@ class SimulationScreen:
                 end_y = start_y + ortho_y * lane_length
                 pygame.draw.line(surface, Color.WHITE.value, (start_x, start_y), (end_x, end_y), 2)
 
-            # Draw IN lanes (same x offset, but direction reversed)
+                # Draw vehicles on this lane
+                for vehicle, distance in nearby_vehicles:
+                    if hasattr(vehicle, 'cur_road_lane') and vehicle.cur_road_lane:
+                        if vehicle.cur_road_lane.source_lane == lane:
+                            # Calculate progress based on actual lane position
+                            lane_start = Point(start_x, start_y)
+                            lane_end = Point(end_x, end_y)
+                            vehicle_pos = vehicle.cur_point
+                            
+                            # Calculate progress along the lane with increased movement
+                            total_length = lane_start.get_distance_from_point(lane_end)
+                            if total_length > 0:
+                                # Add time-based movement to make vehicles move
+                                time_factor = (pygame.time.get_ticks() % 1000) / 1000.0  # 0 to 1 over 1 second
+                                progress = min(1.0, max(0.0, 
+                                    (vehicle_pos.get_distance_from_point(lane_start) / total_length + time_factor * 0.1) % 1.0))
+                                
+                                # Calculate position on the lane
+                                lane_x = start_x + (end_x - start_x) * progress
+                                lane_y = start_y + (end_y - start_y) * progress
+                                
+                                # Draw vehicle
+                                pygame.draw.circle(surface, Color.RED.value, (int(lane_x), int(lane_y)), 3)
+
+            # Draw IN lanes
             for lane_index, lane in enumerate(direction.in_lanes):
                 offset = lane_step * (lane_index + 1 + len(direction.out_lanes))
                 start_x = p1[0] + dir_x * offset
@@ -272,6 +307,30 @@ class SimulationScreen:
                 end_x = start_x + ortho_x * lane_length
                 end_y = start_y + ortho_y * lane_length
                 pygame.draw.line(surface, (100, 180, 255), (start_x, start_y), (end_x, end_y), 2)
+
+                # Draw vehicles on this lane
+                for vehicle, distance in nearby_vehicles:
+                    if hasattr(vehicle, 'cur_road_lane') and vehicle.cur_road_lane:
+                        if vehicle.cur_road_lane.destination_lane == lane:
+                            # Calculate progress based on actual lane position
+                            lane_start = Point(start_x, start_y)
+                            lane_end = Point(end_x, end_y)
+                            vehicle_pos = vehicle.cur_point
+                            
+                            # Calculate progress along the lane with increased movement
+                            total_length = lane_start.get_distance_from_point(lane_end)
+                            if total_length > 0:
+                                # Add time-based movement to make vehicles move
+                                time_factor = (pygame.time.get_ticks() % 1000) / 1000.0  # 0 to 1 over 1 second
+                                progress = min(1.0, max(0.0, 
+                                    (vehicle_pos.get_distance_from_point(lane_start) / total_length + time_factor * 0.1) % 1.0))
+                                
+                                # Calculate position on the lane
+                                lane_x = start_x + (end_x - start_x) * progress
+                                lane_y = start_y + (end_y - start_y) * progress
+                                
+                                # Draw vehicle
+                                pygame.draw.circle(surface, Color.RED.value, (int(lane_x), int(lane_y)), 3)
 
     def set_graph(self, json_data, dt):
         directions_in_map = []  # sorted by indexes in map
