@@ -28,25 +28,29 @@ class TrafficLight:
         self.lanes = None
         self.size = None
         self.current_state = None
-
-        if None is not lanes:
-            self.set_lanes(lanes)
+        self.set_lanes(lanes)
 
     def set_lanes(self, lanes):
+        if None is lanes:
+            return False
         try:
             check_traffic_light_validity(lanes)
             self.lanes = lanes
             self.size = len(lanes)
-        except TypeError as e:
+        except Exception as e:
             print(f"Traffic Light couldn't be created due to this error: {e}")
+            return False
+        return True
 
     def set_state(self, state):
         if isinstance(state, State):
             self.current_state = state
+            for lane in self.lanes:
+                lane.cur_state = self.current_state
             return True
         return False
 
     def change_state(self):
-        self.current_state = (self.current_state.value + 1) % STATE_SIZE
+        self.current_state = State.value((self.current_state.value + 1) % STATE_SIZE)
         for lane in self.lanes:
             lane.cur_state = self.current_state

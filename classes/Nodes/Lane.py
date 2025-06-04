@@ -2,6 +2,7 @@ from itertools import count
 
 from classes.Edges.RoadLane import RoadLane
 from classes.Entities.Vehicles.Vehicle import Vehicle
+from classes.Enums.Color import Color
 from screens.functions import sort_and_remove_duplicates_in_tuple
 from classes.Enums.State import State
 from classes.Enums.LaneFacing import LaneFacing
@@ -89,6 +90,27 @@ class Lane:
         if None is not self.vehicles_queue:
             return self.vehicles_queue.pop(0)
         return False
+
+    def get_lane_color(self):
+        match self.cur_state:
+            case State.RED:
+                return Color.RED
+            case State.RED_YELLOW:
+                return Color.ORANGE
+            case State.GREEN:
+                return Color.GREEN
+            case State.GREEN_FLICKERING:
+                return Color.DARK_GREEN
+            case State.YELLOW:
+                return Color.YELLOW
+            case _:
+                match self.facing:
+                    case LaneFacing.IN:
+                        return Color.SKY_BLUE
+                    case LaneFacing.OUT:
+                        return Color.WHITE
+                    case _:
+                        return Color.BLACK
 
     # def __str__(self):
     #     if None is self.index_in_direction:

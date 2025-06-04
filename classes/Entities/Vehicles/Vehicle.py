@@ -187,11 +187,12 @@ class Vehicle(ABC):
                 return
             print(f"[move] advancing to lanes_path[{self.__lanes_passed}]")
             try:
-                self.__last_lane = self.lanes_path[self.__lanes_passed]
+                if (self.lanes_path[self.__lanes_passed].cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self is self.__last_lane.vehicles_queue[0]:  # if junction is available for crossing and the vehicle is the first in the lane's queue
+                    self.__last_lane = self.lanes_path[self.__lanes_passed]
+                    self.__lanes_passed += 1
             except Exception as e:
                 print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
                 raise
-            self.__lanes_passed += 1
             print(f"[move] new last_lane={self.__last_lane}, lanes_passed={self.__lanes_passed}")
             self.__last_move_time_stamp = time.time()
             return
@@ -202,10 +203,10 @@ class Vehicle(ABC):
                 print(f"[move] passed junction, advancing to lanes_path[{self.__lanes_passed}]")
                 try:
                     self.__last_lane = self.lanes_path[self.__lanes_passed]
+                    self.__lanes_passed += 1
                 except Exception as e:
                     print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
                     raise
-                self.__lanes_passed += 1
                 print(f"[move] new last_lane={self.__last_lane}, lanes_passed={self.__lanes_passed}")
                 self.__last_lane.add_to_queue(self)
                 new_x, new_y = self.__last_lane.parent_junction.point.get_point()
@@ -213,7 +214,7 @@ class Vehicle(ABC):
                 print("[move] moving along current OUT-lane")
                 print(f"[move] current velocity={self.velocity}, acceleration={self.acceleration}")
                 from_node = self.lanes_path[self.__lanes_passed - 1].parent_junction.point
-                to_node   = self.lanes_path[self.__lanes_passed].parent_junction.point
+                to_node = self.lanes_path[self.__lanes_passed].parent_junction.point
                 print(f"[move] from_node={from_node.get_point()}, to_node={to_node.get_point()}")
 
                 distance = self.velocity * dt + 0.5 * self.acceleration * dt**2
