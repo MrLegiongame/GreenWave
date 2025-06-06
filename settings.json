@@ -3,19 +3,16 @@
         "value": "2"
     },
     "Map for simulation": {
-        "value": [
-            "map1",
-            "map1"
-        ]
+        "value": "map2"
     },
     "Private car amount": {
-        "value": "3"
+        "value": "5"
     },
     "Buses amount": {
-        "value": "3"
+        "value": "0"
     },
     "Trucks amount": {
-        "value": "3"
+        "value": "0"
     },
     "Electric": {
         "value": "30"

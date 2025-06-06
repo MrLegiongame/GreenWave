@@ -70,11 +70,6 @@ class Vehicle(ABC):
         self.end_point = end.point
 
     def set_path(self, graph):
-        # start_node = self.start_road.first_direction.parent_junction
-        # end_node = self.end_road.second_direction.parent_junction
-        # if start_node is end_node:
-        #     end_node = self.end_road.first_direction.parent_junction
-
         start_out_lane = None
         end_in_lane = None
 
@@ -96,9 +91,21 @@ class Vehicle(ABC):
 
         self.__end_in_lane = end_in_lane
         self.lanes_path, self.roads_path = graph.get_path(start_out_lane, end_in_lane)
+        
+        # If no path is found, try to find a path to a nearby junction
         if (not self.lanes_path) or (not self.roads_path):
+            print(f"No path available between {start_out_lane} and {end_in_lane}, trying to find alternative path...")
+            # Try to find a path to the next junction
             end_in_lane = start_out_lane.road_lane.destination_lane
             self.lanes_path, self.roads_path = graph.get_path(start_out_lane, end_in_lane)
+            
+            # If still no path, create a minimal path
+            if (not self.lanes_path) or (not self.roads_path):
+                print("No alternative path found, creating minimal path...")
+                self.lanes_path = [start_out_lane, end_in_lane]
+                self.roads_path = [(start_out_lane, end_in_lane)]
+
+        print(f"Final path: {self.roads_path}")
 
         cur_road_lanes = []
         for lane1, lane2 in self.roads_path:
@@ -111,111 +118,116 @@ class Vehicle(ABC):
             else:
                 raise TypeError("set_path method is invalid: Invalid order in path: Lane with facing equals to None")
             cur_road_lanes.append(graph.find_road_lanes_by_lanes(out_lane=out_lane, in_lane=in_lane))
+        
+        if not cur_road_lanes:
+            print("Warning: No road lanes found for path")
+            return
+            
         self.cur_road_lane = cur_road_lanes[0][0]
         self.__last_lane = self.lanes_path[self.__lanes_passed]
         self.__lanes_passed += 1
+        print(f"[DEBUG] SET PATH After increment __lanes_passed={self.__lanes_passed}")
 
     def __is_passed_junction(self):
-        # debug: show current index and path length
-        print(f"[__is_passed_junction] lanes_passed={self.__lanes_passed}, path_length={len(self.lanes_path)}")
-        # attempt to fetch next junction point
         try:
             next_junc = self.lanes_path[self.__lanes_passed].parent_junction.point
-            print(f"[__is_passed_junction] next junction point={next_junc.get_point()}")
+            #print(f"[__is_passed_junction] next_junction={next_junc.get_point()}")
         except Exception as e:
-            print(f"[__is_passed_junction] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
+            #print(f"[__is_passed_junction] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
             raise
 
         current_pt = self.cur_point.get_point()
-        distance = self.cur_point.get_distance_from_point(next_junc)
-        print(f"[__is_passed_junction] current_point={current_pt}, "
-              f"distance_to_next={distance}, last_distance={self.__last_distance_to_next_junction}")
+        
+        # Calculate distance along the road path
+        from_node = self.lanes_path[self.__lanes_passed - 1].parent_junction.point
+        to_node = next_junc
+        road_length = self.cur_road_lane.parent_road.length
+        pixel_length = from_node.get_distance_from_point(to_node)
+        
+        # Calculate how far along the road we are
+        current_distance = self.cur_point.get_distance_from_point(from_node)
+        total_distance = from_node.get_distance_from_point(to_node)
+        progress = current_distance / total_distance if total_distance > 0 else 0
+        
+        #print(f"[__is_passed_junction] current_point={current_pt}, progress={progress:.2f}, total_distance={total_distance:.2f}")
 
         passed = False
         if self.__last_distance_to_next_junction is not None:
-            passed = distance < 2 or (self.__last_distance_to_next_junction < distance)
-        else:
-            passed = distance < 2
+            passed = progress > 0.95
+            #print(f"[__is_passed_junction] passed={passed} (progress > 0.95: {progress > 0.95})")
 
-        print(f"[__is_passed_junction] returning {passed}")
+        if passed:
+            print(f"[__is_passed_junction] passed={passed}, setting __last_distance_to_next_junction={current_distance}")
         return passed
 
     def setup_move(self):
-        print(f"[setup_move] entering: last_move_ts={self.__last_move_time_stamp}, "
-              f"last_lane={self.__last_lane}, lanes_passed={self.__lanes_passed}")
-
+        #print(f"[setup_move] Starting with __lanes_passed={self.__lanes_passed}, last_lane={self.__last_lane}")
         if self.__last_move_time_stamp is None:
             self.__last_move_time_stamp = time.time()
-            print(f"[setup_move] initialized last_move_ts to {self.__last_move_time_stamp}")
 
         if self.__last_lane is None:
-            print(f"[setup_move] initializing last_lane from lanes_path[{self.__lanes_passed}] "
-                  f"(path_length={len(self.lanes_path)})")
             try:
                 self.__last_lane = self.lanes_path[self.__lanes_passed]
+                #print(f"[setup_move] Set last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
             except Exception as e:
                 print(f"[setup_move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
-                raise
-            self.__lanes_passed += 1
-            print(f"[setup_move] new last_lane={self.__last_lane}, lanes_passed now={self.__lanes_passed}")
-
-        if self.__last_distance_to_next_junction is None:
-            print(f"[setup_move] computing last_distance_to_next_junction using lanes_path[{self.__lanes_passed}] "
-                  f"(path_length={len(self.lanes_path)})")
-            try:
-                nxt_point = self.lanes_path[self.__lanes_passed].parent_junction.point
-                self.__last_distance_to_next_junction = self.cur_point.get_distance_from_point(nxt_point)
-                print(f"[setup_move] last_distance_to_next_junction={self.__last_distance_to_next_junction}")
-            except Exception as e:
-                print(f"[setup_move] ERROR computing last_distance: {e}")
                 raise
 
         if self.velocity is None:
             self.velocity = min(self.cur_road_lane.parent_road.maximum_speed, self.maximum_speed)
-            print(f"[setup_move] initialized velocity to {self.velocity}")
+            #print(f"[setup_move] initialized velocity to {self.velocity}")
 
     def move(self, dt):
-        print(f"\n[move] dt={dt}, lanes_passed={self.__lanes_passed}, path_length={len(self.lanes_path)}")
+        #print(f"\n[move] Starting move with __lanes_passed={self.__lanes_passed}, last_lane={self.__last_lane}")
         self.setup_move()
 
-        print(f"[move] last_lane={self.__last_lane}, facing={self.__last_lane.facing}")
+        # Check if we've reached the end of the path
+        if self.__lanes_passed >= len(self.lanes_path):
+            #print("[DEBUG] Reached end of path - no more lanes to follow")
+            return
 
         if self.__last_lane.facing == LaneFacing.IN:
-            print("[move] IN-lane logic")
+           # print(f"[move] IN-lane logic with __lanes_passed={self.__lanes_passed}")
             if self.__last_lane is self.__end_in_lane:
-                print("[move] reached end_in_lane, stopping movement")
+                print("[DEBUG] Reached final destination IN lane")
                 return
-            print(f"[move] advancing to lanes_path[{self.__lanes_passed}]")
             try:
                 if (self.lanes_path[self.__lanes_passed].cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self is self.__last_lane.vehicles_queue[0]:  # if junction is available for crossing and the vehicle is the first in the lane's queue
                     self.__last_lane = self.lanes_path[self.__lanes_passed]
+                     # print(f"[move] IN-lane: Setting last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
                     self.__lanes_passed += 1
+                    print(f"[DEBUG] IN-lane: After increment __lanes_passed={self.__lanes_passed}")
             except Exception as e:
                 print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
                 raise
-            print(f"[move] new last_lane={self.__last_lane}, lanes_passed={self.__lanes_passed}")
             self.__last_move_time_stamp = time.time()
             return
 
         elif self.__last_lane.facing == LaneFacing.OUT:
-            print("[move] OUT-lane logic")
+           # print(f"[move] OUT-lane logic with __lanes_passed={self.__lanes_passed}")
             if self.__is_passed_junction():
-                print(f"[move] passed junction, advancing to lanes_path[{self.__lanes_passed}]")
                 try:
+                    # Check if next lane is the final destination
+                    if self.__lanes_passed > len(self.lanes_path):
+                        print("[DEBUG] Next lane is final destination")
+                        self.__lanes_passed -= 1
+                        
                     self.__last_lane = self.lanes_path[self.__lanes_passed]
+                    #print(f"[move] OUT-lane: Setting last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
                     self.__lanes_passed += 1
+                    print(f"[DEBUG] OUT-lane: After increment __lanes_passed={self.__lanes_passed}")
                 except Exception as e:
                     print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
                     raise
-                print(f"[move] new last_lane={self.__last_lane}, lanes_passed={self.__lanes_passed}")
+                    
                 self.__last_lane.add_to_queue(self)
                 new_x, new_y = self.__last_lane.parent_junction.point.get_point()
             else:
-                print("[move] moving along current OUT-lane")
-                print(f"[move] current velocity={self.velocity}, acceleration={self.acceleration}")
+                #print("[move] moving along current OUT-lane")
+                #print(f"[move] current velocity={self.velocity}, acceleration={self.acceleration}")
                 from_node = self.lanes_path[self.__lanes_passed - 1].parent_junction.point
-                to_node = self.lanes_path[self.__lanes_passed].parent_junction.point
-                print(f"[move] from_node={from_node.get_point()}, to_node={to_node.get_point()}")
+                to_node   = self.lanes_path[self.__lanes_passed].parent_junction.point
+                #print(f"[move] from_node={from_node.get_point()}, to_node={to_node.get_point()}")
 
                 distance = self.velocity * dt + 0.5 * self.acceleration * dt**2
                 road_length = self.cur_road_lane.parent_road.length
@@ -232,27 +244,28 @@ class Vehicle(ABC):
             raise TypeError("move method is invalid: Invalid order in path: facing is None")
 
         # update position
-        print(f"[move] updating position to ({new_x}, {new_y})")
+        #print(f"[move] updating position to ({new_x}, {new_y})")
         self.cur_point = Point(new_x, new_y)
         self.__last_move_time_stamp = time.time()
 
+        # Check if we've reached the end of the path
         if self.__lanes_passed >= len(self.lanes_path):
-            print("[move] no more lanes to follow, finishing move()")
+            print("[DEBUG] Reached end of path after position update")
             return
 
         # compute next junction distance
-        print(f"[move] computing next junction distance using lanes_path[{self.__lanes_passed}]")
-        #try:
-        nxt = self.lanes_path[self.__lanes_passed].parent_junction.point
-        dist = self.cur_point.get_distance_from_point(nxt)
-        print(f"[move] new last_distance_to_next_junction={dist}")
-        self.__last_distance_to_next_junction = dist
-       # except Exception as e:
-        #    print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}] for distance: {e}")
-        #    raise
+        #print(f"[move] computing next junction distance using lanes_path[{self.__lanes_passed}]")
+        try:
+            nxt = self.lanes_path[self.__lanes_passed].parent_junction.point
+            dist = self.cur_point.get_distance_from_point(nxt)
+            #print(f"[move] new last_distance_to_next_junction={dist}")
+            self.__last_distance_to_next_junction = dist
+        except Exception as e:
+            print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}] for distance: {e}")
+            raise
 
         self.velocity += self.acceleration * dt
-        print(f"[move] end of move: velocity now={self.velocity}")
+       # print(f"[move] end of move: velocity now={self.velocity}")
 
         # if self.__last_distance_to_next_junction is None and self.__next_junction_point:
         #     self.__last_distance_to_next_junction = self.cur_point.get_distance_from_point(self.__next_junction_point)
