@@ -192,10 +192,11 @@ class Vehicle(ABC):
                 print("[DEBUG] Reached final destination IN lane")
                 return
             try:
-                self.__last_lane = self.lanes_path[self.__lanes_passed]
-               # print(f"[move] IN-lane: Setting last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
-                self.__lanes_passed += 1
-                print(f"[DEBUG] IN-lane: After increment __lanes_passed={self.__lanes_passed}")
+                if (self.lanes_path[self.__lanes_passed].cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self is self.__last_lane.vehicles_queue[0]:  # if junction is available for crossing and the vehicle is the first in the lane's queue
+                    self.__last_lane = self.lanes_path[self.__lanes_passed]
+                     # print(f"[move] IN-lane: Setting last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
+                    self.__lanes_passed += 1
+                    print(f"[DEBUG] IN-lane: After increment __lanes_passed={self.__lanes_passed}")
             except Exception as e:
                 print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
                 raise
@@ -218,6 +219,7 @@ class Vehicle(ABC):
                 except Exception as e:
                     print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
                     raise
+                    
                 self.__last_lane.add_to_queue(self)
                 new_x, new_y = self.__last_lane.parent_junction.point.get_point()
             else:

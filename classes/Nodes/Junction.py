@@ -1,6 +1,8 @@
 from classes.Entities.Point import Point
 from classes.Nodes.Direction import Direction
-from screens.functions import create_state_from_flow, create_flow_with_lanes_group
+from classes.Nodes.TrafficLight import TrafficLight
+from screens.functions import create_state_from_flow, create_flow_graph, \
+    create_flow_with_traffic_light, reset_graph_flow
 
 
 def check_junction_validity(directions):  # directions: tuple[Direction]
@@ -40,7 +42,7 @@ class Junction:
         self.junction_index = None
 
         self.distance = None  # for bfs use only
-        self.source_junction = None # for bfs use only
+        self.source_junction = None  # for bfs use only
 
         if None is not directions:
             try:
@@ -49,9 +51,8 @@ class Junction:
                 self.size = len(directions)
                 self.__set_junction()
                 self.__set_lanes_as_direction_tuple()
-                self.available_states = self.create_states()  # tuple[tuple[Lane]]
-                self.states_size = len(self.available_states)
-            except TypeError as e:
+                self.set_states()
+            except Exception as e:
                 print(f"Junction couldn't be created due to this error: {e}")
 
     def __set_junction(self):
@@ -66,8 +67,6 @@ class Junction:
                     new_lane[index] = self.directions[(to_direction + direction + 1) % self.size]
                     index += 1
                 self.directions[direction].set_lane_as_direction_tuple(tuple(new_lane), lane)
-
-
 
     def set_point(self, point):
         if isinstance(point, Point):
@@ -111,9 +110,9 @@ class Junction:
                 self.states_size = len(self.available_states)
                 """
 
-    def get_in_lanes_groups(self):
+    def get_traffic_lights(self):
         res = set()
-        lanes_group = set()
+        groups = set()
 
         for direction in self.directions:
             lanes_group = set()
@@ -121,20 +120,23 @@ class Junction:
             for lane in direction.in_lanes:
                 if 0 == len(directions_group):
                     lanes_group.add(lane)
-                    directions_group.update(to_lane.parent_junction for to_lane in lane.to_lanes)
+                    directions_group.update(to_lane.parent_direction for to_lane in lane.to_lanes)
                 else:
                     directions_check_group = set()
-                    directions_check_group.update(to_lane.parent_junction for to_lane in lane.to_lanes)
+                    directions_check_group.update(to_lane.parent_direction for to_lane in lane.to_lanes)
                     if not (directions_check_group & directions_group):  # if the intersection of the sets is empty
-                        res.add(lanes_group)
+                        groups.add(frozenset(lanes_group))
                         lanes_group.clear()
                         lanes_group.add(lane)
                         directions_group = directions_check_group
                     else:
                         lanes_group.add(lane)
                         directions_group = directions_check_group | directions_group  # updates the group to be the union of both of them
+            groups.add(frozenset(lanes_group))
 
-        res.add(lanes_group)
+        for lanes_group in groups:
+            tl = TrafficLight(list(lanes_group))
+            res.add(tl)
         return res
 
     def create_states(self):
@@ -142,11 +144,15 @@ class Junction:
         if not self.size >= 2:
             return None
 
-        for lanes_group in self.get_in_lanes_groups():
-            state = create_state_from_flow(create_flow_with_lanes_group(self, lanes_group))
+        traffic_lights = self.get_traffic_lights()
+        flow_graph = create_flow_graph(traffic_lights)
+
+        for traffic_light_index in range(len(traffic_lights)):
+            reset_graph_flow(flow_graph)
+            state = create_state_from_flow(create_flow_with_traffic_light(flow_graph, traffic_light_index), traffic_lights)
             states.add(state)
 
-        return states
+        return tuple(states)
 
     def set_states(self):
         self.available_states = self.create_states()

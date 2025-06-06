@@ -244,6 +244,25 @@ class SimulationScreen:
                 self.screen.blit(text, (rect.x + 5, rect.y + 5))
             y += line_height
 
+    def draw_arrow(self, surface, color, start, end, width=2, head_size=5):
+        # Draw the shaft
+        pygame.draw.line(surface, color, start, end, width)
+
+        # Calculate direction of the arrow
+        dx = end[0] - start[0]
+        dy = end[1] - start[1]
+        angle = math.atan2(dy, dx)
+
+        # Compute coordinates for arrowhead
+        x, y = end
+        left = (x - head_size * math.cos(angle - math.pi / 6),
+                y - head_size * math.sin(angle - math.pi / 6))
+        right = (x - head_size * math.cos(angle + math.pi / 6),
+                 y - head_size * math.sin(angle + math.pi / 6))
+
+        # Draw the arrowhead as a filled triangle
+        pygame.draw.polygon(surface, color, [end, left, right])
+
     def draw_regular_polygon(self, surface, center, radius, current_junction, directions, width=0, lane_spacing=10,
                              lane_length=100):
         num_sides = current_junction.size
@@ -321,11 +340,11 @@ class SimulationScreen:
             # Draw OUT lanes
             for lane_index, lane in enumerate(direction.out_lanes):
                 offset = lane_step * (lane_index + 1)
-                start_x = p1[0] + dir_x * offset
-                start_y = p1[1] + dir_y * offset
-                end_x = start_x + ortho_x * lane_length
-                end_y = start_y + ortho_y * lane_length
-                pygame.draw.line(surface, Color.WHITE.value, (start_x, start_y), (end_x, end_y), 2)
+                end_x = p1[0] + dir_x * offset
+                end_y = p1[1] + dir_y * offset
+                start_x = end_x + ortho_x * lane_length
+                start_y = end_y + ortho_y * lane_length
+                self.draw_arrow(surface, lane.get_lane_color().value, (start_x, start_y), (end_x, end_y))
 
                 # Draw vehicles on this lane
                 for vehicle, distance in nearby_vehicles:
@@ -363,7 +382,7 @@ class SimulationScreen:
                 start_y = p1[1] + dir_y * offset
                 end_x = start_x + ortho_x * lane_length
                 end_y = start_y + ortho_y * lane_length
-                pygame.draw.line(surface, (100, 180, 255), (start_x, start_y), (end_x, end_y), 2)
+                self.draw_arrow(surface, lane.get_lane_color().value, (start_x, start_y), (end_x, end_y))
 
                 # Draw vehicles on this lane
                 for vehicle, distance in nearby_vehicles:
@@ -495,10 +514,68 @@ class SimulationScreen:
                     maximum_speed=100
                 ))
 
+        # --- Set states --- #
+
+        for junction in nodes:
+            junction.set_states()
+
         self.graph = Graph(nodes, edges, vehicles, dt)
 
         for vehicle in self.graph.vehicles:
             vehicle.set_path(self.graph)
+
+    def set_random_graph(self):
+        class Direction_Matrix_Row:
+            def __init__(self, junction, size):
+                self.junction = junction
+                self.row = [0] * size
+                self.size = size
+                self.directions_amount = 0
+
+            def fill_row(self):
+                pass
+
+        self.NUM_CARS
+
+        nodes = []
+        edges = []
+        vehicles = []
+        direction_matrix = []
+
+        # set junctions and direction_matrix
+        for index in range(self.NUM_NODES):
+            nodes.append(Junction())
+            direction_matrix.append(Direction_Matrix_Row(nodes[index], self.NUM_NODES))
+
+
+
+        #create direction_matrix
+        for row in direction_matrix:
+
+            first_direction = directions_in_map[road_data["direction1_index_in_map"]]
+            second_direction = directions_in_map[road_data["direction2_index_in_map"]]
+            length = road_data["length"]
+            max_speed = road_data["max_speed"]
+            road = Road(road_name, first_direction, second_direction, length, max_speed)
+            first_direction.set_road(road)
+            second_direction.set_road(road)
+            edges.append(road)
+
+        # apply layout
+        self.force_directed_layout(nodes, edges)
+
+        # create vehicles
+
+
+        # create graph
+        self.graph = Graph(nodes, edges, vehicles)
+
+        # set vehicles' paths
+        for vehicle in self.graph.vehicles:
+            vehicle.set_path(self.graph)
+
+        return self.graph
+
 
     def force_directed_layout(self, nodes, edges):
         G = nx.Graph()
