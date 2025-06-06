@@ -6,6 +6,8 @@ import pygame
 import sys
 import tkinter as tk
 from enum import Enum
+import time
+import os
 
 from classes.Edges.Road import Road
 from classes.Entities.Graph import Graph, find_out_lane_by_index_in_junction
@@ -18,6 +20,21 @@ from classes.Enums.LaneFacing import LaneFacing
 from classes.Nodes.Direction import Direction
 from classes.Nodes.Junction import Junction
 from classes.Nodes.Lane import Lane
+
+
+def get_map_from_settings():
+    """Get the map name from settings.json."""
+    try:
+        with open("settings.json", "r") as f:
+            settings = json.load(f)
+            map_name = settings.get("Map for simulation", {}).get("value", "")
+            # Handle case where map_name might be a tuple or list
+            if isinstance(map_name, (tuple, list)):
+                map_name = map_name[0]
+            return map_name
+    except Exception as e:
+        print(f"[ERROR] Failed to read settings.json: {e}")
+        return "map1"  # Default to map1 if there's an error
 
 
 class SimulationScreen:
@@ -64,7 +81,12 @@ class SimulationScreen:
             "Trucks amount": 0
         }
         self.load_vehicle_data_from_json()
-        json_data = json.load(open("map1.json", "r"))
+        
+        # Get map name from settings and load the corresponding map file
+        map_name = get_map_from_settings()
+        map_path = os.path.join("maps", f"{map_name}.json")
+        print(f"[DEBUG] Loading map from: {map_path}")
+        json_data = json.load(open(map_path, "r"))
         self.set_graph(json_data, 0.01)
 
     def get_next_screen(self):
@@ -231,7 +253,7 @@ class SimulationScreen:
         surface.blit(label_surface, text_rect)
 
         if num_sides == 2:
-            num_sides = 4
+           num_sides = 4
 
         angle_step = 2 * math.pi / num_sides
         points = [(center[0] + radius * math.cos(i * angle_step - math.pi / 2),
@@ -241,20 +263,50 @@ class SimulationScreen:
 
         # Find nearby vehicles
         nearby_vehicles = []
+        print(f"\n[DEBUG] Checking vehicles for junction {current_junction.junction_index}")
+        print(f"[DEBUG] Junction center: ({center[0]}, {center[1]})")
+        print(f"[DEBUG] Total vehicles in graph: {len(self.graph.vehicles)}")
+        
         for vehicle in self.graph.vehicles:
+            print(f"\n[DEBUG] Checking vehicle {id(vehicle)}")
             if hasattr(vehicle, 'cur_point'):
                 vehicle_x = vehicle.cur_point.x
                 vehicle_y = vehicle.cur_point.y
+                print(f"[DEBUG] Vehicle position: ({vehicle_x}, {vehicle_y})")
+                
                 dx_to_center = vehicle_x - center[0]
                 dy_to_center = vehicle_y - center[1]
                 distance_to_center = math.sqrt(dx_to_center * dx_to_center + dy_to_center * dy_to_center)
+                print(f"[DEBUG] Distance to center: {distance_to_center}")
                 
-                # Increased visibility range for better tracking
-                if distance_to_center < 500:  # Increased from 300 to 500
-                    nearby_vehicles.append((vehicle, distance_to_center))
+                # Check if vehicle is near this junction - increased threshold to 1000
+                if distance_to_center < 1000:  # Increased from 500 to 1000
+                    print("[DEBUG] Vehicle is within range")
+                    if hasattr(vehicle, 'cur_road_lane') and vehicle.cur_road_lane:
+                        print(f"[DEBUG] Vehicle has road lane: {vehicle.cur_road_lane}")
+                        # Get the junction this vehicle is currently in
+                        current_vehicle_junction = None
+                        if hasattr(vehicle.cur_road_lane, 'source_lane'):
+                            current_vehicle_junction = vehicle.cur_road_lane.source_lane.parent_direction.parent_junction
+                            print(f"[DEBUG] Vehicle source lane junction: {current_vehicle_junction.junction_index if current_vehicle_junction else 'None'}")
+                        elif hasattr(vehicle.cur_road_lane, 'destination_lane'):
+                            current_vehicle_junction = vehicle.cur_road_lane.destination_lane.parent_direction.parent_junction
+                            print(f"[DEBUG] Vehicle destination lane junction: {current_vehicle_junction.junction_index if current_vehicle_junction else 'None'}")
+                        
+                        if current_vehicle_junction and current_vehicle_junction.junction_index == current_junction.junction_index:
+                            nearby_vehicles.append((vehicle, distance_to_center))
+                            print(f"[DEBUG] Added vehicle to nearby_vehicles list")
+                    else:
+                        print("[DEBUG] Vehicle has no road lane")
+                else:
+                    print("[DEBUG] Vehicle is too far from junction")
+            else:
+                print("[DEBUG] Vehicle has no cur_point")
+
+        print(f"\n[DEBUG] Found {len(nearby_vehicles)} nearby vehicles")
 
         # Draw lanes and vehicles
-        for i in range(num_sides):
+        for i in range(min(num_sides, len(directions))):  # Ensure we don't exceed the number of directions
             p1, p2 = points[i], points[(i + 1) % num_sides]
             direction = directions[i]
 
@@ -279,22 +331,27 @@ class SimulationScreen:
                 for vehicle, distance in nearby_vehicles:
                     if hasattr(vehicle, 'cur_road_lane') and vehicle.cur_road_lane:
                         if vehicle.cur_road_lane.source_lane == lane:
-                            # Calculate progress based on actual lane position
-                            lane_start = Point(start_x, start_y)
-                            lane_end = Point(end_x, end_y)
-                            vehicle_pos = vehicle.cur_point
-                            
-                            # Calculate progress along the lane with increased movement
-                            total_length = lane_start.get_distance_from_point(lane_end)
-                            if total_length > 0:
-                                # Add time-based movement to make vehicles move
-                                time_factor = (pygame.time.get_ticks() % 1000) / 1000.0  # 0 to 1 over 1 second
-                                progress = min(1.0, max(0.0, 
-                                    (vehicle_pos.get_distance_from_point(lane_start) / total_length + time_factor * 0.1) % 1.0))
+                            print(f"\n[DEBUG] Drawing vehicle on OUT lane {lane_index}")
+                            # Calculate progress based on time
+                            if hasattr(vehicle, 'velocity') and vehicle.velocity is not None:
+                                print(f"[DEBUG] Vehicle velocity: {vehicle.velocity}")
+                                # Get the road properties
+                                road = vehicle.cur_road_lane.parent_road
+                                road_length = road.length if road else 100
+                                print(f"[DEBUG] Road length: {road_length}")
+                                
+                                # Calculate progress based on time and velocity
+                                time_elapsed = time.time() - vehicle.__last_move_time_stamp if hasattr(vehicle, '__last_move_time_stamp') else 0
+                                print(f"[DEBUG] Time elapsed: {time_elapsed}")
+                                distance_moved = vehicle.velocity * time_elapsed
+                                print(f"[DEBUG] Distance moved: {distance_moved}")
+                                progress = min(1.0, distance_moved / road_length)
+                                print(f"[DEBUG] Progress: {progress}")
                                 
                                 # Calculate position on the lane
                                 lane_x = start_x + (end_x - start_x) * progress
                                 lane_y = start_y + (end_y - start_y) * progress
+                                print(f"[DEBUG] Drawing vehicle at ({lane_x}, {lane_y})")
                                 
                                 # Draw vehicle
                                 pygame.draw.circle(surface, Color.RED.value, (int(lane_x), int(lane_y)), 3)
@@ -312,22 +369,27 @@ class SimulationScreen:
                 for vehicle, distance in nearby_vehicles:
                     if hasattr(vehicle, 'cur_road_lane') and vehicle.cur_road_lane:
                         if vehicle.cur_road_lane.destination_lane == lane:
-                            # Calculate progress based on actual lane position
-                            lane_start = Point(start_x, start_y)
-                            lane_end = Point(end_x, end_y)
-                            vehicle_pos = vehicle.cur_point
-                            
-                            # Calculate progress along the lane with increased movement
-                            total_length = lane_start.get_distance_from_point(lane_end)
-                            if total_length > 0:
-                                # Add time-based movement to make vehicles move
-                                time_factor = (pygame.time.get_ticks() % 1000) / 1000.0  # 0 to 1 over 1 second
-                                progress = min(1.0, max(0.0, 
-                                    (vehicle_pos.get_distance_from_point(lane_start) / total_length + time_factor * 0.1) % 1.0))
+                            print(f"\n[DEBUG] Drawing vehicle on IN lane {lane_index}")
+                            # Calculate progress based on time
+                            if hasattr(vehicle, 'velocity') and vehicle.velocity is not None:
+                                print(f"[DEBUG] Vehicle velocity: {vehicle.velocity}")
+                                # Get the road properties
+                                road = vehicle.cur_road_lane.parent_road
+                                road_length = road.length if road else 100
+                                print(f"[DEBUG] Road length: {road_length}")
                                 
-                                # Calculate position on the lane
-                                lane_x = start_x + (end_x - start_x) * progress
-                                lane_y = start_y + (end_y - start_y) * progress
+                                # Calculate progress based on time and velocity
+                                time_elapsed = time.time() - vehicle.__last_move_time_stamp if hasattr(vehicle, '__last_move_time_stamp') else 0
+                                print(f"[DEBUG] Time elapsed: {time_elapsed}")
+                                distance_moved = vehicle.velocity * time_elapsed
+                                print(f"[DEBUG] Distance moved: {distance_moved}")
+                                progress = min(1.0, distance_moved / road_length)
+                                print(f"[DEBUG] Progress: {progress}")
+                                
+                                # Calculate position on the lane (for IN lanes, move from end to start)
+                                lane_x = end_x - (end_x - start_x) * progress
+                                lane_y = end_y - (end_y - start_y) * progress
+                                print(f"[DEBUG] Drawing vehicle at ({lane_x}, {lane_y})")
                                 
                                 # Draw vehicle
                                 pygame.draw.circle(surface, Color.RED.value, (int(lane_x), int(lane_y)), 3)

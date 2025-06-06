@@ -5,6 +5,32 @@ import json
 import tkinter as tk
 from tkinter import filedialog
 
+
+def get_available_maps():
+    """Get list of available maps from the maps folder."""
+    maps_dir = "maps"
+    available_maps = []
+
+    # Create maps directory if it doesn't exist
+    if not os.path.exists(maps_dir):
+        os.makedirs(maps_dir)
+        print(f"[DEBUG] Created maps directory: {maps_dir}")
+
+    # Get all JSON files in the maps directory
+    for file in os.listdir(maps_dir):
+        if file.endswith('.json'):
+            # Remove .json extension to get map name
+            map_name = os.path.splitext(file)[0]
+            available_maps.append(map_name)
+
+    if not available_maps:
+        print("[WARNING] No map files found in maps directory")
+
+
+    print(f"[DEBUG] Available maps: {available_maps}")
+    return available_maps
+
+
 class SettingsScreen:
     def __init__(self, screen, ui_manager):
         self.screen = screen
@@ -15,6 +41,8 @@ class SettingsScreen:
         self.elements = []
         self.loaded_from_file = False
 
+        # Get available maps
+        self.available_maps = get_available_maps()
 
         # Title
         self.title_label = pygame_gui.elements.UILabel(
@@ -90,7 +118,20 @@ class SettingsScreen:
         self.time_input.set_text("2")
         self.time_input.set_allowed_characters("numbers")
 
-        self.map_dropdown = pygame_gui.elements.UIDropDownMenu(["map1", "map2", "map3"], "map1", pygame.Rect((240, 100), (200, 30)), self.ui_manager)
+        # Initialize dropdown with available maps
+        print(f"[DEBUG] Available maps: {self.available_maps}")
+        self.map_dropdown = pygame_gui.elements.UIDropDownMenu(
+            options_list=self.available_maps,
+            starting_option= self.available_maps[0],  # Start with no selection
+            relative_rect=pygame.Rect((240, 100), (200, 30)),
+            manager=self.ui_manager,
+            object_id='#map_dropdown'
+        )
+        # Set the initial selection after creation
+        # print(f"[DEBUG] Available dropdawon options: {self.map_dropdown.selected_option}")
+        # if self.map_dropdown.selected_option == ("","") and self.available_maps:
+        #     print(f"[DEBUG] No map selected, defaulting to first available map {self.available_maps[0]}")
+        #     self.map_dropdown.selected_option = self.available_maps[0]
 
         self.algorithm_checklist = pygame_gui.elements.UISelectionList(
             pygame.Rect((700, 50), (150, 120)),
@@ -99,7 +140,7 @@ class SettingsScreen:
             allow_multi_select=True
         )
 
-        self.random_checkbox = pygame_gui.elements.UISelectionList(pygame.Rect((700, 180), (30, 30)), ["✔"], self.ui_manager)
+        self.random_checkbox = pygame_gui.elements.UISelectionList(pygame.Rect((700, 180), (30, 30)), ["V"], self.ui_manager)
         self.density_slider = pygame_gui.elements.UIHorizontalSlider(pygame.Rect((700, 250), (150, 30)), start_value=3, value_range=(1, 5), manager=self.ui_manager)
 
         self.density_label = pygame_gui.elements.UILabel(pygame.Rect((860, 250), (30, 30)), "3", self.ui_manager, object_id="#black_label")
@@ -196,9 +237,19 @@ class SettingsScreen:
             print("[DEBUG] Settings already loaded from file.")
             return  # Do not overwrite manually loaded settings
         print("[DEBUG] Saving settings...")
+        
+        # Get the selected map and ensure it's a single value
+        selected_map = self.map_dropdown.selected_option
+        # Handle different types of selected_map
+        if isinstance(selected_map, tuple):
+            selected_map = selected_map[0]  # Take first value from tuple
+        elif isinstance(selected_map, list):
+            selected_map = selected_map[0] if selected_map else ""
+        print(f"[DEBUG] Saving map: {selected_map}")
+        
         data = {
             "Time to shutdown simulation": {"value": self.time_input.get_text()},
-            "Map for simulation": {"value": self.map_dropdown.selected_option},
+            "Map for simulation": {"value": selected_map},
             "Private car amount": {"value": self.car_input.get_text()},
             "Buses amount": {"value": self.bus_input.get_text()},
             "Trucks amount": {"value": self.truck_input.get_text()},
@@ -206,15 +257,32 @@ class SettingsScreen:
             "Gasoline": {"value": self.gasoline_input.get_text()},
             "Gas": {"value": self.gas_input.get_text()}
         }
+        # Clear the file by opening in 'w' mode and then write new data
         with open("settings.json", "w") as f:
             json.dump(data, f, indent=4)
+        print("[DEBUG] Settings saved successfully!")
 
     def load_from_json(self, file_path):
         try:
             with open(file_path, 'r') as f:
                 data = json.load(f)
                 self.time_input.set_text(data.get("Time to shutdown simulation", {}).get("value", ""))
-                self.map_dropdown.selected_option = data.get("Map for simulation", {}).get("value", "map1")
+                
+                # Get the map value from JSON and ensure it's a string
+                map_value = data.get("Map for simulation", {}).get("value", "")
+                # Handle case where map_value might be a list
+                if isinstance(map_value, list) and map_value:
+                    map_value = map_value[0]  # Take the first map from the list
+                
+                # Check if the map exists in available maps
+                if map_value in self.available_maps:
+                    self.map_dropdown.selected_option = map_value
+                elif self.available_maps:  # If map not found but we have other maps
+                    self.map_dropdown.selected_option = self.available_maps[0]
+                    print(f"[WARNING] Map {map_value} not found, using {self.available_maps[0]} instead")
+                else:
+                    print("[WARNING] No maps available")
+                
                 self.car_input.set_text(data.get("Private car amount", {}).get("value", ""))
                 self.bus_input.set_text(data.get("Buses amount", {}).get("value", ""))
                 self.truck_input.set_text(data.get("Trucks amount", {}).get("value", ""))
