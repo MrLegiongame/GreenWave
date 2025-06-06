@@ -51,6 +51,8 @@ class Vehicle(ABC):
         self.__lanes_passed = 0
         self.__last_distance_to_next_junction = None
         self.__last_move_time_stamp = None
+        self.from_node = None
+        self.to_node = None
 
         # Stats
         self.total_time = 0
@@ -127,6 +129,10 @@ class Vehicle(ABC):
         self.__last_lane = self.lanes_path[self.__lanes_passed]
         self.__lanes_passed += 1
         print(f"[DEBUG] SET PATH After increment __lanes_passed={self.__lanes_passed}")
+    def get_cur_lane(self):
+        return self.cur_road_lane
+    def get_next_lane(self):
+        return self.lanes_path[self.__lanes_passed]
 
     def __is_passed_junction(self):
         try:
@@ -139,14 +145,14 @@ class Vehicle(ABC):
         current_pt = self.cur_point.get_point()
         
         # Calculate distance along the road path
-        from_node = self.lanes_path[self.__lanes_passed - 1].parent_junction.point
-        to_node = next_junc
+        self.from_node = self.lanes_path[self.__lanes_passed - 1].parent_junction.point
+        self.to_node = next_junc
         road_length = self.cur_road_lane.parent_road.length
-        pixel_length = from_node.get_distance_from_point(to_node)
+        pixel_length = self.from_node.get_distance_from_point(self.to_node)
         
         # Calculate how far along the road we are
-        current_distance = self.cur_point.get_distance_from_point(from_node)
-        total_distance = from_node.get_distance_from_point(to_node)
+        current_distance = self.cur_point.get_distance_from_point(self.from_node)
+        total_distance = self.from_node.get_distance_from_point(self.to_node)
         progress = current_distance / total_distance if total_distance > 0 else 0
         
         #print(f"[__is_passed_junction] current_point={current_pt}, progress={progress:.2f}, total_distance={total_distance:.2f}")
@@ -192,7 +198,7 @@ class Vehicle(ABC):
                 print("[DEBUG] Reached final destination IN lane")
                 return
             try:
-                if (self.lanes_path[self.__lanes_passed].cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self is self.__last_lane.vehicles_queue[0]:  # if junction is available for crossing and the vehicle is the first in the lane's queue
+                #if (self.lanes_path[self.__lanes_passed].cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self is self.__last_lane.vehicles_queue[0]:  # if junction is available for crossing and the vehicle is the first in the lane's queue
                     self.__last_lane = self.lanes_path[self.__lanes_passed]
                      # print(f"[move] IN-lane: Setting last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
                     self.__lanes_passed += 1

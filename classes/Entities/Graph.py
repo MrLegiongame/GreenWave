@@ -81,12 +81,12 @@ class Graph:
                     for to_lane in in_lane.to_lanes:
                         out_lane_name = "OutLane" + str(to_lane.index_in_map)
                         G.add_edge(in_lane_name, out_lane_name, weight=0)
-                        print(f"  Added edge: {in_lane_name} -> {out_lane_name} (weight=0)")
+                       # print(f"  Added edge: {in_lane_name} -> {out_lane_name} (weight=0)")
 
-        print("\n[DEBUG] Adding road connections:")
+       # print("\n[DEBUG] Adding road connections:")
         for road in self.edges:
             length = road.length
-            print(f"\nRoad {road.name} (length={length}):")
+           # print(f"\nRoad {road.name} (length={length}):")
             
             # Get the direction indices from the road
             dir1_idx = road.first_direction.index_in_map
@@ -108,7 +108,7 @@ class Graph:
                 out_lane_name = "OutLane" + str(out_lane.index_in_map)
                 in_lane_name = "InLane" + str(in_lane.index_in_map)
                 G.add_edge(out_lane_name, in_lane_name, weight=length)
-                print(f"  Added edge: {out_lane_name} -> {in_lane_name} (weight={length})")
+                #print(f"  Added edge: {out_lane_name} -> {in_lane_name} (weight={length})")
             
             # Find the OUT lane from second direction and IN lane from first direction
             out_lane = None
@@ -126,18 +126,18 @@ class Graph:
                 out_lane_name = "OutLane" + str(out_lane.index_in_map)
                 in_lane_name = "InLane" + str(in_lane.index_in_map)
                 G.add_edge(out_lane_name, in_lane_name, weight=length)
-                print(f"  Added edge: {out_lane_name} -> {in_lane_name} (weight={length})")
+                #print(f"  Added edge: {out_lane_name} -> {in_lane_name} (weight={length})")
 
         # Print final graph structure
-        print("\n[DEBUG] Final graph structure:")
-        print(f"Number of nodes: {G.number_of_nodes()}")
-        print(f"Number of edges: {G.number_of_edges()}")
-        print("\nAll nodes:")
-        for node in sorted(G.nodes()):
-            print(f"  {node}")
-        print("\nAll edges:")
-        for edge in sorted(G.edges(data=True)):
-            print(f"  {edge[0]} -> {edge[1]} (weight={edge[2]['weight']})")
+        # print("\n[DEBUG] Final graph structure:")
+        # print(f"Number of nodes: {G.number_of_nodes()}")
+        # print(f"Number of edges: {G.number_of_edges()}")
+        # print("\nAll nodes:")
+        # for node in sorted(G.nodes()):
+        #     print(f"  {node}")
+        # print("\nAll edges:")
+        # for edge in sorted(G.edges(data=True)):
+        #     print(f"  {edge[0]} -> {edge[1]} (weight={edge[2]['weight']})")
 
         self.graph = G
         return G
@@ -179,11 +179,11 @@ class Graph:
             print(f"\nFound path: {lane_path}")
         except nx.exception.NetworkXNoPath as e:
             print(f"\nNo path available between {source} and {target}")
-            print("\nGraph structure:")
-            print("Nodes:", sorted(self.graph.nodes()))
-            print("\nEdges:")
-            for edge in sorted(self.graph.edges(data=True)):
-                print(f"  {edge[0]} -> {edge[1]} (weight={edge[2]['weight']})")
+            # print("\nGraph structure:")
+            # print("Nodes:", sorted(self.graph.nodes()))
+            # print("\nEdges:")
+            # for edge in sorted(self.graph.edges(data=True)):
+            #     print(f"  {edge[0]} -> {edge[1]} (weight={edge[2]['weight']})")
             return None, None
 
         # Convert to list of edges (as tuples)
