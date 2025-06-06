@@ -301,28 +301,28 @@ class SimulationScreen:
                 # Check if vehicle is near this junction - increased threshold to 1000
                 if distance_to_center < 1000:  # Increased from 500 to 1000
                     #print("[DEBUG] Vehicle is within range")
-                    if hasattr(vehicle, 'cur_road_lane') and vehicle.get_cur_lane():
+                    if hasattr(vehicle, 'cur_road_lane') and vehicle.get_source_junction():
                         #print(f"[DEBUG] Vehicle has road lane: {vehicle.cur_road_lane}")
                         # Get the junction this vehicle is currently in
                         current_vehicle_junction = None
                         next_vehicle_junction = None
 
                         # Get current junction from source lane
-                        current_vehicle_junction = vehicle.get_cur_lane().source_lane.parent_direction.parent_junction
-                        print(f"[DEBUG] Vehicle source lane junction: {current_vehicle_junction.junction_index if current_vehicle_junction else 'None'}")
+                        current_vehicle_junction = vehicle.get_source_junction()
+                        #print(f"[DEBUG] Vehicle source lane junction: {current_vehicle_junction.junction_index if current_vehicle_junction else 'None'}")
 
                         # Get next junction from destination lane
-                        next_vehicle_junction = vehicle.get_cur_lane().destination_lane.parent_direction.parent_junction
-                        print(f"[DEBUG] Vehicle destination lane junction: {next_vehicle_junction.junction_index if next_vehicle_junction else 'None'}")
+                        next_vehicle_junction = vehicle.get_destination_junction()
+                        #print(f"[DEBUG] Vehicle destination lane junction: {next_vehicle_junction.junction_index if next_vehicle_junction else 'None'}")
 
                         
-                        print(f"[DEBUG] Vehicle junctions: {current_vehicle_junction.junction_index}, {next_vehicle_junction.junction_index if next_vehicle_junction else 'None'}")
-                        print(f"[DEBUG] Current junction being drawn: {current_junction.junction_index}")
+                        #print(f"[DEBUG] Vehicle junctions: {current_vehicle_junction.junction_index}, {next_vehicle_junction.junction_index if next_vehicle_junction else 'None'}")
+                        #print(f"[DEBUG] Current junction being drawn: {current_junction.junction_index}")
                         
                         # Check if vehicle is near this junction
                         is_near_current = current_vehicle_junction and current_vehicle_junction.junction_index == current_junction.junction_index
                         is_near_next = next_vehicle_junction and next_vehicle_junction.junction_index == current_junction.junction_index
-                        print(f"[DEBUG] Is near current junction: {is_near_current}, Is near next junction: {is_near_next}")
+                       # print(f"[DEBUG] Is near current junction: {is_near_current}, Is near next junction: {is_near_next}")
                         
                         if is_near_current or is_near_next:
                             nearby_vehicles.append((vehicle, distance_to_center))
@@ -362,16 +362,16 @@ class SimulationScreen:
                 for vehicle, distance in nearby_vehicles:
                     if hasattr(vehicle, 'cur_road_lane') and vehicle.cur_road_lane:
                         # For OUT lanes, check if this is the source lane
-                        if vehicle.cur_road_lane.source_lane == lane:
+                        if vehicle.get_cur_lane() == lane:
                             # Calculate progress based on time
                             if hasattr(vehicle, 'velocity') and vehicle.velocity is not None:
                                 # Get the road properties
-                                road = vehicle.cur_road_lane.parent_road
+                                #road = vehicle.get_cur_lane().parent_road
                                 
                                 # Get source and destination nodes from the current road lane
-                                from_node = vehicle.cur_road_lane.source_lane.parent_direction.parent_junction.point
-                                to_node = vehicle.cur_road_lane.destination_lane.parent_direction.parent_junction.point
-                                road_length = road.length
+                                from_node = vehicle.get_source_junction().point
+                                to_node = vehicle.get_destination_junction().point
+                                #road_length = road.length
                                 pixel_length = from_node.get_distance_from_point(to_node)
                                 
                                 # Calculate current distance from start of road
@@ -384,7 +384,7 @@ class SimulationScreen:
                                     # Calculate position on the lane (for OUT lanes, move from start to end)
                                     lane_x = start_x + (end_x - start_x) * progress
                                     lane_y = start_y + (end_y - start_y) * progress
-                                    print(f"[DEBUG] OUT lane vehicle - current_distance: {current_distance}, total_distance: {total_distance}, progress: {progress}")
+                                    #print(f"[DEBUG] OUT lane vehicle - current_distance: {current_distance}, total_distance: {total_distance}, progress: {progress}")
                                     # Draw vehicle
                                     pygame.draw.circle(surface, Color.RED.value, (int(lane_x), int(lane_y)), 3)
 
@@ -399,18 +399,19 @@ class SimulationScreen:
 
                 # Draw vehicles on this lane
                 for vehicle, distance in nearby_vehicles:
-                    if hasattr(vehicle, 'cur_road_lane') and vehicle.cur_road_lane:
+                    if hasattr(vehicle, 'cur_road_lane') and vehicle.get_cur_lane():
                         # For IN lanes, check if this is the destination lane
-                        if vehicle.cur_road_lane.destination_lane == lane:
+                       # print(f"[DEBUG] Checked lane: {lane} for vehicle: {vehicle.get_cur_lane()}")
+                        if vehicle.get_next_lane() == lane:
                             # Calculate progress based on time
                             if hasattr(vehicle, 'velocity') and vehicle.velocity is not None:
                                 # Get the road properties
-                                road = vehicle.cur_road_lane.parent_road
+                               # road = vehicle.get_cur_lane().parent_road
                                 
                                 # Get source and destination nodes from the current road lane
-                                from_node = vehicle.cur_road_lane.source_lane.parent_direction.parent_junction.point
-                                to_node = vehicle.cur_road_lane.destination_lane.parent_direction.parent_junction.point
-                                road_length = road.length
+                                from_node = vehicle.get_source_junction().point
+                                to_node = vehicle.get_destination_junction().point
+                               # road_length = road.length
                                 pixel_length = from_node.get_distance_from_point(to_node)
                                 
                                 # Calculate current distance from start of road
@@ -423,7 +424,7 @@ class SimulationScreen:
                                     # Calculate position on the lane (for IN lanes, move from start to end)
                                     lane_x = start_x + (end_x - start_x) * progress
                                     lane_y = start_y + (end_y - start_y) * progress
-                                    print(f"[DEBUG] IN lane vehicle - current_distance: {current_distance}, total_distance: {total_distance}, progress: {progress}")
+                                    #print(f"[DEBUG] IN lane vehicle - current_distance: {current_distance}, total_distance: {total_distance}, progress: {progress}")
                                     # Draw vehicle
                                     pygame.draw.circle(surface, Color.RED.value, (int(lane_x), int(lane_y)), 3)
 
