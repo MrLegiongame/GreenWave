@@ -25,6 +25,11 @@ class MainMenuScreen:
         self.frame_border = (100, 180, 100)
         self.screen.fill((255, 255, 255))  # soft greenish white or any background color
 
+        # Update button positions
+        self.update_button_positions()
+
+    def update_button_positions(self):
+        """Update button positions based on current window size"""
         # Button layout
         button_width = 220
         button_height = 50
@@ -37,14 +42,48 @@ class MainMenuScreen:
             "Start Simulation": pygame.Rect(center_x + spacing // 2, bottom_y, button_width, button_height),
         }
 
+        # Description frame layout
+        frame_width = min(600, self.screen.get_width() - 100)  # Max width of 600 or screen width - 100
+        frame_height = 150
+        frame_x = (self.screen.get_width() - frame_width) // 2
+        frame_y = 140
+        self.frame_rect = pygame.Rect(frame_x, frame_y, frame_width, frame_height)
+
+    def handle_resize(self, new_width, new_height):
+        """Handle window resize"""
+        # Update background scaling
+        try:
+            raw_bg = pygame.image.load(os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "background.jpg"))
+            self.background, self.bg_offset = self.scale_and_center(raw_bg, new_width, new_height)
+        except Exception as e:
+            print(f"Error loading background: {e}")
+            # Fallback to solid color if image loading fails
+            self.background = pygame.Surface((new_width, new_height))
+            self.background.fill((255, 255, 255))
+            self.bg_offset = (0, 0)
+        
+        # Update button positions
+        self.update_button_positions()
+
     def scale_and_center(self, img, target_width, target_height):
+        # Calculate scaling factor to cover the entire screen while maintaining aspect ratio
         img_width, img_height = img.get_size()
-        scale_factor = min(target_width / img_width, target_height / img_height)
+        width_ratio = target_width / img_width
+        height_ratio = target_height / img_height
+        scale_factor = max(width_ratio, height_ratio)  # Use max to ensure full coverage
+        
+        # Calculate new dimensions
         new_width = int(img_width * scale_factor)
         new_height = int(img_height * scale_factor)
+        
+        # Scale the image smoothly
         scaled_img = pygame.transform.smoothscale(img, (new_width, new_height))
-        offset = ((target_width - new_width) // 2, (target_height - new_height) // 2)
-        return scaled_img, offset
+        
+        # Calculate offset to center and ensure full coverage
+        offset_x = (target_width - new_width) // 2
+        offset_y = (target_height - new_height) // 2
+        
+        return scaled_img, (offset_x, offset_y)
 
     def handle_events(self, event):
         if event.type == pygame.QUIT:
@@ -54,7 +93,6 @@ class MainMenuScreen:
             if self.buttons["Start Simulation"].collidepoint(event.pos):
                 print("Go to Simulation screen")
                 self.next_screen = "simulation"
-                # self.next_screen = "simulation"  # for future
             elif self.buttons["Change Parameters"].collidepoint(event.pos):
                 print("Go to Settings screen")
                 self.next_screen = "settings"
@@ -63,6 +101,8 @@ class MainMenuScreen:
         pass  # or update logic later if needed
 
     def draw(self):
+        # Draw background
+        self.screen.fill((255, 255, 255))  # Fill with white first to prevent black lines
         self.screen.blit(self.background, self.bg_offset)
 
         # Title
@@ -70,9 +110,8 @@ class MainMenuScreen:
         self.screen.blit(title, (self.center_x(title), 20))
 
         # Description box
-        frame_rect = pygame.Rect(150, 140, 600, 150)
-        pygame.draw.rect(self.screen, self.frame_fill, frame_rect, border_radius=12)
-        pygame.draw.rect(self.screen, self.frame_border, frame_rect, width=2, border_radius=12)
+        pygame.draw.rect(self.screen, self.frame_fill, self.frame_rect, border_radius=12)
+        pygame.draw.rect(self.screen, self.frame_border, self.frame_rect, width=2, border_radius=12)
 
         desc_lines = [
             "A smart traffic light simulation designed to reduce",
@@ -82,7 +121,7 @@ class MainMenuScreen:
 
         for i, line in enumerate(desc_lines):
             desc = self.desc_font.render(line, True, (30, 60, 30))
-            self.screen.blit(desc, (self.center_x(desc), 160 + i * 30))
+            self.screen.blit(desc, (self.center_x(desc), self.frame_rect.y + 20 + i * 30))
 
         # Buttons
         mouse_pos = pygame.mouse.get_pos()

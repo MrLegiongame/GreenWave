@@ -122,16 +122,11 @@ class SettingsScreen:
         print(f"[DEBUG] Available maps: {self.available_maps}")
         self.map_dropdown = pygame_gui.elements.UIDropDownMenu(
             options_list=self.available_maps,
-            starting_option= self.available_maps[0],  # Start with no selection
+            starting_option=self.available_maps[0] if self.available_maps else "",
             relative_rect=pygame.Rect((240, 100), (200, 30)),
             manager=self.ui_manager,
             object_id='#map_dropdown'
         )
-        # Set the initial selection after creation
-        # print(f"[DEBUG] Available dropdawon options: {self.map_dropdown.selected_option}")
-        # if self.map_dropdown.selected_option == ("","") and self.available_maps:
-        #     print(f"[DEBUG] No map selected, defaulting to first available map {self.available_maps[0]}")
-        #     self.map_dropdown.selected_option = self.available_maps[0]
 
         self.algorithm_checklist = pygame_gui.elements.UISelectionList(
             pygame.Rect((700, 50), (150, 120)),
@@ -172,9 +167,11 @@ class SettingsScreen:
             self.random_checkbox, self.density_slider, self.density_label,
             self.car_input, self.bus_input, self.truck_input,
             self.electric_input, self.gasoline_input, self.gas_input,
-            self.upload_button, self.save_button, self.cancel_button, self.error_label , self.electric_icon, self.gasoline_icon, self.gas_icon,
-    self.electric_percent, self.gasoline_percent, self.gas_percent
+            self.upload_button, self.save_button, self.cancel_button, self.error_label,
+            self.electric_icon, self.gasoline_icon, self.gas_icon,
+            self.electric_percent, self.gasoline_percent, self.gas_percent
         ])
+
         if os.path.exists("settings.json"):
             self.load_from_json("settings.json")
 
@@ -189,7 +186,14 @@ class SettingsScreen:
                 self.save_to_json()
                 print("[DEBUG] Settings saved!")
             elif event.ui_element == self.cancel_button:
-                self.next_screen = "main_menu"  # This returns to main screen
+                self.next_screen = "main_menu"
+
+    def cleanup(self):
+        """Clean up UI elements before switching screens"""
+        for element in self.elements:
+            element.kill()
+        self.elements.clear()
+        self.ui_manager.clear_and_reset()
 
     def update(self, time_delta):
         self.ui_manager.update(time_delta)
@@ -222,6 +226,8 @@ class SettingsScreen:
         self.ui_manager.draw_ui(self.screen)
 
     def get_next_screen(self):
+        if self.next_screen:  # Only cleanup if we're actually switching screens
+            self.cleanup()
         return self.next_screen
 
     def upload_json(self):

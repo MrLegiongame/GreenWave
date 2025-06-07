@@ -36,6 +36,7 @@ class Vehicle(ABC):
         # self.velocity = min(self.cur_road_lane.maximum_speed, self.maximum_speed)
         self.velocity = None
         self.acceleration = acceleration
+        self.has_reached_destination = False  # Add flag for destination arrival
 
         if isinstance(image, str):
             self.image = pygame.image.load(image).convert_alpha()
@@ -305,3 +306,16 @@ class Vehicle(ABC):
 
     def get_cur_point(self):
         return self.cur_point
+
+    def has_arrived(self):
+        """Check if the vehicle has reached its destination."""
+        if self.has_reached_destination:
+            return True
+            
+        # Check if we're at the end of the path and in the final lane
+        if self.__lanes_passed >= len(self.lanes_path) or self.__last_lane == self.__end_in_lane:
+            # Check if we're close enough to the end point
+            if self.cur_point and self.end_point:
+                self.has_reached_destination = True
+                return True
+        return False
