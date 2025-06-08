@@ -208,7 +208,8 @@ class Vehicle(ABC):
                 print("[DEBUG] Reached final destination IN lane")
                 return
             try:
-                #if (self.lanes_path[self.__lanes_passed].cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self is self.__last_lane.vehicles_queue[0]:  # if junction is available for crossing and the vehicle is the first in the lane's queue
+                if (self.lanes_path[self.__lanes_passed].cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self is self.__last_lane.vehicles_queue[0]:  # if junction is available for crossing and the vehicle is the first in the lane's queue
+                    self.__last_lane.pop_head_from_queue()
                     self.__last_lane = self.lanes_path[self.__lanes_passed]
                      # print(f"[move] IN-lane: Setting last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
                     self.__lanes_passed += 1

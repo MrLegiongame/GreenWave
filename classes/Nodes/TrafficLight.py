@@ -43,14 +43,14 @@ class TrafficLight:
         return True
 
     def set_state(self, state):
-        if isinstance(state, State):
-            self.current_state = state
-            for lane in self.lanes:
-                lane.cur_state = self.current_state
-            return True
-        return False
-
-    def change_state(self):
-        self.current_state = State.value((self.current_state.value + 1) % STATE_SIZE)
+        if not isinstance(state, State):
+            return False
+        self.current_state = state
         for lane in self.lanes:
-            lane.cur_state = self.current_state
+            lane.set_cur_state(self.current_state)
+        return True
+
+    def update_state(self):
+        self.current_state = State((self.current_state.value + 1) % STATE_SIZE)
+        for lane in self.lanes:
+            lane.update_state()
