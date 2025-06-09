@@ -555,6 +555,7 @@ class SimulationScreen:
         # Start thread
         self.algorithm_thread.start()
 
+        # TODO: start all different algorithms threads here by copying the graph (for statistics)
         # TODO: terminate thread when simulation is finished
         """
         self.algorithm.terminate_flag = True

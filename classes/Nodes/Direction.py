@@ -37,6 +37,7 @@ class Direction:
         self.size = 0
         self.parent_junction = None
         self.index_in_map = index_in_map
+        self.module_index = None  # used for states creation in Junction
         self.road = road
 
         if None is not in_lanes:

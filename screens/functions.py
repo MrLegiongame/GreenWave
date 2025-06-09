@@ -1,6 +1,7 @@
+from typing import List, Set
+
 import networkx as nx
 from networkx.algorithms.flow import capacity_scaling, build_residual_network
-
 
 
 def are_there_possible_collisions(lanes):
@@ -67,6 +68,7 @@ def find_obj_index_in_array(obj, arr):
     return None
 
 
+"""
 def get_to_lanes_amount_in_traffic_light(traffic_light):
     amount = 0
     for lane in traffic_light.lanes:
@@ -120,7 +122,6 @@ def print_flow_graph_data(flow_graph):
 
 
 def create_flow_with_traffic_light(flow_graph, traffic_light_index):
-    """
     print("Before")  # TODO: delete code line later- used for debug
     print_flow_graph_data(flow_graph)  # TODO: delete code line later- used for debug
     print()  # TODO: delete code line later- used for debug
@@ -173,7 +174,6 @@ def create_flow_with_traffic_light(flow_graph, traffic_light_index):
 
     print("After adjusting flow")  # TODO: delete code line later- used for debug
     print_flow_graph_data(flow_graph) # TODO: delete code line later- used for debug
-    """
 
     flow_graph["S"][f"TL{traffic_light_index}"]["flow"] = flow_graph["S"][f"TL{traffic_light_index}"]["capacity"]
     lanes_neighbors = flow_graph.successors(f"TL{traffic_light_index}")
@@ -206,8 +206,154 @@ def print_residual_flows(residual_graph):
             reverse_capacity = reverse_edge.get("capacity", 0)
             flow = reverse_capacity  # reverse edge capacity = actual flow on original edge
             print(f"{u} → {v} | residual capacity: {capacity} | flow: {flow}")
+"""
 
 
+def create_state(main_traffic_light, traffic_lights, junction):
+    state = set()
+    state.add(main_traffic_light)
+
+    main_direction = main_traffic_light.get_direction()
+    junction.set_directions_module_indexes(main_direction)
+    directions_directing_indexes = main_traffic_light.get_directions_directing_indexes()
+
+    for traffic_light in traffic_lights:
+        if traffic_light is main_traffic_light:
+            continue
+        elif main_direction is traffic_light.get_direction():
+            state.add(traffic_light)
+            directions_directing_indexes.extend(traffic_light.get_directions_directing_indexes())
+            continue
+
+        traffic_light_is_valid = True
+
+        for valid_tl in state:
+            direction = valid_tl.get_direction()
+            junction.set_directions_module_indexes(direction)
+
+            target_direction_module_index = traffic_light.get_direction().module_index
+            max_direction_index = min(filter_greater_than_or_equal_to(directions_directing_indexes, target_direction_module_index,junction.size - 1))
+            min_direction_index = max(filter_less_than(directions_directing_indexes, target_direction_module_index, 0))
+
+            for lane in traffic_light.lanes:
+                for to_lane in lane.to_lanes:
+                    to_lane_direction_index = to_lane.parent_direction.module_index
+                    if min_direction_index < to_lane_direction_index < max_direction_index:
+                        continue
+                    elif min_direction_index == to_lane_direction_index:
+                        if not valid_tl.get_minimum_to_lane_index_by_direction(to_lane.parent_direction) > to_lane.index_in_junction:
+                            traffic_light_is_valid = False
+                    elif max_direction_index == to_lane_direction_index:
+                        if not valid_tl.get_maximum_to_lane_index_by_direction(to_lane.parent_direction) < to_lane.index_in_junction:
+                            traffic_light_is_valid = False
+                    else:
+                        traffic_light_is_valid = False
+
+        if traffic_light_is_valid:
+            state.add(traffic_light)
+            directions_directing_indexes.extend(traffic_light.get_directions_directing_indexes())
+    return tuple(state)
+
+
+def filter_greater_than_or_equal_to(tup, threshold, default_val):
+    res = [default_val]
+    for x in tup:
+        if x >= threshold:
+            res.append(x)
+    return tuple(res)
+
+
+
+def filter_less_than(tup, threshold, default_val):
+    res = [default_val]
+    for x in tup:
+        if x < threshold:
+            res.append(x)
+    return tuple(res)
+
+
+def get_blocked_traffic_lights_by_traffic_light(junction, blocking_traffic_light):
+    from classes.Nodes.TrafficLight import TrafficLight
+    blocked_traffic_lights = set()
+
+    main_direction = blocking_traffic_light.get_direction()
+    junction.set_directions_module_indexes(main_direction)
+    directions_directing_indexes = blocking_traffic_light.get_directions_directing_indexes()
+
+    for traffic_light in junction.traffic_lights:
+        if traffic_light is blocking_traffic_light:
+            continue
+        elif blocking_traffic_light is traffic_light.get_direction():
+            blocked_traffic_lights.add(traffic_light)
+            continue
+
+        traffic_light_is_valid = True
+
+        target_direction_module_index = traffic_light.get_direction().module_index
+        max_direction_index = min(filter_greater_than_or_equal_to(directions_directing_indexes, target_direction_module_index,junction.size - 1))
+        min_direction_index = max(filter_less_than(directions_directing_indexes, target_direction_module_index, 0))
+
+        for lane in traffic_light.lanes:
+            for to_lane in lane.to_lanes:
+                to_lane_direction_index = to_lane.parent_direction.module_index
+                if min_direction_index < to_lane_direction_index < max_direction_index:
+                    continue
+                elif min_direction_index == to_lane_direction_index:
+                    if not blocking_traffic_light.get_minimum_to_lane_index_by_direction(
+                            to_lane.parent_direction) > to_lane.index_in_junction:
+                        traffic_light_is_valid = False
+                elif max_direction_index == to_lane_direction_index:
+                    if not blocking_traffic_light.get_maximum_to_lane_index_by_direction(
+                            to_lane.parent_direction) < to_lane.index_in_junction:
+                        traffic_light_is_valid = False
+                else:
+                    traffic_light_is_valid = False
+
+        if traffic_light_is_valid:
+            blocked_traffic_lights.add(traffic_light)
+    return blocked_traffic_lights
+
+
+def get_blocked_traffic_lights_by_traffic_lights(junction, blocking_traffic_lights):
+    blocked_traffic_lights = set()
+    for blocking_traffic_light in blocking_traffic_lights:
+        blocked_traffic_lights = blocked_traffic_lights | get_blocked_traffic_lights_by_traffic_light(junction, blocking_traffic_light)
+    return blocked_traffic_lights
+
+
+def solve_custom_knapsack(items, must_include, capacity: int, junction):
+    best_reward = float('-inf')
+    best_combination = []
+
+    def backtrack(index: int, included, total_reward: int, total_weight: int):
+        nonlocal best_reward, best_combination
+
+        # Base case: reached end
+        if index == len(items):
+            if must_include in included and total_weight <= capacity:
+                if total_reward > best_reward:
+                    best_reward = total_reward
+                    best_combination = list(included)
+            return
+
+        item = items[index]
+
+        # Option 1: include the item
+        next_included = included | {item}
+        weight = item.get_weight(included, junction)
+        if total_weight + weight <= capacity:
+            backtrack(index + 1, next_included, total_reward + item.size, total_weight + weight)
+
+        # Option 2: exclude the item (only if it's not the must-include)
+        if item != must_include:
+            backtrack(index + 1, included, total_reward, total_weight)
+
+    # Start recursion
+    backtrack(0, set(), 0, 0)
+    return best_reward, best_combination
+
+
+"""
 def create_state_from_flow(flow_graph, traffic_lights):
     state = set()
 
@@ -231,7 +377,7 @@ def reset_graph_flow(flow_graph):
             for to_lane_index in range(len(list(to_lanes_neighbors))):
                 flow_graph[f"I{traffic_light_index}:{lane_index}"][f"O{traffic_light_index}:{lane_index}:{to_lane_index}"]["flow"] = 0
                 flow_graph[f"O{traffic_light_index}:{lane_index}:{to_lane_index}"]["T"]["flow"] = 0
-
+"""
 
 def sort_and_remove_duplicates_in_tuple(tup): # tup: tuple
     if not isinstance(tup, tuple):

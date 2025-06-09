@@ -256,7 +256,7 @@ class SettingsScreen:
             "Electric": {"value": self.electric_input.get_text()},
             "Gasoline": {"value": self.gasoline_input.get_text()},
             "Gas": {"value": self.gas_input.get_text()},
-            "Alg": {"value": self.algorithm_checklist.get_single_selection()}  # TODO: check if line doesnt cause bugs
+            # "Alg": {"value": self.algorithm_checklist.get_single_selection()}  # TODO: check if line doesnt cause bugs
         }
         # Clear the file by opening in 'w' mode and then write new data
         with open("settings.json", "w") as f:

@@ -1,11 +1,11 @@
 import time
+from typing import Set, List
 
 from classes.Entities.Point import Point
 from classes.Enums.State import State
 from classes.Nodes.Direction import Direction
 from classes.Nodes.TrafficLight import TrafficLight
-from screens.functions import create_state_from_flow, create_flow_graph, \
-    create_flow_with_traffic_light, reset_graph_flow
+from screens.functions import solve_custom_knapsack
 
 
 def check_junction_validity(directions):  # directions: tuple[Direction]
@@ -38,6 +38,7 @@ class Junction:
     def __init__(self, directions=None):  # directions: list[Direction]
         self.directions = []
         self.size = 0
+        self.traffic_lights = None
         self.available_states = None
         self.states_size = None
         self.active_state = None  # for states management
@@ -138,9 +139,11 @@ class Junction:
                         directions_group = directions_check_group | directions_group  # updates the group to be the union of both of them
             groups.add(frozenset(lanes_group))
 
-        for lanes_group in groups:
-            tl = TrafficLight(list(lanes_group))
+        for lanes_group_index in range(len(groups)):
+            tl = TrafficLight(str(lanes_group_index), list(list(groups)[lanes_group_index]))
             res.add(tl)
+
+        self.traffic_lights = res
         return res
 
     def create_states(self):
@@ -148,15 +151,34 @@ class Junction:
         if not self.size >= 2:
             return None
 
-        traffic_lights = self.get_traffic_lights()
-        flow_graph = create_flow_graph(traffic_lights)
+        traffic_lights = list(self.get_traffic_lights())
 
-        for traffic_light_index in range(len(traffic_lights)):
-            reset_graph_flow(flow_graph)
-            state = create_state_from_flow(create_flow_with_traffic_light(flow_graph, traffic_light_index), traffic_lights)
-            states.add(state)
+
+        for direction in self.directions:
+            state = []
+            for traffic_light in traffic_lights:
+                if traffic_light.get_direction() is direction:
+                    state.append(traffic_light)
+            states.add(tuple(state))
+        """
+        
+        for traffic_light in traffic_lights:
+            reward, state = solve_custom_knapsack(traffic_lights, traffic_light, self.size, self)
+            states.add(tuple(state))
+        """
 
         return tuple(states)
+
+
+    def set_directions_module_indexes(self, main_direction):
+        module_index = 0
+        for index in range(self.size):
+            self.directions[index].module_index = index
+            if main_direction is self.directions[index]:
+                module_index = index
+
+        for index in range(self.size):
+            self.directions[index].module_index = (self.directions[index].module_index - module_index) % self.size
 
     def set_states(self):
         self.available_states = self.create_states()
@@ -166,9 +188,8 @@ class Junction:
         self.active_index = active_index
         self.active_state = self.available_states[active_index]
 
-        for state in self.available_states:
-            for traffic_light in state:
-                traffic_light.set_state(State.RED)
+        for traffic_light in self.traffic_lights:
+            traffic_light.set_state(State.RED)
 
         for traffic_light in self.active_state:
             traffic_light.set_state(State.GREEN)
