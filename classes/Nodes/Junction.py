@@ -153,7 +153,7 @@ class Junction:
 
         traffic_lights = list(self.get_traffic_lights())
 
-
+        """
         for direction in self.directions:
             state = []
             for traffic_light in traffic_lights:
@@ -164,8 +164,7 @@ class Junction:
         
         for traffic_light in traffic_lights:
             reward, state = solve_custom_knapsack(traffic_lights, traffic_light, self.size, self)
-            states.add(tuple(state))
-        """
+        states.add(tuple(set(state)))
 
         return tuple(states)
 

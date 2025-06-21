@@ -216,7 +216,7 @@ class Vehicle(ABC):
                 print("[DEBUG] Reached final destination IN lane")
                 return
             try:
-                print(f"IN path len: {len(self.lanes_path)}")
+                # print(f"IN path len: {len(self.lanes_path)}")
                 # print(f"[DEBUG] IN-lane: states {self.lanes_path[self.__lanes_passed+1].cur_state} and the queue {self.__last_lane.vehicles_queue}")
                 if (self.lanes_path[self.__lanes_passed + 1].cur_state in [State.GREEN,
                                                                            State.GREEN_FLICKERING]) and self is \
@@ -237,7 +237,7 @@ class Vehicle(ABC):
             # print(f"[move] OUT-lane logic with __lanes_passed={self.__lanes_passed}")
             if self.__is_passed_junction():
                 try:
-                    print(f" OUT path len: {len(self.lanes_path)}")
+                    # print(f" OUT path len: {len(self.lanes_path)}")
                     # Check if next lane is the final destination
                     if self.__lanes_passed > len(self.lanes_path):
                         print("[DEBUG] Next lane is final destination")
@@ -298,7 +298,7 @@ class Vehicle(ABC):
             raise
 
         self.velocity += self.acceleration * dt
-        print(f"END path len: {len(self.lanes_path)}")
+        # print(f"END path len: {len(self.lanes_path)}")
 
     # print(f"[move] end of move: velocity now={self.velocity}")
     # if self.__last_distance_to_next_junction is None and self.__next_junction_point:

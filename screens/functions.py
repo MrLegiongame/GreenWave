@@ -1,9 +1,3 @@
-from typing import List, Set
-
-import networkx as nx
-from networkx.algorithms.flow import capacity_scaling, build_residual_network
-
-
 def are_there_possible_collisions(lanes):
     """
     Checks if there are possible collisions between the given in-lanes.
@@ -206,7 +200,6 @@ def print_residual_flows(residual_graph):
             reverse_capacity = reverse_edge.get("capacity", 0)
             flow = reverse_capacity  # reverse edge capacity = actual flow on original edge
             print(f"{u} → {v} | residual capacity: {capacity} | flow: {flow}")
-"""
 
 
 def create_state(main_traffic_light, traffic_lights, junction):
@@ -253,6 +246,7 @@ def create_state(main_traffic_light, traffic_lights, junction):
             state.add(traffic_light)
             directions_directing_indexes.extend(traffic_light.get_directions_directing_indexes())
     return tuple(state)
+"""
 
 
 def filter_greater_than_or_equal_to(tup, threshold, default_val):
@@ -261,7 +255,6 @@ def filter_greater_than_or_equal_to(tup, threshold, default_val):
         if x >= threshold:
             res.append(x)
     return tuple(res)
-
 
 
 def filter_less_than(tup, threshold, default_val):
@@ -273,7 +266,6 @@ def filter_less_than(tup, threshold, default_val):
 
 
 def get_blocked_traffic_lights_by_traffic_light(junction, blocking_traffic_light):
-    from classes.Nodes.TrafficLight import TrafficLight
     blocked_traffic_lights = set()
 
     main_direction = blocking_traffic_light.get_direction()
@@ -283,8 +275,7 @@ def get_blocked_traffic_lights_by_traffic_light(junction, blocking_traffic_light
     for traffic_light in junction.traffic_lights:
         if traffic_light is blocking_traffic_light:
             continue
-        elif blocking_traffic_light is traffic_light.get_direction():
-            blocked_traffic_lights.add(traffic_light)
+        elif main_direction is traffic_light.get_direction():
             continue
 
         traffic_light_is_valid = True
@@ -299,17 +290,15 @@ def get_blocked_traffic_lights_by_traffic_light(junction, blocking_traffic_light
                 if min_direction_index < to_lane_direction_index < max_direction_index:
                     continue
                 elif min_direction_index == to_lane_direction_index:
-                    if not blocking_traffic_light.get_minimum_to_lane_index_by_direction(
-                            to_lane.parent_direction) > to_lane.index_in_junction:
+                    if not (blocking_traffic_light.get_minimum_to_lane_index_by_direction(to_lane.parent_direction) > to_lane.index_in_junction):
                         traffic_light_is_valid = False
                 elif max_direction_index == to_lane_direction_index:
-                    if not blocking_traffic_light.get_maximum_to_lane_index_by_direction(
-                            to_lane.parent_direction) < to_lane.index_in_junction:
+                    if not (blocking_traffic_light.get_maximum_to_lane_index_by_direction(to_lane.parent_direction) < to_lane.index_in_junction):
                         traffic_light_is_valid = False
                 else:
                     traffic_light_is_valid = False
 
-        if traffic_light_is_valid:
+        if not traffic_light_is_valid:
             blocked_traffic_lights.add(traffic_light)
     return blocked_traffic_lights
 
@@ -322,8 +311,8 @@ def get_blocked_traffic_lights_by_traffic_lights(junction, blocking_traffic_ligh
 
 
 def solve_custom_knapsack(items, must_include, capacity: int, junction):
-    best_reward = float('-inf')
-    best_combination = []
+    best_reward = must_include.size
+    best_combination = [must_include]
 
     def backtrack(index: int, included, total_reward: int, total_weight: int):
         nonlocal best_reward, best_combination
@@ -338,18 +327,21 @@ def solve_custom_knapsack(items, must_include, capacity: int, junction):
 
         item = items[index]
 
-        # Option 1: include the item
-        next_included = included | {item}
-        weight = item.get_weight(included, junction)
-        if total_weight + weight <= capacity:
-            backtrack(index + 1, next_included, total_reward + item.size, total_weight + weight)
+        # must_include already in included
+        if item is must_include:
+            backtrack(index + 1, included, total_reward, total_weight)
+        else:
+            next_included = included | {item}
+            weight = item.get_weight(included, junction)
+            if total_weight + weight <= capacity:
+                backtrack(index + 1, next_included, total_reward + item.size, total_weight + weight)
 
-        # Option 2: exclude the item (only if it's not the must-include)
-        if item != must_include:
             backtrack(index + 1, included, total_reward, total_weight)
 
     # Start recursion
-    backtrack(0, set(), 0, 0)
+    init_included = set()
+    init_included.add(must_include)
+    backtrack(0, init_included, best_reward, must_include.get_weight(set(), junction))
     return best_reward, best_combination
 
 

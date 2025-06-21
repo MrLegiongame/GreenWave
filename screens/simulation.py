@@ -336,7 +336,7 @@ class SimulationScreen:
                         
                         if is_near_current or is_near_next:
                             nearby_vehicles.append((vehicle, distance_to_center))
-                            print(f"[DEBUG] Added vehicle to nearby_vehicles list")
+                            # print(f"[DEBUG] Added vehicle to nearby_vehicles list")
                     else:
                         print("[DEBUG] Vehicle has no road lane")
                 else:
@@ -344,7 +344,7 @@ class SimulationScreen:
             else:
                 print("[DEBUG] Vehicle has no cur_point")
 
-        print(f"\n[DEBUG] Found {len(nearby_vehicles)} nearby vehicles")
+        # print(f"\n[DEBUG] Found {len(nearby_vehicles)} nearby vehicles")
 
         # Draw lanes and vehicles
         for i in range(min(num_sides, len(directions))):  # Ensure we don't exceed the number of directions
