@@ -55,6 +55,8 @@ class SimulationScreen:
         self.is_stopped = False
         self.clock = pygame.time.Clock()
         self.dt = 0
+        self.simulation_time = 0  # Add simulation time tracking
+        self.all_vehicles_arrived = False  # Add flag for vehicle arrival
 
         root = tk.Tk()
         root.withdraw()
@@ -146,9 +148,27 @@ class SimulationScreen:
         #print(f"[DEBUG] update() called. is_stopped = {self.is_stopped}")
         self.dt = delta_time
         if not self.is_stopped:
-            #print("[UPDATE] Simulation running.")
+            # Update simulation time
+            self.simulation_time += delta_time
+            
+            # Check if all vehicles have arrived
+            all_arrived = True
             for vehicle in self.graph.vehicles:
                 vehicle.move(delta_time)
+                if not vehicle.has_arrived():  # You'll need to implement this method in Vehicle class
+                    all_arrived = False
+            
+            if all_arrived and not self.all_vehicles_arrived:
+                self.all_vehicles_arrived = True
+                # Transition to statistics screen
+                from screens.statistics import StatisticsScreen
+                self.next_screen = StatisticsScreen(
+                    self.screen,
+                    self.ui_manager,
+                    len(self.graph.vehicles),
+                    self.simulation_time,
+                    self.vehicle_stats  # Pass vehicle statistics
+                )
         else:
             print("[UPDATE] Simulation paused.")
 
