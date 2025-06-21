@@ -193,6 +193,7 @@ class Vehicle(ABC):
             try:
                 self.__last_lane = self.lanes_path[self.__lanes_passed]
                 print(f"Setup path len: {len(self.lanes_path)}")
+                self.__lanes_passed += 1
                 # print(f"[setup_move] Set last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
             except Exception as e:
                 print(f"[setup_move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
@@ -219,10 +220,8 @@ class Vehicle(ABC):
             try:
                 # print(f"IN path len: {len(self.lanes_path)}")
                 # print(f"[DEBUG] IN-lane: states {self.lanes_path[self.__lanes_passed+1].cur_state} and the queue {self.__last_lane.vehicles_queue}")
-                if (self.lanes_path[self.__lanes_passed + 1].cur_state in [State.GREEN,
-                                                                           State.GREEN_FLICKERING]) and self is \
-                        self.__last_lane.vehicles_queue[
-                            0]:  # if junction is available for crossing and the vehicle is the first in the lane's queue
+                if (self.__last_lane.cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self is \
+                        self.__last_lane.vehicles_queue[0]:  # if junction is available for crossing and the vehicle is the first in the lane's queue
                     self.__last_lane.pop_head_from_queue()
                     self.__last_lane = self.lanes_path[self.__lanes_passed]
                     # print(f"[move] IN-lane: Setting last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")

@@ -48,6 +48,7 @@ class SimulationScreen:
         self.alg = alg
         self.algorithm = None
         self.algorithm_thread = None
+        self.stop_event = threading.Event()  # Flag to tell the thread to stop
         self.next_screen = None
         self.graph = None
         self.current_junction = None
@@ -159,6 +160,10 @@ class SimulationScreen:
                     all_arrived = False
             
             if all_arrived and not self.all_vehicles_arrived:
+                self.algorithm.terminate_flag = True
+                self.stop_event.set()
+                self.algorithm_thread.join()
+
                 self.all_vehicles_arrived = True
                 # Transition to statistics screen
                 from screens.statistics import StatisticsScreen

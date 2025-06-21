@@ -59,11 +59,11 @@ while running:
         elif next_screen == "main_menu":
             current_screen = MainMenuScreen(screen)
         elif next_screen == "simulation":
-            current_screen = SimulationScreen(screen, ui_manager)
-        elif isinstance(next_screen, StatisticsScreen):
-            current_screen = next_screen
             chosen_alg = Alg.FIXED_TIMING_CYCLE  # TODO: change to get from settings
             current_screen = SimulationScreen(screen, ui_manager, True, Alg.FIXED_TIMING_CYCLE)
+            # current_screen = SimulationScreen(screen, ui_manager)
+        elif isinstance(next_screen, StatisticsScreen):
+            current_screen = next_screen
             """ TODO: make something like this in simulation.py
             simulation_to_compare = []
             for alg in Alg:
