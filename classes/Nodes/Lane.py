@@ -4,7 +4,7 @@ from classes.Edges.RoadLane import RoadLane
 from classes.Entities.Vehicles.Vehicle import Vehicle
 from classes.Enums.Color import Color
 from screens.functions import sort_and_remove_duplicates_in_tuple
-from classes.Enums.State import State
+from classes.Enums.State import State, STATE_SIZE
 from classes.Enums.LaneFacing import LaneFacing
 import bisect
 
@@ -68,6 +68,9 @@ class Lane:
     def set_cur_state(self, cur_state):
         if isinstance(cur_state, State):
             self.cur_state = cur_state
+
+    def update_state(self):
+        self.cur_state = State((self.cur_state.value + 1) % STATE_SIZE)
 
     def add_to_lane(self, to_lane):  # lane: Lane
         if isinstance(to_lane, Lane):

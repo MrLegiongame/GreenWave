@@ -1,6 +1,8 @@
 import json
 import math
 import random
+import threading
+
 import networkx as nx
 import pygame
 import sys
@@ -10,6 +12,7 @@ import time
 import os
 
 from classes.Edges.Road import Road
+from classes.Entities.Algorithm import Algorithm
 from classes.Entities.Graph import Graph, find_out_lane_by_index_in_junction
 from classes.Entities.Point import Point
 from classes.Entities.Vehicles.Vehicle import Vehicle, get_image_list
@@ -38,11 +41,14 @@ def get_map_from_settings():
 
 
 class SimulationScreen:
-    def __init__(self, screen, ui_manager):
+    def __init__(self, screen, ui_manager, is_displayed, alg):
         self.screen = screen
         self.ui_manager = ui_manager
+        self.is_displayed = is_displayed
+        self.alg = alg
+        self.algorithm = None
+        self.algorithm_thread = None
         self.next_screen = None
-        # self.sim = Simulation(None)
         self.graph = None
         self.current_junction = None
         self.running = True
@@ -52,21 +58,22 @@ class SimulationScreen:
 
         root = tk.Tk()
         root.withdraw()
-        self.WINDOW_WIDTH, self.WINDOW_HEIGHT = self.screen.get_size()
-        self.MAIN_WIDTH = (2 * self.WINDOW_WIDTH) // 3
-        self.MAIN_HEIGHT = (9 * self.WINDOW_HEIGHT) // 10
-        self.SIDE_WIDTH = self.WINDOW_WIDTH - self.MAIN_WIDTH
-        self.SIDE_HEIGHT = self.WINDOW_HEIGHT // 2
-        self.CONTROL_BAR_HEIGHT = self.WINDOW_HEIGHT - self.MAIN_HEIGHT
-        self.DIVIDER_WIDTH = 2
-        self.BUTTON_CENTER = Point((self.MAIN_WIDTH // 2), self.MAIN_HEIGHT + (self.CONTROL_BAR_HEIGHT // 2))
-        self.BUTTON_RADIUS = 25
-        self.FPS = 60
+        if None is not self.screen:
+            self.WINDOW_WIDTH, self.WINDOW_HEIGHT = self.screen.get_size()
+            self.MAIN_WIDTH = (2 * self.WINDOW_WIDTH) // 3
+            self.MAIN_HEIGHT = (9 * self.WINDOW_HEIGHT) // 10
+            self.SIDE_WIDTH = self.WINDOW_WIDTH - self.MAIN_WIDTH
+            self.SIDE_HEIGHT = self.WINDOW_HEIGHT // 2
+            self.CONTROL_BAR_HEIGHT = self.WINDOW_HEIGHT - self.MAIN_HEIGHT
+            self.DIVIDER_WIDTH = 2
+            self.BUTTON_CENTER = Point((self.MAIN_WIDTH // 2), self.MAIN_HEIGHT + (self.CONTROL_BAR_HEIGHT // 2))
+            self.BUTTON_RADIUS = 25
+            self.FPS = 60
 
-        self.SIMULATION_SCREEN = pygame.Rect(0, 0, self.MAIN_WIDTH, self.MAIN_HEIGHT)
-        self.CONTROL_BAR_SCREEN = pygame.Rect(0, self.MAIN_HEIGHT, self.MAIN_WIDTH, self.CONTROL_BAR_HEIGHT)
-        self.JUNCTION_SCREEN = pygame.Rect(self.MAIN_WIDTH, 0, self.SIDE_WIDTH, self.SIDE_HEIGHT)
-        self.VEHICLE_SCREEN = pygame.Rect(self.MAIN_WIDTH, self.SIDE_HEIGHT, self.SIDE_WIDTH, self.SIDE_HEIGHT)
+            self.SIMULATION_SCREEN = pygame.Rect(0, 0, self.MAIN_WIDTH, self.MAIN_HEIGHT)
+            self.CONTROL_BAR_SCREEN = pygame.Rect(0, self.MAIN_HEIGHT, self.MAIN_WIDTH, self.CONTROL_BAR_HEIGHT)
+            self.JUNCTION_SCREEN = pygame.Rect(self.MAIN_WIDTH, 0, self.SIDE_WIDTH, self.SIDE_HEIGHT)
+            self.VEHICLE_SCREEN = pygame.Rect(self.MAIN_WIDTH, self.SIDE_HEIGHT, self.SIDE_WIDTH, self.SIDE_HEIGHT)
 
         self.EDGES_DENSITY = random.choice((EdgeDensity.LOW, EdgeDensity.MEDIUM, EdgeDensity.HIGH))
         self.NUM_NODES = 25
@@ -146,6 +153,9 @@ class SimulationScreen:
             print("[UPDATE] Simulation paused.")
 
     def draw(self):
+        if not self.is_displayed:
+            return
+
         #print("[DRAW] Redrawing screen...")
         self.screen.fill(Color.WHITE.value)
 
@@ -326,7 +336,7 @@ class SimulationScreen:
                         
                         if is_near_current or is_near_next:
                             nearby_vehicles.append((vehicle, distance_to_center))
-                            print(f"[DEBUG] Added vehicle to nearby_vehicles list")
+                            # print(f"[DEBUG] Added vehicle to nearby_vehicles list")
                     else:
                         print("[DEBUG] Vehicle has no road lane")
                 else:
@@ -334,7 +344,7 @@ class SimulationScreen:
             else:
                 print("[DEBUG] Vehicle has no cur_point")
 
-        print(f"\n[DEBUG] Found {len(nearby_vehicles)} nearby vehicles")
+        # print(f"\n[DEBUG] Found {len(nearby_vehicles)} nearby vehicles")
 
         # Draw lanes and vehicles
         for i in range(min(num_sides, len(directions))):  # Ensure we don't exceed the number of directions
@@ -539,6 +549,20 @@ class SimulationScreen:
         for vehicle in self.graph.vehicles:
             vehicle.set_path(self.graph)
 
+        self.algorithm = Algorithm(self.alg, self.graph.nodes)
+        self.algorithm_thread = threading.Thread(target=self.algorithm.run)
+
+        # Start thread
+        self.algorithm_thread.start()
+
+        # TODO: start all different algorithms threads here by copying the graph (for statistics)
+        # TODO: terminate thread when simulation is finished
+        """
+        self.algorithm.terminate_flag = True
+        self.algorithm_thread.join()
+        """
+
+    """
     def set_random_graph(self):
         class Direction_Matrix_Row:
             def __init__(self, junction, size):
@@ -590,9 +614,11 @@ class SimulationScreen:
             vehicle.set_path(self.graph)
 
         return self.graph
-
+    """
 
     def force_directed_layout(self, nodes, edges):
+        if not self.is_displayed:
+            return
         G = nx.Graph()
         node_id_map = {node: idx for idx, node in enumerate(nodes)}
         id_node_map = {idx: node for node, idx in node_id_map.items()}
@@ -607,7 +633,6 @@ class SimulationScreen:
         for node_id, (x, y) in pos.items():
             id_node_map[node_id].point = Point(int(padding + (x + 1) / 2 * area_width),
                                                int(padding + (y + 1) / 2 * area_height))
-
 
     def load_vehicle_data_from_json(self, file_path="settings.json"):
         try:
@@ -633,7 +658,3 @@ class SimulationScreen:
         energies = {"Electric": electric, "Gasoline": gasoline, "Gas": gas}
         dominant = max(energies.items(), key=lambda x: x[1])[0]
         return dominant
-
-    class Color(Enum):
-        RED = (255, 0, 0)
-        LIGHT_BLUE = (100, 180, 255)
