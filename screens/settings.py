@@ -129,8 +129,8 @@ class SettingsScreen:
         )
 
         self.algorithm_checklist = pygame_gui.elements.UISelectionList(
-            pygame.Rect((700, 50), (150, 120)),
-            ["alg1", "alg2", "alg3", "alg4"],
+            pygame.Rect((700, 50), (150, 120)),  # TODO: fix size to fit amount of algorithms
+            ["alg1", "alg2", "alg3", "alg4"],  # TODO: change to the actual possible algorithms' names
             manager=self.ui_manager,
             allow_multi_select=True
         )
@@ -261,7 +261,8 @@ class SettingsScreen:
             "Trucks amount": {"value": self.truck_input.get_text()},
             "Electric": {"value": self.electric_input.get_text()},
             "Gasoline": {"value": self.gasoline_input.get_text()},
-            "Gas": {"value": self.gas_input.get_text()}
+            "Gas": {"value": self.gas_input.get_text()},
+            # "Alg": {"value": self.algorithm_checklist.get_single_selection()}  # TODO: check if line doesnt cause bugs
         }
         # Clear the file by opening in 'w' mode and then write new data
         with open("settings.json", "w") as f:
@@ -295,6 +296,7 @@ class SettingsScreen:
                 self.electric_input.set_text(data.get("Electric", {}).get("value", ""))
                 self.gasoline_input.set_text(data.get("Gasoline", {}).get("value", ""))
                 self.gas_input.set_text(data.get("Gas", {}).get("value", ""))
+                # TODO: set default alg from json file
                 print(f"[DEBUG] Loaded settings from {file_path}")
         except Exception as e:
             print(f"[ERROR] Failed to load JSON: {e}")

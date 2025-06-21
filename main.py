@@ -1,6 +1,8 @@
 import pygame
 import pygame_gui
 import os
+
+from classes.Enums.Alg import Alg
 from screens.main_menu import MainMenuScreen
 from screens.settings import SettingsScreen
 from screens.simulation import SimulationScreen
@@ -60,4 +62,12 @@ while running:
             current_screen = SimulationScreen(screen, ui_manager)
         elif isinstance(next_screen, StatisticsScreen):
             current_screen = next_screen
+            chosen_alg = Alg.FIXED_TIMING_CYCLE  # TODO: change to get from settings
+            current_screen = SimulationScreen(screen, ui_manager, True, Alg.FIXED_TIMING_CYCLE)
+            """ TODO: make something like this in simulation.py
+            simulation_to_compare = []
+            for alg in Alg:
+                if alg != chosen_alg:
+                    simulation_to_compare.append(SimulationScreen(None, None, False, alg))  # TODO: check if line doesnt cause bugs (because of None as parameters)
+            """
 

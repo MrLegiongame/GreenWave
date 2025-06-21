@@ -1,6 +1,9 @@
+from typing import Set
+
 from classes.Nodes.Lane import Lane
 from classes.Enums.State import State, STATE_SIZE
-from screens.functions import are_there_possible_collisions
+from screens.functions import are_there_possible_collisions, get_blocked_traffic_lights_by_traffic_lights, \
+    get_blocked_traffic_lights_by_traffic_light
 
 
 def check_traffic_light_validity(lanes):  # lanes: list[Lane]
@@ -24,7 +27,8 @@ def check_traffic_light_validity(lanes):  # lanes: list[Lane]
 
 class TrafficLight:
 
-    def __init__(self, lanes=None):
+    def __init__(self, key, lanes=None):
+        self.key = key
         self.lanes = None
         self.size = None
         self.current_state = None
@@ -43,14 +47,65 @@ class TrafficLight:
         return True
 
     def set_state(self, state):
-        if isinstance(state, State):
-            self.current_state = state
-            for lane in self.lanes:
-                lane.cur_state = self.current_state
-            return True
-        return False
-
-    def change_state(self):
-        self.current_state = State.value((self.current_state.value + 1) % STATE_SIZE)
+        if not isinstance(state, State):
+            return False
+        self.current_state = state
         for lane in self.lanes:
-            lane.cur_state = self.current_state
+            lane.set_cur_state(self.current_state)
+        return True
+
+    def update_state(self):
+        self.current_state = State((self.current_state.value + 1) % STATE_SIZE)
+        for lane in self.lanes:
+            lane.update_state()
+
+    def get_direction(self):
+        if None is self.lanes:
+            return None
+        return self.lanes[0].parent_direction
+
+    def get_directions_directing_indexes(self):
+        directions_directing_indexes = set()
+        for lane in self.lanes:
+            for to_lane in lane.to_lanes:
+                directions_directing_indexes.add(to_lane.parent_direction.module_index)
+        return list(directions_directing_indexes)
+
+    def get_minimum_to_lane_index_by_direction(self, direction):
+        indexes = []
+        for lane in self.lanes:
+            for to_lane in lane.to_lanes:
+                if to_lane.parent_direction is direction:
+                    indexes.append(to_lane.index_in_junction)
+        if indexes:
+            return min(indexes)
+        return float('inf')
+
+    def get_maximum_to_lane_index_by_direction(self, direction):
+        indexes = []
+        for lane in self.lanes:
+            for to_lane in lane.to_lanes:
+                if to_lane.parent_direction is direction:
+                    indexes.append(to_lane.index_in_junction)
+        if indexes:
+            return max(indexes)
+        return -1
+
+    def get_weight(self, included: Set['TrafficLight'], junction) -> int:
+        blocked_traffic_lights_by_self = get_blocked_traffic_lights_by_traffic_light(junction, self)
+        blocked_traffic_lights_by_included = get_blocked_traffic_lights_by_traffic_lights(junction, included)
+
+        blocked_traffic_lights_for_weight = blocked_traffic_lights_by_self - blocked_traffic_lights_by_included
+        weight = 0
+        for traffic_light in blocked_traffic_lights_for_weight:
+            weight += traffic_light.size
+        return weight
+
+    def __repr__(self):
+        return self.key
+
+    def __eq__(self, other):
+        return isinstance(other, TrafficLight) and self.key == other.key
+
+    def __hash__(self):
+        return hash(self.key)
