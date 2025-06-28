@@ -23,6 +23,7 @@ from classes.Enums.LaneFacing import LaneFacing
 from classes.Nodes.Direction import Direction
 from classes.Nodes.Junction import Junction
 from classes.Nodes.Lane import Lane
+from classes.Enums.State import State
 
 
 def get_map_from_settings():
@@ -48,7 +49,6 @@ class SimulationScreen:
         self.alg = alg
         self.algorithm = None
         self.algorithm_thread = None
-        self.stop_event = threading.Event()  # Flag to tell the thread to stop
         self.next_screen = None
         self.graph = None
         self.current_junction = None
@@ -159,12 +159,13 @@ class SimulationScreen:
                 if not vehicle.has_arrived():  # You'll need to implement this method in Vehicle class
                     all_arrived = False
             
-            if all_arrived and not self.all_vehicles_arrived:
-                self.algorithm.terminate_flag = True
-                self.stop_event.set()
-                self.algorithm_thread.join()
+            # Remove vehicles that have arrived
+            #self.graph.vehicles = [v for v in self.graph.vehicles if not (hasattr(v, 'has_arrived') and v.has_arrived())]
 
+            if all_arrived and not self.all_vehicles_arrived:
                 self.all_vehicles_arrived = True
+                # Collect consumption statistics
+                consumption_stats = self.collect_consumption_statistics()
                 # Transition to statistics screen
                 from screens.statistics import StatisticsScreen
                 self.next_screen = StatisticsScreen(
@@ -172,7 +173,8 @@ class SimulationScreen:
                     self.ui_manager,
                     len(self.graph.vehicles),
                     self.simulation_time,
-                    self.vehicle_stats  # Pass vehicle statistics
+                    self.vehicle_stats,  # Pass vehicle statistics
+                    consumption_stats    # Pass consumption statistics
                 )
         else:
             print("[UPDATE] Simulation paused.")
@@ -233,9 +235,7 @@ class SimulationScreen:
         if not self.graph or not self.graph.vehicles:
             print("[DRAW] No vehicle data to display.")
             return
-
-        #print(f"[DEBUG] Found {len(self.graph.vehicles)} vehicles in the graph.")
-
+        
         font = pygame.font.SysFont("Arial", 18)
         x_start = self.MAIN_WIDTH + 20
         y_start = self.SIDE_HEIGHT + 20
@@ -260,6 +260,10 @@ class SimulationScreen:
             "Truck": {"Gas": 0, "Gasoline": 0, "Electric": 0},
         }
 
+        # Count arrived vehicles (all types)
+        total_vehicles = 0
+        arrived_vehicles = 0
+
         for v in self.graph.vehicles:
             v_type = getattr(v, "vehicle_type", "Unknown")
             energy = getattr(v, "energy_type", "Unknown")
@@ -268,6 +272,10 @@ class SimulationScreen:
                 stats[v_type][energy] += 1
             else:
                 print(f"[WARNING] Unexpected vehicle type or energy: {v_type}, {energy}")
+
+            total_vehicles += 1
+            if hasattr(v, "has_arrived") and v.has_arrived():
+                arrived_vehicles += 1
 
         for v_type, counts in stats.items():
             row = [v_type, str(counts["Gas"]), str(counts["Gasoline"]), str(counts["Electric"])]
@@ -278,6 +286,12 @@ class SimulationScreen:
                 text = font.render(value, True, Color.WHITE.value)
                 self.screen.blit(text, (rect.x + 5, rect.y + 5))
             y += line_height
+
+        # Draw arrived vehicles counter under the table
+        counter_text = f"Arrived: {arrived_vehicles} / {total_vehicles} vehicles"
+        counter_font = pygame.font.SysFont("Arial", 18, bold=True)
+        counter_surface = counter_font.render(counter_text, True, Color.WHITE.value)
+        self.screen.blit(counter_surface, (x_start, y + 10))
 
     def draw_arrow(self, surface, color, start, end, width=2, head_size=5):
         # Draw the shaft
@@ -395,6 +409,8 @@ class SimulationScreen:
 
                 # Draw vehicles on this lane
                 for vehicle, distance in nearby_vehicles:
+                    if hasattr(vehicle, 'has_arrived') and vehicle.has_arrived():
+                        continue  # Skip drawing if vehicle reached destination
                     if hasattr(vehicle, 'cur_road_lane') and vehicle.cur_road_lane:
                         # For OUT lanes, check if this is the source lane
                         if vehicle.get_cur_lane() == lane:
@@ -414,14 +430,16 @@ class SimulationScreen:
                                 total_distance = from_node.get_distance_from_point(to_node)
                                 progress = current_distance / total_distance if total_distance > 0 else 0
 
-                                # Only draw if progress is less than 0.95
+                                # Only draw if progress is less than 0.95 or light is green
                                 if progress < 0.95:
-                                    # Calculate position on the lane (for OUT lanes, move from start to end)
                                     lane_x = start_x + (end_x - start_x) * progress
                                     lane_y = start_y + (end_y - start_y) * progress
-                                    #print(f"[DEBUG] OUT lane vehicle - current_distance: {current_distance}, total_distance: {total_distance}, progress: {progress}")
-                                    # Draw vehicle
                                     pygame.draw.circle(surface, Color.RED.value, (int(lane_x), int(lane_y)), 3)
+                                elif progress >= 0.95 and (lane.get_lane_color() == Color.YELLOW or lane.get_lane_color() == Color.RED or lane.get_lane_color() == Color.ORANGE):
+                                    print(f"[DEBUG] Progress is {progress} with color {lane.get_lane_color()}")
+                                    lane_x = start_x + (end_x - start_x) * 0.95
+                                    lane_y = start_y + (end_y - start_y) * 0.95
+                                    pygame.draw.circle(surface, Color.SKY_BLUE.value, (int(lane_x), int(lane_y)), 3)
 
             # Draw IN lanes
             for lane_index, lane in enumerate(direction.in_lanes):
@@ -434,6 +452,8 @@ class SimulationScreen:
 
                 # Draw vehicles on this lane
                 for vehicle, distance in nearby_vehicles:
+                    if hasattr(vehicle, 'has_arrived') and vehicle.has_arrived():
+                        continue  # Skip drawing if vehicle reached destination
                     if hasattr(vehicle, 'cur_road_lane') and vehicle.get_cur_lane():
                         # For IN lanes, check if this is the destination lane
                        # print(f"[DEBUG] Checked lane: {lane} for vehicle: {vehicle.get_cur_lane()}")
@@ -454,14 +474,24 @@ class SimulationScreen:
                                 total_distance = from_node.get_distance_from_point(to_node)
                                 progress = current_distance / total_distance if total_distance > 0 else 0
 
-                                # Only draw if progress is less than 0.95
-                                if progress < 0.95:
-                                    # Calculate position on the lane (for IN lanes, move from start to end)
+                                # Check traffic light state for this lane
+                                light_state = getattr(lane, 'cur_state', None)
+                                should_wait = light_state not in [State.GREEN, State.GREEN_FLICKERING]
+
+                                # Only draw if progress is less than 0.95 or light is green
+                                if progress < 0.95 and progress != 0:
                                     lane_x = start_x + (end_x - start_x) * progress
                                     lane_y = start_y + (end_y - start_y) * progress
-                                    #print(f"[DEBUG] IN lane vehicle - current_distance: {current_distance}, total_distance: {total_distance}, progress: {progress}")
-                                    # Draw vehicle
                                     pygame.draw.circle(surface, Color.RED.value, (int(lane_x), int(lane_y)), 3)
+                                elif (progress >= 0.95 or progress == 0) and (lane.get_lane_color() == Color.YELLOW or lane.get_lane_color() == Color.RED or lane.get_lane_color() == Color.ORANGE):
+                                    print(f"[DEBUG] Progress is {progress} with color {lane.get_lane_color()}")
+                                    vehicle.need_to_stop = True
+                                    lane_x = start_x + (end_x - start_x) * 0.95
+                                    lane_y = start_y + (end_y - start_y) * 0.95
+                                    pygame.draw.circle(surface, Color.SKY_BLUE.value, (int(lane_x), int(lane_y)), 3)
+                                else:
+                                    print(f"[DEBUG] need_to_stop Flase with color {lane.get_lane_color()}")
+                                    vehicle.need_to_stop = False
 
     def set_graph(self, json_data, dt):
         directions_in_map = []  # sorted by indexes in map
@@ -683,3 +713,57 @@ class SimulationScreen:
         energies = {"Electric": electric, "Gasoline": gasoline, "Gas": gas}
         dominant = max(energies.items(), key=lambda x: x[1])[0]
         return dominant
+
+    def collect_consumption_statistics(self):
+        """
+        Collect consumption and pollution statistics from all vehicles
+        """
+        total_energy_consumed = 0
+        total_pollution = 0
+        total_distance = 0
+        total_stops = 0
+        total_acceleration_events = 0
+        total_idle_time = 0
+        
+        # Energy type breakdown
+        energy_consumption = {"Electric": 0, "Gasoline": 0, "Gas": 0}
+        energy_pollution = {"Electric": 0, "Gasoline": 0, "Gas": 0}
+        
+        # Vehicle type breakdown
+        vehicle_consumption = {"Car": 0, "Bus": 0, "Truck": 0}
+        vehicle_pollution = {"Car": 0, "Bus": 0, "Truck": 0}
+        
+        for vehicle in self.graph.vehicles:
+            # Get consumption summary for this vehicle
+            summary = vehicle.get_consumption_summary()
+            
+            # Add to totals
+            total_energy_consumed += summary["total_energy_consumed"]
+            total_pollution += summary["total_pollution"]
+            total_distance += summary["total_distance"]
+            total_stops += summary["stops_count"]
+            total_acceleration_events += summary["acceleration_events"]
+            total_idle_time += summary["idle_time"]
+            
+            # Add to energy type breakdown
+            energy_consumption[vehicle.energy_type] += summary["total_energy_consumed"]
+            energy_pollution[vehicle.energy_type] += summary["total_pollution"]
+            
+            # Add to vehicle type breakdown
+            vehicle_consumption[vehicle.vehicle_type] += summary["total_energy_consumed"]
+            vehicle_pollution[vehicle.vehicle_type] += summary["total_pollution"]
+        
+        return {
+            "total_energy_consumed": total_energy_consumed,
+            "total_pollution": total_pollution,
+            "total_distance": total_distance,
+            "total_stops": total_stops,
+            "total_acceleration_events": total_acceleration_events,
+            "total_idle_time": total_idle_time,
+            "energy_consumption": energy_consumption,
+            "energy_pollution": energy_pollution,
+            "vehicle_consumption": vehicle_consumption,
+            "vehicle_pollution": vehicle_pollution,
+            "average_energy_efficiency": total_energy_consumed / total_distance if total_distance > 0 else 0,
+            "average_pollution_efficiency": total_pollution / total_distance if total_distance > 0 else 0
+        }

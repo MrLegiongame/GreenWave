@@ -1,3 +1,5 @@
+import time
+
 from itertools import count
 
 from classes.Edges.RoadLane import RoadLane
@@ -87,12 +89,32 @@ class Lane:
 
     def add_to_queue(self, vehicle):
         if isinstance(vehicle, Vehicle):
-            self.vehicles_queue.append(vehicle)
+            # Check if vehicle is already in queue to prevent duplicates
+            if vehicle not in self.vehicles_queue:
+                self.vehicles_queue.append(vehicle)
+                timestamp = time.strftime("%H:%M:%S", time.localtime())
+                print(f"[{timestamp}] Lane {self.index_in_map}: Vehicle {vehicle.vehicle_id} added to queue. Queue length: {len(self.vehicles_queue)}")
+            else:
+                timestamp = time.strftime("%H:%M:%S", time.localtime())
+                print(f"[{timestamp}] Lane {self.index_in_map}: Vehicle {vehicle.vehicle_id} already in queue. Queue length: {len(self.vehicles_queue)}")
 
     def pop_head_from_queue(self):
-        if None is not self.vehicles_queue:
-            return self.vehicles_queue.pop(0)
+        if self.vehicles_queue and len(self.vehicles_queue) > 0:
+            vehicle = self.vehicles_queue.pop(0)
+            timestamp = time.strftime("%H:%M:%S", time.localtime())
+            print(f"[{timestamp}] Lane {self.index_in_map}: Vehicle {vehicle.vehicle_id} removed from queue. Queue length: {len(self.vehicles_queue)}")
+            return vehicle
         return False
+
+    def is_vehicle_in_queue(self, vehicle):
+        """Check if a vehicle is in the queue"""
+        return vehicle in self.vehicles_queue
+
+    def get_vehicle_queue_position(self, vehicle):
+        """Get the position of a vehicle in the queue (0-based index)"""
+        if vehicle in self.vehicles_queue:
+            return self.vehicles_queue.index(vehicle)
+        return -1
 
     def get_lane_color(self):
         match self.cur_state:
