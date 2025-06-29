@@ -10,12 +10,14 @@ import tkinter as tk
 from enum import Enum
 import time
 import os
+import copy
 
 from classes.Edges.Road import Road
 from classes.Entities.Algorithm import Algorithm
 from classes.Entities.Graph import Graph, find_out_lane_by_index_in_junction
 from classes.Entities.Point import Point
 from classes.Entities.Vehicles.Vehicle import Vehicle, get_image_list
+from classes.Enums.Alg import Alg, ALGORITHM_SIZE
 from classes.Enums.Color import Color
 from classes.Entities.Simulation import Simulation
 from classes.Enums.EdgeDensity import EdgeDensity
@@ -42,13 +44,20 @@ def get_map_from_settings():
 
 
 class SimulationScreen:
-    def __init__(self, screen, ui_manager, is_displayed, alg):
+    def __init__(self, screen, ui_manager, display_alg, compare_alg):
         self.screen = screen
         self.ui_manager = ui_manager
-        self.is_displayed = is_displayed
-        self.alg = alg
+        self.display_alg = display_alg
+        self.compare_alg = compare_alg
         self.algorithm = None
         self.algorithm_thread = None
+
+        self.stop_event = threading.Event()  # Flag to tell the thread to stop
+
+        self.algorithm_to_compare = None
+        self.algorithm_to_compare_thread = None
+        self.graph_for_algorithm_to_compare = None
+
         self.next_screen = None
         self.graph = None
         self.current_junction = None
@@ -139,6 +148,38 @@ class SimulationScreen:
                     #     print(f"[EVENT] Vehicle selected at {vehicle.cur_point}")
                     #     return
 
+    def loading_screen(self):
+        pygame.font.init()
+        clock = pygame.time.Clock()
+
+        center = (self.WINDOW_WIDTH // 2, self.WINDOW_HEIGHT // 2)
+        radius = 30
+        num_dots = 12
+        angle = 0
+        speed = 0.15  # rotation speed
+
+        running = True
+        while self.all_vehicles_arrived and running:
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+            rect = pygame.Rect(center[0] - 250, center[1] - 150, center[0] + 250, center[1] + 150)
+            pygame.draw.rect(self.screen, Color.LIGHT_GREY.value, rect)
+
+            # draw spinner
+            for i in range(num_dots):
+                a = angle + i * (2 * math.pi / num_dots)
+                x = int(center[0] + radius * math.cos(a))
+                y = int(center[1] + radius * math.sin(a))
+                shade = 255 - int((i / num_dots) * 200)
+                pygame.draw.circle(self.screen, (shade, shade, shade), (x, y), 5)
+
+            angle += speed
+            pygame.display.flip()
+            clock.tick(60)
+
     def is_cursor_in_circle(self, center_point, radius):
         mouse_pos = pygame.mouse.get_pos()
         dx = mouse_pos[0] - center_point.x
@@ -159,13 +200,23 @@ class SimulationScreen:
                 if not vehicle.has_arrived():  # You'll need to implement this method in Vehicle class
                     all_arrived = False
             
-            # Remove vehicles that have arrived
-            #self.graph.vehicles = [v for v in self.graph.vehicles if not (hasattr(v, 'has_arrived') and v.has_arrived())]
-
             if all_arrived and not self.all_vehicles_arrived:
+                self.algorithm.terminate_flag = True
+                self.algorithm_to_compare.terminate_flag = True
+
+                loading_thread = threading.Thread(target=self.loading_screen)
+                print("starting loading thread")  # TODO: delete later - for test purposes only
+                loading_thread.start()
+
+                self.stop_event.set()
+                self.algorithm_thread.join()
+                self.algorithm_to_compare_thread.join()
                 self.all_vehicles_arrived = True
-                # Collect consumption statistics
-                consumption_stats = self.collect_consumption_statistics()
+
+                time.sleep(2)  # TODO: delete later - for test purposes only
+                print("ending loading thread")  # TODO: delete later - for test purposes only
+                loading_thread.join()
+
                 # Transition to statistics screen
                 from screens.statistics import StatisticsScreen
                 self.next_screen = StatisticsScreen(
@@ -180,8 +231,6 @@ class SimulationScreen:
             print("[UPDATE] Simulation paused.")
 
     def draw(self):
-        if not self.is_displayed:
-            return
 
         #print("[DRAW] Redrawing screen...")
         self.screen.fill(Color.WHITE.value)
@@ -601,21 +650,24 @@ class SimulationScreen:
 
         self.graph = Graph(nodes, edges, vehicles, dt)
 
+        # --- Set paths --- #
+
         for vehicle in self.graph.vehicles:
             vehicle.set_path(self.graph)
 
-        self.algorithm = Algorithm(self.alg, self.graph.nodes)
+        # --- Set algorithms --- #
+
+        self.graph_for_algorithm_to_compare = copy.deepcopy(self.graph)
+
+        self.algorithm = Algorithm(self.display_alg, self.graph.nodes)
         self.algorithm_thread = threading.Thread(target=self.algorithm.run)
 
-        # Start thread
-        self.algorithm_thread.start()
+        self.algorithm_to_compare = Algorithm(self.compare_alg, self.graph_for_algorithm_to_compare.nodes)
+        self.algorithm_to_compare_thread = threading.Thread(target=self.algorithm_to_compare.run)
 
-        # TODO: start all different algorithms threads here by copying the graph (for statistics)
-        # TODO: terminate thread when simulation is finished
-        """
-        self.algorithm.terminate_flag = True
-        self.algorithm_thread.join()
-        """
+        # Start threads
+        self.algorithm_thread.start()
+        self.algorithm_to_compare_thread.start()
 
     """
     def set_random_graph(self):
@@ -672,8 +724,6 @@ class SimulationScreen:
     """
 
     def force_directed_layout(self, nodes, edges):
-        if not self.is_displayed:
-            return
         G = nx.Graph()
         node_id_map = {node: idx for idx, node in enumerate(nodes)}
         id_node_map = {idx: node for node, idx in node_id_map.items()}
