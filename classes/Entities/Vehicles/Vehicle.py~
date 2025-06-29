@@ -20,15 +20,8 @@ def get_image_list(folder_path):
 
 
 class Vehicle(ABC):
-    # Class variable to track the next available vehicle ID
-    _next_vehicle_id = 1
-    
     def __init__(self, length, weight, start_node, end_node, image, vehicle_type, energy_type, maximum_speed,
                  acceleration=0):
-        # Assign unique vehicle ID
-        self.vehicle_id = Vehicle._next_vehicle_id
-        Vehicle._next_vehicle_id += 1
-        
         self.length = length
         self.weight = weight
         self.start_node = None
@@ -68,20 +61,11 @@ class Vehicle(ABC):
         self.total_energy_consumed = 0
         self.total_pollution = 0
         self.total_distance = 0
-        
-        # Additional tracking parameters for statistics
-        self.stops_count = 0
-        self.acceleration_events = 0
-        self.idle_time = 0
-        self.creation_time = time.time()
-        self.last_stop_time = None
-        self.is_stopped = False
-        self.last_velocity = 0
 
         print(
-            f"[Vehicle Init] Vehicle #{self.vehicle_id} - {vehicle_type} with {energy_type} created from {self.start_point} "
+            f"[Vehicle Init] {vehicle_type} with {energy_type} created from {self.start_point} "
             f"to {self.end_point}")
-        print(f"[Vehicle Init] Vehicle #{self.vehicle_id} - cur_point: {self.cur_point}")
+        print(f"[Vehicle Init] cur_point: {self.cur_point}")
 
     def set_start_and_end_nodes(self, start, end):
         self.start_node = start
@@ -222,15 +206,9 @@ class Vehicle(ABC):
     def move(self, dt):
         # print(f"\n[move] Starting move with __lanes_passed={self.__lanes_passed}, last_lane={self.__last_lane}")
         self.setup_move()
-        
-        # Update total time
-        self.update_total_time()
 
         # Check if we've reached the end of the path
         if self.__lanes_passed >= len(self.lanes_path):
-            if self.get_queue_position() == 0:
-                self.has_reached_destination = True
-                self.__last_lane.pop_head_from_queue()
             # print("[DEBUG] Reached end of path - no more lanes to follow")
             return
 
@@ -249,12 +227,6 @@ class Vehicle(ABC):
                     # print(f"[move] IN-lane: Setting last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
                     self.__lanes_passed += 1
                     print(f"[DEBUG] IN-lane: After increment __lanes_passed={self.__lanes_passed}")
-                    # Track movement when crossing junction
-                    self.track_movement()
-                else:
-                    # Track stop when waiting at traffic light
-                    if self.get_queue_position() >= 0:
-                        self.track_stop()
             except Exception as e:
                 print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
                 raise
@@ -300,18 +272,6 @@ class Vehicle(ABC):
                 dy = length * math.sin(alpha)
                 new_x = self.cur_point.x + dx
                 new_y = self.cur_point.y + dy
-                
-                # Track acceleration events
-                self.track_acceleration(self.acceleration)
-                
-                # Update distance traveled
-                self.total_distance += length
-                
-                # Calculate and update energy consumption and pollution
-                energy_consumed = self.calculate_energy_consumption(length)
-                pollution_generated = self.calculate_pollution(length)
-                self.total_energy_consumed += energy_consumed
-                self.total_pollution += pollution_generated
 
         else:
             raise TypeError("move method is invalid: Invalid order in path: facing is None")
@@ -393,112 +353,3 @@ class Vehicle(ABC):
                 return -1
         except (AttributeError, ValueError):
             return -1
-
-    def get_consumption_summary(self):
-        """Get a summary of the vehicle's consumption and pollution statistics.
-        
-        Returns:
-            dict: Dictionary containing consumption and pollution statistics
-        """
-        return {
-            "total_energy_consumed": self.total_energy_consumed,
-            "total_pollution": self.total_pollution,
-            "total_distance": self.total_distance,
-            "total_time": self.total_time,
-            "stops_count": self.stops_count,
-            "acceleration_events": self.acceleration_events,
-            "idle_time": self.idle_time,
-            "vehicle_id": self.vehicle_id,
-            "vehicle_type": self.vehicle_type,
-            "energy_type": self.energy_type
-        }
-
-    def track_stop(self):
-        """Track when vehicle stops due to traffic lights/queues"""
-        if not self.is_stopped:
-            self.is_stopped = True
-            self.last_stop_time = time.time()
-            self.stops_count += 1
-            print(f"[Vehicle #{self.vehicle_id}] Stopped - Total stops: {self.stops_count}")
-
-    def track_movement(self):
-        """Track when vehicle starts moving again"""
-        if self.is_stopped:
-            self.is_stopped = False
-            if self.last_stop_time:
-                self.idle_time += time.time() - self.last_stop_time
-                print(f"[Vehicle #{self.vehicle_id}] Resumed movement - Idle time: {self.idle_time:.2f}s")
-
-    def track_acceleration(self, current_acceleration):
-        """Track acceleration events"""
-        if current_acceleration > 0 and self.last_velocity <= 0:
-            self.acceleration_events += 1
-            print(f"[Vehicle #{self.vehicle_id}] Acceleration event - Total: {self.acceleration_events}")
-        self.last_velocity = current_acceleration
-
-    def update_total_time(self):
-        """Update total time from creation to current time"""
-        self.total_time = time.time() - self.creation_time
-
-    def calculate_energy_consumption(self, distance_traveled):
-        """Calculate energy consumption based on vehicle weight, type, distance, and stops"""
-        # Base consumption per meter based on vehicle type and weight
-        base_consumption = {
-            "Car": 0.0001,  # kWh per meter per kg
-            "Bus": 0.00015,
-            "Truck": 0.0002
-        }
-        
-        # Energy type multipliers
-        energy_multipliers = {
-            "Electric": 1.0,    # Most efficient
-            "Gas": 1.2,         # 20% less efficient than electric
-            "Gasoline": 1.4     # 40% less efficient than electric
-        }
-        
-        # Stop penalty (extra energy for each stop)
-        stop_penalty = self.stops_count * 0.01  # kWh per stop
-        
-        # Calculate base consumption
-        base_energy = base_consumption.get(self.vehicle_type, 0.0001) * self.weight * distance_traveled
-        
-        # Apply energy type multiplier
-        energy_multiplier = energy_multipliers.get(self.energy_type, 1.0)
-        total_energy = (base_energy * energy_multiplier) + stop_penalty
-        
-        return total_energy
-
-    def calculate_pollution(self, distance_traveled):
-        """Calculate pollution based on energy type, distance, and vehicle type"""
-        # CO2 emissions per kWh/L based on energy type
-        emissions_per_unit = {
-            "Electric": 0.5,    # g CO2 per kWh (assuming grid mix)
-            "Gas": 2.3,         # g CO2 per L
-            "Gasoline": 2.4     # g CO2 per L
-        }
-        
-        # Vehicle type multipliers (heavier vehicles pollute more)
-        vehicle_multipliers = {
-            "Car": 1.0,
-            "Bus": 1.5,
-            "Truck": 2.0
-        }
-        
-        # Calculate energy consumption first
-        energy_consumed = self.calculate_energy_consumption(distance_traveled)
-        
-        # Convert to appropriate units for pollution calculation
-        if self.energy_type == "Electric":
-            # For electric, use kWh directly
-            pollution = energy_consumed * emissions_per_unit["Electric"]
-        else:
-            # For gas/gasoline, convert energy to liters (approximate)
-            # Assuming 10 kWh per liter for fossil fuels
-            liters_consumed = energy_consumed / 10
-            pollution = liters_consumed * emissions_per_unit[self.energy_type]
-        
-        # Apply vehicle type multiplier
-        vehicle_multiplier = vehicle_multipliers.get(self.vehicle_type, 1.0)
-        total_pollution = pollution * vehicle_multiplier
-        
-        return total_pollution
