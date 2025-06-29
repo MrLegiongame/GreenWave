@@ -59,15 +59,9 @@ while running:
         elif next_screen == "main_menu":
             current_screen = MainMenuScreen(screen)
         elif next_screen == "simulation":
-            chosen_alg = Alg.FIXED_TIMING_CYCLE  # TODO: change to get from settings
-            current_screen = SimulationScreen(screen, ui_manager, True, Alg.FIXED_TIMING_CYCLE)
-            # current_screen = SimulationScreen(screen, ui_manager)
+            display_alg = Alg.ADAPTIVE_ALG  # TODO: change to get from settings
+            compare_alg = Alg.FIXED_TIMING_CYCLE  # TODO: change to get from settings
+            current_screen = SimulationScreen(screen, ui_manager, display_alg, compare_alg)
         elif isinstance(next_screen, StatisticsScreen):
             current_screen = next_screen
-            """ TODO: make something like this in simulation.py
-            simulation_to_compare = []
-            for alg in Alg:
-                if alg != chosen_alg:
-                    simulation_to_compare.append(SimulationScreen(None, None, False, alg))  # TODO: check if line doesnt cause bugs (because of None as parameters)
-            """
 

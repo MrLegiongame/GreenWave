@@ -20,18 +20,46 @@ class Algorithm:
         time.sleep(2)
         threads = []
         for index in range(self.nodes_size):
-            threads.append(threading.Thread(target=self.nodes[index].update_state))
+            active_index = (self.nodes[index].active_index + 1) % self.nodes[index].states_size
+            threads.append(threading.Thread(target=self.nodes[index].update_state, args=(active_index,)))
             threads[index].start()
         for index in range(self.nodes_size):
             threads[index].join()
 
+    def update_adaptive_alg(self):
+        threads = []
+        start_time = time.time()
+        for index in range(self.nodes_size):
+            active_index = self.nodes[index].get_max_vehicle_count_state_index()
+            threads.append(threading.Thread(target=self.nodes[index].update_state, args=(active_index,)))
+            threads[index].start()
+        for index in range(self.nodes_size):
+            threads[index].join()
+        end_time = time.time()
+        delta_time = end_time - start_time
+        if delta_time < 0.5:
+            time.sleep(0.5 - delta_time)
+
     def update_green_wave(self):
-        pass
+        threads = []
+        start_time = time.time()
+        for index in range(self.nodes_size):
+            active_index = self.nodes[index].get_max_weighted_state_index()
+            threads.append(threading.Thread(target=self.nodes[index].update_state, args=(active_index,)))
+            threads[index].start()
+        for index in range(self.nodes_size):
+            threads[index].join()
+        end_time = time.time()
+        delta_time = end_time - start_time
+        if delta_time < 0.5:
+            time.sleep(0.5 - delta_time)
 
     def update(self):
         match self.alg:
             case Alg.FIXED_TIMING_CYCLE:
                 return self.update_fixed_timing_cycle()
+            case Alg.ADAPTIVE_ALG:
+                return self.update_adaptive_alg()
             case Alg.GREEN_WAVE:
                 return self.update_green_wave()
             case _:
