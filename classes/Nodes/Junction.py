@@ -168,7 +168,6 @@ class Junction:
 
         return tuple(states)
 
-
     def set_directions_module_indexes(self, main_direction):
         module_index = 0
         for index in range(self.size):
@@ -193,45 +192,63 @@ class Junction:
         for traffic_light in self.active_state:
             traffic_light.set_state(State.GREEN)
 
-    def update_state(self):
-        common_traffic_lights = set()
-        next_active_index = (self.active_index + 1) % self.states_size
-        next_active_state = self.available_states[self.active_index]
-
-        for traffic_light in self.active_state:
-            if traffic_light in next_active_state:
-                common_traffic_lights.add(traffic_light)
+    def update_state(self, next_active_index):
+        next_active_state = self.available_states[next_active_index]
+        traffic_lights_to_turn_red = tuple(set(self.active_state) - set(next_active_state))
+        traffic_lights_to_turn_green = tuple(set(next_active_state) - set(self.active_state))
 
         # start updating
 
-        for traffic_light in self.active_state:
-            if traffic_light not in common_traffic_lights:
-                traffic_light.update_state()  # to GREEN_FLICKERING
+        for traffic_light in traffic_lights_to_turn_red:
+            traffic_light.update_state()  # to GREEN_FLICKERING
 
         time.sleep(3)
 
-        for traffic_light in self.active_state:
-            if traffic_light not in common_traffic_lights:
-                traffic_light.update_state()  # to YELLOW
+        for traffic_light in traffic_lights_to_turn_red:
+            traffic_light.update_state()  # to YELLOW
 
         time.sleep(2)
 
-        for traffic_light in self.active_state:
-            if traffic_light not in common_traffic_lights:
-                traffic_light.update_state()  # active_state lanes to RED
+        for traffic_light in traffic_lights_to_turn_red:
+            traffic_light.update_state()  # active_state lanes to RED
 
         self.active_index = next_active_index
         self.active_state = next_active_state
 
-        for traffic_light in self.active_state:
-            if traffic_light not in common_traffic_lights:
-                traffic_light.update_state()  # active_state lanes to RED_YELLOW
+        for traffic_light in traffic_lights_to_turn_green:
+            traffic_light.update_state()  # active_state lanes to RED_YELLOW
 
         time.sleep(2)
 
-        for traffic_light in self.active_state:
-            if traffic_light not in common_traffic_lights:
-                traffic_light.update_state()  # active_state lanes to GREEN
+        for traffic_light in traffic_lights_to_turn_green:
+            traffic_light.update_state()  # active_state lanes to GREEN
+
+    def get_max_weighted_state_index(self):
+        max_weight = 0
+        res_index = 0
+        for state_index in range(self.states_size):
+            temp_weight = 0
+            for traffic_light in self.available_states[state_index]:
+                for lane in traffic_light.lanes:
+                    for vehicle in lane.vehicles_queue:
+                        temp_weight += vehicle.weight
+            if temp_weight > max_weight:
+                max_weight = temp_weight
+                res_index = state_index
+        return res_index
+
+    def get_max_vehicle_count_state_index(self):
+        max_vehicle_count = 0
+        res_index = 0
+        for state_index in range(self.states_size):
+            temp_vehicle_count = 0
+            for traffic_light in self.available_states[state_index]:
+                for lane in traffic_light.lanes:
+                    temp_vehicle_count += len(lane.vehicles_queue)
+            if temp_vehicle_count > max_vehicle_count:
+                max_vehicle_count = temp_vehicle_count
+                res_index = state_index
+        return res_index
 
     def __str__(self):
         res = f"Junction has {self.size} directions:\n\n"
