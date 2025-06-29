@@ -1,0 +1,374 @@
+{"event": "path_set", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036885.3502817, "lanes_path": [10, 41, 4, 66, 31, 60, 24, 50, 12, 56, 15, 62, 33, 40], "junctions_path": [1, 0, 0, 4, 4, 3, 3, 1, 1, 2, 2, 4, 4, 0], "start_node": 1, "end_node": 0}
+{"event": "path_set", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036885.3574157, "lanes_path": [0, 57, 26, 65, 27, 52, 19, 48, 10, 41, 4, 66, 31, 60, 24, 50, 12, 56], "junctions_path": [0, 3, 3, 4, 4, 2, 2, 1, 1, 0, 0, 4, 4, 3, 3, 1, 1, 2], "start_node": 0, "end_node": 2}
+{"event": "path_set", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036885.3584094, "lanes_path": [21, 34], "junctions_path": [3, 0], "start_node": 3, "end_node": 1}
+{"event": "path_set", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036885.359522, "lanes_path": [15, 62], "junctions_path": [2, 4], "start_node": 2, "end_node": 3}
+{"event": "path_set", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751036885.361774, "lanes_path": [13, 58, 21, 34, 4, 66, 31, 60], "junctions_path": [1, 3, 3, 0, 0, 4, 4, 3], "start_node": 1, "end_node": 3}
+{"event": "path_set", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036885.3640525, "lanes_path": [8, 63, 27, 52, 19, 48, 10, 41, 4, 66, 31, 60, 24, 50, 12, 56], "junctions_path": [1, 4, 4, 2, 2, 1, 1, 0, 0, 4, 4, 3, 3, 1, 1, 2], "start_node": 1, "end_node": 2}
+{"event": "path_set", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036885.365995, "lanes_path": [19, 48], "junctions_path": [2, 1], "start_node": 2, "end_node": 4}
+{"event": "path_set", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036885.3682873, "lanes_path": [12, 56, 16, 37, 0, 57, 26, 65, 27, 52, 19, 48, 10, 41, 4, 66], "junctions_path": [1, 2, 2, 0, 0, 3, 3, 4, 4, 2, 2, 1, 1, 0, 0, 4], "start_node": 1, "end_node": 4}
+{"event": "path_set", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036885.3731081, "lanes_path": [24, 50, 12, 56], "junctions_path": [3, 1, 1, 2], "start_node": 3, "end_node": 2}
+{"event": "path_set", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751036885.373887, "lanes_path": [29, 44], "junctions_path": [4, 1], "start_node": 4, "end_node": 1}
+{"event": "path_set", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751036885.3744469, "lanes_path": [26, 65], "junctions_path": [3, 4], "start_node": 3, "end_node": 0}
+{"event": "path_set", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751036885.3749666, "lanes_path": [10, 41], "junctions_path": [1, 0], "start_node": 1, "end_node": 3}
+{"event": "path_set", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751036885.3754492, "lanes_path": [5, 67], "junctions_path": [0, 4], "start_node": 0, "end_node": 4}
+{"event": "path_set", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751036885.3760746, "lanes_path": [7, 47], "junctions_path": [0, 1], "start_node": 0, "end_node": 1}
+{"event": "path_set", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751036885.3773627, "lanes_path": [26, 65, 27, 52, 19, 48, 10, 41, 4, 66, 31, 60, 24, 50, 12, 56], "junctions_path": [3, 4, 4, 2, 2, 1, 1, 0, 0, 4, 4, 3, 3, 1, 1, 2], "start_node": 3, "end_node": 2}
+{"event": "IN_junction_passed", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036889.8353124, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036889.8358705, "junction_id": 0}
+{"event": "arrived", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036889.8361473}
+{"event": "IN_junction_passed", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036893.7920492, "junction_id": 1}
+{"event": "arrived", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036893.7930112}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036893.7934442, "junction_id": 2}
+{"event": "OUT_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036893.8090143, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036893.904903, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751036893.905684, "junction_id": 0}
+{"event": "arrived", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751036893.905961}
+{"event": "IN_junction_passed", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751036893.9064338, "junction_id": 1}
+{"event": "arrived", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751036893.9066885}
+{"event": "IN_junction_passed", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036895.3146486, "junction_id": 4}
+{"event": "arrived", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036895.3151846}
+{"event": "IN_junction_passed", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751036897.7652428, "junction_id": 4}
+{"event": "arrived", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751036897.7657623}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751036897.7663345, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036898.4989848, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751036898.4996326, "junction_id": 1}
+{"event": "arrived", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751036898.5000005}
+{"event": "OUT_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036898.514993, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751036900.2958531, "junction_id": 4}
+{"event": "arrived", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751036900.2963018}
+{"event": "IN_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751036901.2443876, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036901.2456203, "junction_id": 1}
+{"event": "OUT_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751036901.2618043, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036902.5388472, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036903.410816, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036908.180361, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036911.9567745, "junction_id": 2}
+{"event": "OUT_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036912.4118025, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036912.4124372, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751036912.4128227, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751036917.4323766, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036921.1451957, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036921.2597048, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036921.2767375, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751036921.4253547, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751036925.099109, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036930.1285627, "junction_id": 3}
+{"event": "OUT_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036930.4360723, "junction_id": 2}
+{"event": "OUT_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036930.4366221, "junction_id": 3}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751036930.4370875, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751036937.6038842, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751036937.6198387, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036939.1620877, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036939.4372606, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751036943.119225, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036943.873578, "junction_id": 1}
+{"event": "OUT_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036948.439599, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751036953.7949686, "junction_id": 3}
+{"event": "arrived", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751036953.7954657}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036955.613223, "junction_id": 2}
+{"event": "arrived", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751036955.614098}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036957.2808266, "junction_id": 1}
+{"event": "OUT_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036984.4736743, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751036993.3144727, "junction_id": 2}
+{"event": "path_set", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751103287.8822966, "lanes_path": [13, 58], "junctions_path": [1, 3], "start_node": 1, "end_node": 2}
+{"event": "path_set", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103287.8863127, "lanes_path": [3, 55], "junctions_path": [0, 2], "start_node": 0, "end_node": 4}
+{"event": "path_set", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103287.8884807, "lanes_path": [15, 62, 33, 40, 0, 57], "junctions_path": [2, 4, 4, 0, 0, 3], "start_node": 2, "end_node": 3}
+{"event": "path_set", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751103287.8909163, "lanes_path": [22, 35], "junctions_path": [3, 0], "start_node": 3, "end_node": 2}
+{"event": "path_set", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103287.8931878, "lanes_path": [18, 39], "junctions_path": [2, 0], "start_node": 2, "end_node": 4}
+{"event": "path_set", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751103287.895187, "lanes_path": [27, 52], "junctions_path": [4, 2], "start_node": 4, "end_node": 0}
+{"event": "path_set", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751103287.8989317, "lanes_path": [22, 35], "junctions_path": [3, 0], "start_node": 3, "end_node": 0}
+{"event": "path_set", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751103287.9020486, "lanes_path": [26, 65], "junctions_path": [3, 4], "start_node": 3, "end_node": 1}
+{"event": "path_set", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751103287.9064245, "lanes_path": [26, 65], "junctions_path": [3, 4], "start_node": 3, "end_node": 1}
+{"event": "path_set", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751103287.908896, "lanes_path": [18, 39], "junctions_path": [2, 0], "start_node": 2, "end_node": 0}
+{"event": "path_set", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751103287.9109879, "lanes_path": [30, 45], "junctions_path": [4, 1], "start_node": 4, "end_node": 1}
+{"event": "path_set", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751103287.9137907, "lanes_path": [15, 62, 33, 40, 0, 57, 26, 65, 27, 52, 19, 48, 10, 41, 4, 66, 31, 60], "junctions_path": [2, 4, 4, 0, 0, 3, 3, 4, 4, 2, 2, 1, 1, 0, 0, 4, 4, 3], "start_node": 2, "end_node": 3}
+{"event": "path_set", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751103287.9174592, "lanes_path": [26, 65, 27, 52, 19, 48, 10, 41], "junctions_path": [3, 4, 4, 2, 2, 1, 1, 0], "start_node": 3, "end_node": 0}
+{"event": "path_set", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751103287.9202306, "lanes_path": [23, 36], "junctions_path": [3, 0], "start_node": 3, "end_node": 0}
+{"event": "path_set", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751103287.9228346, "lanes_path": [3, 55], "junctions_path": [0, 2], "start_node": 0, "end_node": 1}
+{"event": "IN_junction_passed", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751103292.1669488, "junction_id": 0}
+{"event": "arrived", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751103292.1673207}
+{"event": "IN_junction_passed", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751103292.1708872, "junction_id": 0}
+{"event": "arrived", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751103292.1712325}
+{"event": "IN_junction_passed", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751103292.1772156, "junction_id": 0}
+{"event": "arrived", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751103292.1775744}
+{"event": "IN_junction_passed", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103295.7183356, "junction_id": 2}
+{"event": "arrived", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103295.7188828}
+{"event": "IN_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103295.7242777, "junction_id": 0}
+{"event": "arrived", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103295.7246397}
+{"event": "IN_junction_passed", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751103295.728718, "junction_id": 0}
+{"event": "arrived", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751103295.7289977}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751103295.7339957, "junction_id": 2}
+{"event": "arrived", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751103295.7343714}
+{"event": "IN_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103297.6287785, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751103297.6306632, "junction_id": 2}
+{"event": "arrived", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751103297.630936}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751103297.6347125, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103297.6466694, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751103297.6500885, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751103300.0685835, "junction_id": 4}
+{"event": "arrived", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751103300.0688455}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751103300.0706947, "junction_id": 4}
+{"event": "arrived", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751103300.070938}
+{"event": "IN_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751103300.0751004, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751103300.8124423, "junction_id": 1}
+{"event": "arrived", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751103300.8128853}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751103303.5517442, "junction_id": 3}
+{"event": "arrived", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751103303.5520706}
+{"event": "IN_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103307.9088037, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751103307.9107645, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103314.9554355, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751103314.9573634, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751103323.9663036, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103325.2140453, "junction_id": 3}
+{"event": "arrived", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751103325.2143576}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751103325.2164595, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751103336.662563, "junction_id": 2}
+{"event": "OUT_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751103336.678115, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751103349.3728414, "junction_id": 1}
+{"event": "OUT_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751103350.9939704, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751103363.6893125, "junction_id": 0}
+{"event": "arrived", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751103363.6895924}
+{"event": "path_set", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751104358.5831425, "lanes_path": [11, 42], "junctions_path": [1, 0], "start_node": 1, "end_node": 4}
+{"event": "path_set", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751104358.5853164, "lanes_path": [25, 51], "junctions_path": [3, 1], "start_node": 3, "end_node": 4}
+{"event": "path_set", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751104358.5871217, "lanes_path": [20, 49], "junctions_path": [2, 1], "start_node": 2, "end_node": 4}
+{"event": "path_set", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751104358.5893111, "lanes_path": [26, 65, 28, 43, 13, 58, 21, 34, 6, 46], "junctions_path": [3, 4, 4, 1, 1, 3, 3, 0, 0, 1], "start_node": 3, "end_node": 1}
+{"event": "path_set", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751104358.5915363, "lanes_path": [19, 48, 10, 41, 4, 66], "junctions_path": [2, 1, 1, 0, 0, 4], "start_node": 2, "end_node": 4}
+{"event": "path_set", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751104358.59312, "lanes_path": [15, 62, 33, 40, 0, 57, 26, 65], "junctions_path": [2, 4, 4, 0, 0, 3, 3, 4], "start_node": 2, "end_node": 4}
+{"event": "path_set", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751104358.5950122, "lanes_path": [30, 45], "junctions_path": [4, 1], "start_node": 4, "end_node": 3}
+{"event": "path_set", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751104358.59701, "lanes_path": [2, 54], "junctions_path": [0, 2], "start_node": 0, "end_node": 2}
+{"event": "path_set", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751104358.5987494, "lanes_path": [26, 65, 27, 52, 19, 48, 10, 41], "junctions_path": [3, 4, 4, 2, 2, 1, 1, 0], "start_node": 3, "end_node": 0}
+{"event": "path_set", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751104358.6013875, "lanes_path": [9, 64], "junctions_path": [1, 4], "start_node": 1, "end_node": 4}
+{"event": "path_set", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751104358.603581, "lanes_path": [22, 35], "junctions_path": [3, 0], "start_node": 3, "end_node": 4}
+{"event": "path_set", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751104358.6064873, "lanes_path": [20, 49], "junctions_path": [2, 1], "start_node": 2, "end_node": 1}
+{"event": "path_set", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751104358.608003, "lanes_path": [12, 56, 16, 37, 0, 57], "junctions_path": [1, 2, 2, 0, 0, 3], "start_node": 1, "end_node": 3}
+{"event": "path_set", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751104358.6094267, "lanes_path": [26, 65, 27, 52], "junctions_path": [3, 4, 4, 2], "start_node": 3, "end_node": 2}
+{"event": "path_set", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751104358.611883, "lanes_path": [0, 57, 26, 65, 27, 52, 19, 48, 10, 41, 4, 66, 31, 60, 24, 50, 12, 56], "junctions_path": [0, 3, 3, 4, 4, 2, 2, 1, 1, 0, 0, 4, 4, 3, 3, 1, 1, 2], "start_node": 0, "end_node": 2}
+{"event": "IN_junction_passed", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751104363.11014, "junction_id": 0}
+{"event": "arrived", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751104363.1104467}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751104363.1149893, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751104366.6622188, "junction_id": 2}
+{"event": "arrived", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751104366.6625657}
+{"event": "IN_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751104367.059398, "junction_id": 1}
+{"event": "arrived", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751104367.0596561}
+{"event": "IN_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751104367.0623941, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751104367.06679, "junction_id": 1}
+{"event": "arrived", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751104367.0670402}
+{"event": "IN_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751104367.0692368, "junction_id": 2}
+{"event": "OUT_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751104367.0819104, "junction_id": 1}
+{"event": "OUT_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751104367.086236, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751104367.1665788, "junction_id": 0}
+{"event": "arrived", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751104367.166844}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751104368.5721009, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751104371.0131998, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751104371.0177512, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751104371.0209093, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751104371.7732723, "junction_id": 1}
+{"event": "arrived", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751104371.7735307}
+{"event": "IN_junction_passed", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751104371.7773337, "junction_id": 4}
+{"event": "arrived", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751104371.7775803}
+{"event": "IN_junction_passed", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751104374.491679, "junction_id": 1}
+{"event": "arrived", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751104374.4919486}
+{"event": "IN_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751104375.8164706, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751104375.8223805, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751104376.6248627, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751104381.4154925, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751104385.6428323, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751104394.6417, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751104394.6457598, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751104395.8914886, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751104403.3841052, "junction_id": 4}
+{"event": "arrived", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751104403.3845952}
+{"event": "IN_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751104403.3906317, "junction_id": 3}
+{"event": "arrived", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751104403.39095}
+{"event": "OUT_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751104412.655206, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751104422.9122488, "junction_id": 3}
+{"event": "path_set", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105144.9180672, "lanes_path": [31, 60, 24, 50, 12, 56, 15, 62, 33, 40], "junctions_path": [4, 3, 3, 1, 1, 2, 2, 4, 4, 0], "start_node": 4, "end_node": 0}
+{"event": "path_set", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105144.9196317, "lanes_path": [31, 60], "junctions_path": [4, 3], "start_node": 4, "end_node": 1}
+{"event": "path_set", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105144.9214923, "lanes_path": [0, 57, 26, 65, 27, 52, 19, 48, 10, 41, 4, 66, 31, 60], "junctions_path": [0, 3, 3, 4, 4, 2, 2, 1, 1, 0, 0, 4, 4, 3], "start_node": 0, "end_node": 3}
+{"event": "path_set", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105144.9232097, "lanes_path": [13, 58], "junctions_path": [1, 3], "start_node": 1, "end_node": 4}
+{"event": "path_set", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751105144.9249952, "lanes_path": [11, 42], "junctions_path": [1, 0], "start_node": 1, "end_node": 3}
+{"event": "path_set", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105144.926858, "lanes_path": [5, 67], "junctions_path": [0, 4], "start_node": 0, "end_node": 3}
+{"event": "path_set", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105144.928811, "lanes_path": [8, 63], "junctions_path": [1, 4], "start_node": 1, "end_node": 4}
+{"event": "path_set", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105144.930418, "lanes_path": [24, 50, 12, 56, 15, 62, 33, 40], "junctions_path": [3, 1, 1, 2, 2, 4, 4, 0], "start_node": 3, "end_node": 0}
+{"event": "path_set", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105144.9317586, "lanes_path": [26, 65, 33, 40, 1, 53, 15, 62], "junctions_path": [3, 4, 4, 0, 0, 2, 2, 4], "start_node": 3, "end_node": 4}
+{"event": "path_set", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105144.9333045, "lanes_path": [27, 52], "junctions_path": [4, 2], "start_node": 4, "end_node": 1}
+{"event": "path_set", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105144.9348192, "lanes_path": [13, 58], "junctions_path": [1, 3], "start_node": 1, "end_node": 4}
+{"event": "path_set", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105144.9369235, "lanes_path": [19, 48, 10, 41, 4, 66, 31, 60, 24, 50, 12, 56, 16, 37, 0, 57, 26, 65, 28, 43, 13, 58, 21, 34], "junctions_path": [2, 1, 1, 0, 0, 4, 4, 3, 3, 1, 1, 2, 2, 0, 0, 3, 3, 4, 4, 1, 1, 3, 3, 0], "start_node": 2, "end_node": 0}
+{"event": "path_set", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105144.9385803, "lanes_path": [5, 67], "junctions_path": [0, 4], "start_node": 0, "end_node": 2}
+{"event": "path_set", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105144.9400773, "lanes_path": [8, 63], "junctions_path": [1, 4], "start_node": 1, "end_node": 2}
+{"event": "path_set", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105144.9414053, "lanes_path": [0, 57, 26, 65, 33, 40, 1, 53, 15, 62], "junctions_path": [0, 3, 3, 4, 4, 0, 0, 2, 2, 4], "start_node": 0, "end_node": 4}
+{"event": "IN_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105149.4162166, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105149.4230793, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105153.377481, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751105153.4902234, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105154.8861783, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105157.325298, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105157.3268201, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105157.3314176, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105158.0675328, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105158.0726447, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105159.8695798, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105159.874749, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105160.8147619, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105160.8164325, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105160.8188534, "junction_id": 3}
+{"event": "OUT_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105162.9672017, "junction_id": 3}
+{"event": "OUT_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105162.9690294, "junction_id": 1}
+{"event": "OUT_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105162.9708006, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105162.9740605, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105167.7333908, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105167.736662, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105167.7508945, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105167.755445, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105171.974097, "junction_id": 3}
+{"event": "OUT_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105171.9774342, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105172.5319355, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105172.534934, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105175.6629694, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105179.1379623, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105180.7135003, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105180.9824889, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105180.9980516, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105184.6727211, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105185.7548249, "junction_id": 2}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105185.771669, "junction_id": 2}
+{"event": "OUT_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105189.9853125, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105190.5486116, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105193.6893778, "junction_id": 2}
+{"event": "OUT_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105198.994433, "junction_id": 2}
+{"event": "OUT_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105198.9964323, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105206.1669643, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105207.727065, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105207.7440717, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105208.0030103, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105211.6902168, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105216.4774022, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105220.6879537, "junction_id": 2}
+{"event": "OUT_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105220.7042549, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105233.3945887, "junction_id": 4}
+{"event": "path_set", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751105499.628545, "lanes_path": [2, 54], "junctions_path": [0, 2], "start_node": 0, "end_node": 2}
+{"event": "path_set", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105499.6301417, "lanes_path": [14, 59], "junctions_path": [1, 3], "start_node": 1, "end_node": 4}
+{"event": "path_set", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751105499.6316705, "lanes_path": [4, 66], "junctions_path": [0, 4], "start_node": 0, "end_node": 1}
+{"event": "path_set", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105499.633184, "lanes_path": [5, 67], "junctions_path": [0, 4], "start_node": 0, "end_node": 3}
+{"event": "path_set", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105499.6346426, "lanes_path": [22, 35], "junctions_path": [3, 0], "start_node": 3, "end_node": 2}
+{"event": "path_set", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105499.6362047, "lanes_path": [20, 49], "junctions_path": [2, 1], "start_node": 2, "end_node": 3}
+{"event": "path_set", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105499.6374016, "lanes_path": [16, 37, 0, 57, 26, 65], "junctions_path": [2, 0, 0, 3, 3, 4], "start_node": 2, "end_node": 4}
+{"event": "path_set", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105499.6385112, "lanes_path": [10, 41], "junctions_path": [1, 0], "start_node": 1, "end_node": 0}
+{"event": "path_set", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105499.6402197, "lanes_path": [5, 67], "junctions_path": [0, 4], "start_node": 0, "end_node": 1}
+{"event": "path_set", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105499.6416576, "lanes_path": [0, 57, 26, 65, 28, 43, 13, 58], "junctions_path": [0, 3, 3, 4, 4, 1, 1, 3], "start_node": 0, "end_node": 3}
+{"event": "path_set", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105499.6432269, "lanes_path": [12, 56], "junctions_path": [1, 2], "start_node": 1, "end_node": 3}
+{"event": "path_set", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105499.6446006, "lanes_path": [10, 41, 4, 66, 31, 60], "junctions_path": [1, 0, 0, 4, 4, 3], "start_node": 1, "end_node": 3}
+{"event": "path_set", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105499.6461246, "lanes_path": [23, 36], "junctions_path": [3, 0], "start_node": 3, "end_node": 1}
+{"event": "path_set", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105499.6472914, "lanes_path": [27, 52, 19, 48], "junctions_path": [4, 2, 2, 1], "start_node": 4, "end_node": 1}
+{"event": "path_set", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105499.6487484, "lanes_path": [9, 64], "junctions_path": [1, 4], "start_node": 1, "end_node": 3}
+{"event": "IN_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105504.1595237, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105504.163291, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105504.165624, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751105507.7250688, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105507.728489, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105508.122051, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105508.1267812, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105508.2367551, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105508.2401118, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105509.638883, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105512.8333821, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751105514.6167839, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105514.6185453, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105514.621284, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105515.5488856, "junction_id": 3}
+{"event": "OUT_junction_passed", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105517.6701362, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105517.672969, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105517.6744332, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105526.005231, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105526.512439, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105526.5290153, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105526.6731596, "junction_id": 3}
+{"event": "OUT_junction_passed", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105526.6878161, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105527.9196577, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105531.454292, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105535.0259304, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105535.3741543, "junction_id": 3}
+{"event": "OUT_junction_passed", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105544.6794953, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105549.459432, "junction_id": 1}
+{"event": "OUT_junction_passed", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105553.6918418, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105558.4591339, "junction_id": 3}
+{"event": "path_set", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105570.3806605, "lanes_path": [3, 55], "junctions_path": [0, 2], "start_node": 0, "end_node": 1}
+{"event": "path_set", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751105570.3825414, "lanes_path": [32, 61], "junctions_path": [4, 3], "start_node": 4, "end_node": 1}
+{"event": "path_set", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751105570.3846917, "lanes_path": [33, 40, 0, 57, 26, 65, 27, 52, 19, 48, 10, 41, 4, 66, 31, 60, 24, 50], "junctions_path": [4, 0, 0, 3, 3, 4, 4, 2, 2, 1, 1, 0, 0, 4, 4, 3, 3, 1], "start_node": 4, "end_node": 1}
+{"event": "path_set", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105570.3863711, "lanes_path": [31, 60, 24, 50, 12, 56, 16, 37, 0, 57], "junctions_path": [4, 3, 3, 1, 1, 2, 2, 0, 0, 3], "start_node": 4, "end_node": 3}
+{"event": "path_set", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751105570.3879893, "lanes_path": [0, 57], "junctions_path": [0, 3], "start_node": 0, "end_node": 4}
+{"event": "path_set", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105570.3898387, "lanes_path": [2, 54], "junctions_path": [0, 2], "start_node": 0, "end_node": 2}
+{"event": "path_set", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105570.3917007, "lanes_path": [28, 43, 13, 58, 21, 34, 6, 46, 8, 63, 27, 52, 19, 48], "junctions_path": [4, 1, 1, 3, 3, 0, 0, 1, 1, 4, 4, 2, 2, 1], "start_node": 4, "end_node": 1}
+{"event": "path_set", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105570.3932817, "lanes_path": [23, 36], "junctions_path": [3, 0], "start_node": 3, "end_node": 1}
+{"event": "path_set", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105570.3950748, "lanes_path": [18, 39], "junctions_path": [2, 0], "start_node": 2, "end_node": 4}
+{"event": "path_set", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105570.3965666, "lanes_path": [9, 64], "junctions_path": [1, 4], "start_node": 1, "end_node": 4}
+{"event": "path_set", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Gasoline", "timestamp": 1751105570.398043, "lanes_path": [6, 46, 8, 63, 33, 40, 1, 53], "junctions_path": [0, 1, 1, 4, 4, 0, 0, 2], "start_node": 0, "end_node": 2}
+{"event": "path_set", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105570.3999252, "lanes_path": [19, 48], "junctions_path": [2, 1], "start_node": 2, "end_node": 0}
+{"event": "path_set", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105574.3079655, "lanes_path": [14, 59], "junctions_path": [1, 3], "start_node": 1, "end_node": 3}
+{"event": "path_set", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751105574.3095634, "lanes_path": [26, 65], "junctions_path": [3, 4], "start_node": 3, "end_node": 0}
+{"event": "path_set", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105574.3117683, "lanes_path": [11, 42], "junctions_path": [1, 0], "start_node": 1, "end_node": 4}
+{"event": "path_set", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105574.3135965, "lanes_path": [14, 59], "junctions_path": [1, 3], "start_node": 1, "end_node": 4}
+{"event": "path_set", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105574.316352, "lanes_path": [11, 42], "junctions_path": [1, 0], "start_node": 1, "end_node": 0}
+{"event": "path_set", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105574.3180723, "lanes_path": [26, 65, 33, 40, 1, 53, 15, 62], "junctions_path": [3, 4, 4, 0, 0, 2, 2, 4], "start_node": 3, "end_node": 4}
+{"event": "path_set", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105574.319833, "lanes_path": [26, 65], "junctions_path": [3, 4], "start_node": 3, "end_node": 1}
+{"event": "path_set", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105574.3212488, "lanes_path": [4, 66, 31, 60, 24, 50, 12, 56, 16, 37, 0, 57], "junctions_path": [0, 4, 4, 3, 3, 1, 1, 2, 2, 0, 0, 3], "start_node": 0, "end_node": 3}
+{"event": "path_set", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105574.3226297, "lanes_path": [28, 43, 13, 58, 21, 34, 6, 46, 8, 63, 27, 52], "junctions_path": [4, 1, 1, 3, 3, 0, 0, 1, 1, 4, 4, 2], "start_node": 4, "end_node": 2}
+{"event": "path_set", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105574.3243186, "lanes_path": [23, 36], "junctions_path": [3, 0], "start_node": 3, "end_node": 0}
+{"event": "path_set", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105574.3258216, "lanes_path": [3, 55], "junctions_path": [0, 2], "start_node": 0, "end_node": 1}
+{"event": "path_set", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105574.3272922, "lanes_path": [29, 44], "junctions_path": [4, 1], "start_node": 4, "end_node": 3}
+{"event": "path_set", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105574.3288496, "lanes_path": [25, 51], "junctions_path": [3, 1], "start_node": 3, "end_node": 2}
+{"event": "path_set", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105574.3299158, "lanes_path": [26, 65], "junctions_path": [3, 4], "start_node": 3, "end_node": 4}
+{"event": "path_set", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105574.3315182, "lanes_path": [0, 57, 26, 65, 28, 43, 13, 58, 21, 34, 6, 46, 8, 63], "junctions_path": [0, 3, 3, 4, 4, 1, 1, 3, 3, 0, 0, 1, 1, 4], "start_node": 0, "end_node": 4}
+{"event": "IN_junction_passed", "vehicle_id": 9, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105578.8194942, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105578.823567, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 10, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105582.3813126, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 2, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105582.899469, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 4, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105582.9019852, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 1, "vehicle_type": "Car", "energy_type": "Electric", "timestamp": 1751105586.7462633, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105586.749189, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 6, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105586.7509956, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 13, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105586.7561176, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105586.7687666, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105587.4849646, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 11, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105587.4866278, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105589.2688138, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105589.2847931, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 0, "vehicle_type": "Car", "energy_type": "Gasoline", "timestamp": 1751105590.2159233, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 3, "vehicle_type": "Car", "energy_type": "Gas", "timestamp": 1751105590.2176123, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 12, "vehicle_type": "Truck", "energy_type": "Electric", "timestamp": 1751105590.2212949, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105599.458685, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105601.3601573, "junction_id": 1}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105601.361747, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105604.514773, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105606.1376996, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105610.3654053, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105610.366968, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105614.7992508, "junction_id": 3}
+{"event": "OUT_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105614.8154335, "junction_id": 3}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105619.3646011, "junction_id": 4}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105623.0610895, "junction_id": 2}
+{"event": "OUT_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105623.0779574, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105624.1378338, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105625.593803, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105628.253164, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105628.3681118, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 5, "vehicle_type": "Bus", "energy_type": "Gasoline", "timestamp": 1751105635.769056, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105637.3729358, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105641.806473, "junction_id": 1}
+{"event": "OUT_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105641.822878, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105642.1501987, "junction_id": 3}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105642.1674228, "junction_id": 3}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105646.9364753, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105655.2653198, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105655.39508, "junction_id": 1}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105655.3976579, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105660.1689384, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105670.6256917, "junction_id": 2}
+{"event": "OUT_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105673.4113154, "junction_id": 1}
+{"event": "IN_junction_passed", "vehicle_id": 14, "vehicle_type": "Truck", "energy_type": "Gas", "timestamp": 1751105678.18875, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105682.413075, "junction_id": 4}
+{"event": "OUT_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105691.4162104, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 8, "vehicle_type": "Bus", "energy_type": "Electric", "timestamp": 1751105695.8508034, "junction_id": 2}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105706.6451743, "junction_id": 0}
+{"event": "OUT_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105727.4467056, "junction_id": 0}
+{"event": "IN_junction_passed", "vehicle_id": 7, "vehicle_type": "Bus", "energy_type": "Gas", "timestamp": 1751105742.6678226, "junction_id": 3}
