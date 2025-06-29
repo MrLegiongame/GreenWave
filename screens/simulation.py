@@ -217,6 +217,9 @@ class SimulationScreen:
                 print("ending loading thread")  # TODO: delete later - for test purposes only
                 loading_thread.join()
 
+                # Collect consumption statistics before transitioning
+                self.consumption_stats = self.collect_consumption_statistics()
+
                 # Transition to statistics screen
                 from screens.statistics import StatisticsScreen
                 self.next_screen = StatisticsScreen(
@@ -225,7 +228,7 @@ class SimulationScreen:
                     len(self.graph.vehicles),
                     self.simulation_time,
                     self.vehicle_stats,  # Pass vehicle statistics
-                    consumption_stats    # Pass consumption statistics
+                    self.consumption_stats    # Pass consumption statistics
                 )
         else:
             print("[UPDATE] Simulation paused.")
