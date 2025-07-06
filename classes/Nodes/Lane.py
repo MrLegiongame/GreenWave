@@ -47,6 +47,8 @@ class Lane:
         self.cur_state = None
         self.road_lane = None
         self.vehicles_queue = []  # used as in FIFO (index 0 is head)
+        self.time_to_cross_queue = []  # used as in FIFO (index 0 is head)
+        self.free_to_leave_queue = True
 
         if None is not to_lanes:
             try:
@@ -89,21 +91,22 @@ class Lane:
 
     def add_to_queue(self, vehicle):
         if isinstance(vehicle, Vehicle):
-            # Check if vehicle is already in queue to prevent duplicates
-            if vehicle not in self.vehicles_queue:
-                self.vehicles_queue.append(vehicle)
-                timestamp = time.strftime("%H:%M:%S", time.localtime())
-                print(f"[{timestamp}] Lane {self.index_in_map}: Vehicle {vehicle.vehicle_id} added to queue. Queue length: {len(self.vehicles_queue)}")
-            else:
-                timestamp = time.strftime("%H:%M:%S", time.localtime())
-                print(f"[{timestamp}] Lane {self.index_in_map}: Vehicle {vehicle.vehicle_id} already in queue. Queue length: {len(self.vehicles_queue)}")
+
+            time_to_cross = 1
+            match vehicle.vehicle_type:
+                case "Car":
+                    time_to_cross = 2
+                case "Bus":
+                    time_to_cross = 3
+                case "Truck":
+                    time_to_cross = 4
+            self.vehicles_queue.append(vehicle)
+            self.time_to_cross_queue.append(time_to_cross)
 
     def pop_head_from_queue(self):
-        if self.vehicles_queue and len(self.vehicles_queue) > 0:
-            vehicle = self.vehicles_queue.pop(0)
-            timestamp = time.strftime("%H:%M:%S", time.localtime())
-            print(f"[{timestamp}] Lane {self.index_in_map}: Vehicle {vehicle.vehicle_id} removed from queue. Queue length: {len(self.vehicles_queue)}")
-            return vehicle
+        if [] is not self.vehicles_queue and [] is not self.time_to_cross_queue:
+            return self.vehicles_queue.pop(0), self.time_to_cross_queue.pop(0)
+
         return False
 
     def is_vehicle_in_queue(self, vehicle):

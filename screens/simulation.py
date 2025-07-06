@@ -149,9 +149,6 @@ class SimulationScreen:
                     #     return
 
     def loading_screen(self):
-        pygame.font.init()
-        clock = pygame.time.Clock()
-
         center = (self.WINDOW_WIDTH // 2, self.WINDOW_HEIGHT // 2)
         radius = 30
         num_dots = 12
@@ -167,6 +164,8 @@ class SimulationScreen:
 
             rect = pygame.Rect(center[0] - 250, center[1] - 150, center[0] + 250, center[1] + 150)
             pygame.draw.rect(self.screen, Color.LIGHT_GREY.value, rect)
+            pygame.display.flip()
+            print("background printed")  # TODO: delete later - for test purposes only
 
             # draw spinner
             for i in range(num_dots):
@@ -175,10 +174,12 @@ class SimulationScreen:
                 y = int(center[1] + radius * math.sin(a))
                 shade = 255 - int((i / num_dots) * 200)
                 pygame.draw.circle(self.screen, (shade, shade, shade), (x, y), 5)
+                pygame.display.flip()
+                # time.sleep(0.2)  # TODO: delete later - for test purposes only
 
+            print("spinner printed")  # TODO: delete later - for test purposes only
             angle += speed
             pygame.display.flip()
-            clock.tick(60)
 
     def is_cursor_in_circle(self, center_point, radius):
         mouse_pos = pygame.mouse.get_pos()

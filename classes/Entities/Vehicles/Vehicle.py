@@ -1,6 +1,7 @@
 import math
 import os
 import random
+import threading
 import time
 from abc import ABC
 from classes.Entities.Point import Point
@@ -219,6 +220,14 @@ class Vehicle(ABC):
             self.velocity = min(self.cur_road_lane.parent_road.maximum_speed, self.maximum_speed)
             # print(f"[setup_move] initialized velocity to {self.velocity}")
 
+    def cross_junction(self):
+        vehicle, time_to_sleep = self.__last_lane.pop_head_from_queue()
+        time.sleep(time_to_sleep)
+        self.__last_lane.free_to_leave_queue = True
+        self.__last_lane = self.lanes_path[self.__lanes_passed]
+        self.__lanes_passed += 1
+        print(f"[DEBUG] IN-lane: After increment __lanes_passed={self.__lanes_passed}")
+
     def move(self, dt):
         # print(f"\n[move] Starting move with __lanes_passed={self.__lanes_passed}, last_lane={self.__last_lane}")
         self.setup_move()
@@ -242,19 +251,11 @@ class Vehicle(ABC):
             try:
                 # print(f"IN path len: {len(self.lanes_path)}")
                 # print(f"[DEBUG] IN-lane: states {self.lanes_path[self.__lanes_passed+1].cur_state} and the queue {self.__last_lane.vehicles_queue}")
-                if (self.__last_lane.cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self is \
-                        self.__last_lane.vehicles_queue[0]:  # if junction is available for crossing and the vehicle is the first in the lane's queue
-                    self.__last_lane.pop_head_from_queue()
-                    self.__last_lane = self.lanes_path[self.__lanes_passed]
-                    # print(f"[move] IN-lane: Setting last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
-                    self.__lanes_passed += 1
-                    print(f"[DEBUG] IN-lane: After increment __lanes_passed={self.__lanes_passed}")
-                    # Track movement when crossing junction
-                    self.track_movement()
-                else:
-                    # Track stop when waiting at traffic light
-                    if self.get_queue_position() >= 0:
-                        self.track_stop()
+                if (self.__last_lane.cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self.__last_lane.vehicles_queue is not [] and self.__last_lane.free_to_leave_queue:  # if junction is available for crossing and the vehicle is the first in the lane's queue
+                    if self is self.__last_lane.vehicles_queue[0]:
+                        self.__last_lane.free_to_leave_queue = False
+                        crossing_thread = threading.Thread(target=self.cross_junction)
+                        crossing_thread.start()
             except Exception as e:
                 print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
                 raise
@@ -279,7 +280,8 @@ class Vehicle(ABC):
                     print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
                     raise
 
-                self.__last_lane.add_to_queue(self)
+                if self.__last_lane is not self.__end_in_lane:
+                    self.__last_lane.add_to_queue(self)
                 new_x, new_y = self.__last_lane.parent_junction.point.get_point()
             else:
                 # print("[move] moving along current OUT-lane")
