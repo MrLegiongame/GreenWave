@@ -44,7 +44,7 @@ class Algorithm:
         threads = []
         start_time = time.time()
         for index in range(self.nodes_size):
-            active_index = self.nodes[index].get_max_weighted_state_index()
+            active_index = self.nodes[index].get_max_score_state_index()
             threads.append(threading.Thread(target=self.nodes[index].update_state, args=(active_index,)))
             threads[index].start()
         for index in range(self.nodes_size):

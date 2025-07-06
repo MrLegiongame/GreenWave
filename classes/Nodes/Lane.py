@@ -45,6 +45,8 @@ class Lane:
         self.cur_state = None
         self.road_lane = None
         self.vehicles_queue = []  # used as in FIFO (index 0 is head)
+        self.time_to_cross_queue = []  # used as in FIFO (index 0 is head)
+        self.free_to_leave_queue = True
 
         if None is not to_lanes:
             try:
@@ -87,11 +89,20 @@ class Lane:
 
     def add_to_queue(self, vehicle):
         if isinstance(vehicle, Vehicle):
+            time_to_cross = 1
+            match vehicle.vehicle_type:
+                case "Car":
+                    time_to_cross = 2
+                case "Bus":
+                    time_to_cross = 3
+                case "Truck":
+                    time_to_cross = 4
             self.vehicles_queue.append(vehicle)
+            self.time_to_cross_queue.append(time_to_cross)
 
     def pop_head_from_queue(self):
-        if None is not self.vehicles_queue:
-            return self.vehicles_queue.pop(0)
+        if [] is not self.vehicles_queue and [] is not self.time_to_cross_queue:
+            return self.vehicles_queue.pop(0), self.time_to_cross_queue.pop(0)
         return False
 
     def get_lane_color(self):
