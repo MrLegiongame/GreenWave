@@ -200,6 +200,10 @@ class SimulationScreen:
                 vehicle.move(delta_time)
                 if not vehicle.has_arrived():  # You'll need to implement this method in Vehicle class
                     all_arrived = False
+
+            # Also move vehicles for the compare algorithm
+            for vehicle in self.graph_for_algorithm_to_compare.vehicles:
+                vehicle.move(delta_time)
             
             if all_arrived and not self.all_vehicles_arrived:
                 self.algorithm.terminate_flag = True
@@ -219,7 +223,8 @@ class SimulationScreen:
                 loading_thread.join()
 
                 # Collect consumption statistics before transitioning
-                self.consumption_stats = self.collect_consumption_statistics()
+                self.display_stats = self.collect_consumption_statistics(self.graph)
+                self.compare_stats = self.collect_consumption_statistics(self.graph_for_algorithm_to_compare)
 
                 # Transition to statistics screen
                 from screens.statistics import StatisticsScreen
@@ -229,7 +234,8 @@ class SimulationScreen:
                     len(self.graph.vehicles),
                     self.simulation_time,
                     self.vehicle_stats,  # Pass vehicle statistics
-                    self.consumption_stats    # Pass consumption statistics
+                    self.display_stats,    # Pass display algorithm statistics
+                    self.compare_stats     # Pass compare algorithm statistics
                 )
         else:
             print("[UPDATE] Simulation paused.")
@@ -450,10 +456,61 @@ class SimulationScreen:
 
             total_lanes = len(direction.in_lanes) + len(direction.out_lanes)
             lane_step = edge_length / (total_lanes + 1)
+            # Draw IN lanes
+            for lane_index, lane in enumerate(direction.in_lanes):
+                offset = lane_step * (lane_index + 1)
+                end_x = p1[0] + dir_x * offset  # End at junction
+                end_y = p1[1] + dir_y * offset
+                start_x = end_x + ortho_x * lane_length  # Start away from junction
+                start_y = end_y + ortho_y * lane_length
+                self.draw_arrow(surface, lane.get_lane_color().value, (start_x, start_y), (end_x, end_y))
 
+                # Draw vehicles on this lane
+                for vehicle, distance in nearby_vehicles:
+                    if hasattr(vehicle, 'has_arrived') and vehicle.has_arrived():
+                        continue  # Skip drawing if vehicle reached destination
+                    if hasattr(vehicle, 'cur_road_lane') and vehicle.get_cur_lane():
+                        # For IN lanes, check if this is the destination lane
+                        # print(f"[DEBUG] Checked lane: {lane} for vehicle: {vehicle.get_cur_lane()}")
+                        if vehicle.get_next_lane() == lane:
+                            # Calculate progress based on time
+                            if hasattr(vehicle, 'velocity') and vehicle.velocity is not None:
+                                # Get the road properties
+                                # road = vehicle.get_cur_lane().parent_road
+
+                                # Get source and destination nodes from the current road lane
+                                from_node = vehicle.get_source_junction().point
+                                to_node = vehicle.get_destination_junction().point
+                                # road_length = road.length
+                                pixel_length = from_node.get_distance_from_point(to_node)
+
+                                # Calculate current distance from start of road
+                                current_distance = vehicle.cur_point.get_distance_from_point(from_node)
+                                total_distance = from_node.get_distance_from_point(to_node)
+                                progress = current_distance / total_distance if total_distance > 0 else 0
+
+                                # Check traffic light state for this lane
+                                light_state = getattr(lane, 'cur_state', None)
+                                should_wait = light_state not in [State.GREEN, State.GREEN_FLICKERING]
+
+                                # Only draw if progress is less than 0.95 or light is green
+                                if progress < 0.95 and progress != 0:
+                                    lane_x = start_x + (end_x - start_x) * progress
+                                    lane_y = start_y + (end_y - start_y) * progress
+                                    pygame.draw.circle(surface, Color.RED.value, (int(lane_x), int(lane_y)), 3)
+                                elif (progress >= 0.95 or progress == 0) and (
+                                        lane.get_lane_color() == Color.YELLOW or lane.get_lane_color() == Color.RED or lane.get_lane_color() == Color.ORANGE):
+                                    print(f"[DEBUG] Progress is {progress} with color {lane.get_lane_color()}")
+                                    vehicle.need_to_stop = True
+                                    lane_x = start_x + (end_x - start_x) * 0.95
+                                    lane_y = start_y + (end_y - start_y) * 0.95
+                                    pygame.draw.circle(surface, Color.SKY_BLUE.value, (int(lane_x), int(lane_y)), 3)
+                                else:
+                                    print(f"[DEBUG] need_to_stop Flase with color {lane.get_lane_color()}")
+                                    vehicle.need_to_stop = False
             # Draw OUT lanes
             for lane_index, lane in enumerate(direction.out_lanes):
-                offset = lane_step * (lane_index + 1)
+                offset = lane_step * (lane_index + 1 + len(direction.in_lanes))
                 start_x = p1[0] + dir_x * offset  # Start at junction
                 start_y = p1[1] + dir_y * offset
                 end_x = start_x + ortho_x * lane_length  # End away from junction
@@ -493,58 +550,6 @@ class SimulationScreen:
                                     lane_x = start_x + (end_x - start_x) * 0.95
                                     lane_y = start_y + (end_y - start_y) * 0.95
                                     pygame.draw.circle(surface, Color.SKY_BLUE.value, (int(lane_x), int(lane_y)), 3)
-
-            # Draw IN lanes
-            for lane_index, lane in enumerate(direction.in_lanes):
-                offset = lane_step * (lane_index + 1 + len(direction.out_lanes))
-                end_x = p1[0] + dir_x * offset  # End at junction
-                end_y = p1[1] + dir_y * offset
-                start_x = end_x + ortho_x * lane_length  # Start away from junction
-                start_y = end_y + ortho_y * lane_length
-                self.draw_arrow(surface, lane.get_lane_color().value, (start_x, start_y), (end_x, end_y))
-
-                # Draw vehicles on this lane
-                for vehicle, distance in nearby_vehicles:
-                    if hasattr(vehicle, 'has_arrived') and vehicle.has_arrived():
-                        continue  # Skip drawing if vehicle reached destination
-                    if hasattr(vehicle, 'cur_road_lane') and vehicle.get_cur_lane():
-                        # For IN lanes, check if this is the destination lane
-                       # print(f"[DEBUG] Checked lane: {lane} for vehicle: {vehicle.get_cur_lane()}")
-                        if vehicle.get_next_lane() == lane:
-                            # Calculate progress based on time
-                            if hasattr(vehicle, 'velocity') and vehicle.velocity is not None:
-                                # Get the road properties
-                               # road = vehicle.get_cur_lane().parent_road
-                                
-                                # Get source and destination nodes from the current road lane
-                                from_node = vehicle.get_source_junction().point
-                                to_node = vehicle.get_destination_junction().point
-                               # road_length = road.length
-                                pixel_length = from_node.get_distance_from_point(to_node)
-                                
-                                # Calculate current distance from start of road
-                                current_distance = vehicle.cur_point.get_distance_from_point(from_node)
-                                total_distance = from_node.get_distance_from_point(to_node)
-                                progress = current_distance / total_distance if total_distance > 0 else 0
-
-                                # Check traffic light state for this lane
-                                light_state = getattr(lane, 'cur_state', None)
-                                should_wait = light_state not in [State.GREEN, State.GREEN_FLICKERING]
-
-                                # Only draw if progress is less than 0.95 or light is green
-                                if progress < 0.95 and progress != 0:
-                                    lane_x = start_x + (end_x - start_x) * progress
-                                    lane_y = start_y + (end_y - start_y) * progress
-                                    pygame.draw.circle(surface, Color.RED.value, (int(lane_x), int(lane_y)), 3)
-                                elif (progress >= 0.95 or progress == 0) and (lane.get_lane_color() == Color.YELLOW or lane.get_lane_color() == Color.RED or lane.get_lane_color() == Color.ORANGE):
-                                    print(f"[DEBUG] Progress is {progress} with color {lane.get_lane_color()}")
-                                    vehicle.need_to_stop = True
-                                    lane_x = start_x + (end_x - start_x) * 0.95
-                                    lane_y = start_y + (end_y - start_y) * 0.95
-                                    pygame.draw.circle(surface, Color.SKY_BLUE.value, (int(lane_x), int(lane_y)), 3)
-                                else:
-                                    print(f"[DEBUG] need_to_stop Flase with color {lane.get_lane_color()}")
-                                    vehicle.need_to_stop = False
 
     def set_graph(self, json_data, dt):
         directions_in_map = []  # sorted by indexes in map
@@ -768,9 +773,9 @@ class SimulationScreen:
         dominant = max(energies.items(), key=lambda x: x[1])[0]
         return dominant
 
-    def collect_consumption_statistics(self):
+    def collect_consumption_statistics(self, graph):
         """
-        Collect consumption and pollution statistics from all vehicles
+        Collect consumption and pollution statistics from all vehicles in the given graph
         """
         total_energy_consumed = 0
         total_pollution = 0
@@ -787,7 +792,7 @@ class SimulationScreen:
         vehicle_consumption = {"Car": 0, "Bus": 0, "Truck": 0}
         vehicle_pollution = {"Car": 0, "Bus": 0, "Truck": 0}
         
-        for vehicle in self.graph.vehicles:
+        for vehicle in graph.vehicles:
             # Get consumption summary for this vehicle
             summary = vehicle.get_consumption_summary()
             

@@ -4,6 +4,7 @@ import os
 import json
 import tkinter as tk
 from tkinter import filedialog
+from classes.Enums.Alg import Alg
 
 
 def get_available_maps():
@@ -33,6 +34,7 @@ def get_available_maps():
 
 class SettingsScreen:
     def __init__(self, screen, ui_manager):
+        # Resize window to 900x700 for settings screen
         self.screen = screen
         self.ui_manager = ui_manager
         self.next_screen = None
@@ -43,10 +45,12 @@ class SettingsScreen:
 
         # Get available maps
         self.available_maps = get_available_maps()
+        # Get available algorithms from Alg enum
+        self.available_algorithms = [alg.name for alg in Alg]
 
         # Title
         self.title_label = pygame_gui.elements.UILabel(
-            pygame.Rect((350, 10), (250, 30)),
+            pygame.Rect((350, 10), (350, 30)),
             text="Simulation Settings",
             manager=self.ui_manager,
             object_id="#title_label"
@@ -61,9 +65,10 @@ class SettingsScreen:
             ("Buses amount", (40, 300)),
             ("Trucks amount", (40, 350)),
             ("Type:", (40, 400)),
-            ("Display algorithm", (500, 50)),
-            ("Random vehicles JSON", (500, 180)),
-            ("Density", (500, 250))
+            ("Display algorithm", (600, 50)),
+            ("Compared algorithm", (600, 100)),
+            ("Random vehicles JSON", (600, 180)),
+            ("Density", (600, 250))
         ]
         for text, pos in labels:
             label = pygame_gui.elements.UILabel(
@@ -128,17 +133,26 @@ class SettingsScreen:
             object_id='#map_dropdown'
         )
 
-        self.algorithm_checklist = pygame_gui.elements.UISelectionList(
-            pygame.Rect((700, 50), (150, 120)),  # TODO: fix size to fit amount of algorithms
-            ["alg1", "alg2", "alg3", "alg4"],  # TODO: change to the actual possible algorithms' names
+        # Algorithm dropdowns
+        self.display_alg_dropdown = pygame_gui.elements.UIDropDownMenu(
+            options_list=self.available_algorithms,
+            starting_option=self.available_algorithms[0] if self.available_algorithms else "",
+            relative_rect=pygame.Rect((800, 50), (250, 30)),
             manager=self.ui_manager,
-            allow_multi_select=True
+            object_id='#display_alg_dropdown'
+        )
+        self.compared_alg_dropdown = pygame_gui.elements.UIDropDownMenu(
+            options_list=self.available_algorithms,
+            starting_option=self.available_algorithms[0] if self.available_algorithms else "",
+            relative_rect=pygame.Rect((800, 100), (250, 30)),
+            manager=self.ui_manager,
+            object_id='#compared_alg_dropdown'
         )
 
-        self.random_checkbox = pygame_gui.elements.UISelectionList(pygame.Rect((700, 180), (30, 30)), ["V"], self.ui_manager)
-        self.density_slider = pygame_gui.elements.UIHorizontalSlider(pygame.Rect((700, 250), (150, 30)), start_value=3, value_range=(1, 5), manager=self.ui_manager)
+        self.random_checkbox = pygame_gui.elements.UISelectionList(pygame.Rect((800, 180), (30, 30)), ["V"], self.ui_manager)
+        self.density_slider = pygame_gui.elements.UIHorizontalSlider(pygame.Rect((800, 250), (150, 30)), start_value=3, value_range=(1, 5), manager=self.ui_manager)
 
-        self.density_label = pygame_gui.elements.UILabel(pygame.Rect((860, 250), (30, 30)), "3", self.ui_manager, object_id="#black_label")
+        self.density_label = pygame_gui.elements.UILabel(pygame.Rect((960, 250), (30, 30)), "3", self.ui_manager, object_id="#black_label")
 
         self.car_input = pygame_gui.elements.UITextEntryLine(pygame.Rect((240, 250), (200, 30)), self.ui_manager)
         self.bus_input = pygame_gui.elements.UITextEntryLine(pygame.Rect((240, 300), (200, 30)), self.ui_manager)
@@ -157,13 +171,13 @@ class SettingsScreen:
             inp.set_allowed_characters("numbers")
             inp.set_text_length_limit(3)
 
-        self.upload_button = pygame_gui.elements.UIButton(pygame.Rect((700, 500), (150, 30)), "Upload JSON", self.ui_manager)
+        self.upload_button = pygame_gui.elements.UIButton(pygame.Rect((800, 500), (150, 30)), "Upload JSON", self.ui_manager)
         self.save_button = pygame_gui.elements.UIButton(pygame.Rect((100, 500), (200, 50)), "Save", self.ui_manager)
         self.cancel_button = pygame_gui.elements.UIButton(pygame.Rect((850, 10), (30, 30)), "X", self.ui_manager)
         self.error_label = pygame_gui.elements.UILabel(pygame.Rect((300, 560), (400, 30)), "", self.ui_manager, object_id="#error_label")
 
         self.elements.extend([
-            self.time_input, self.map_dropdown, self.algorithm_checklist,
+            self.time_input, self.map_dropdown, self.display_alg_dropdown, self.compared_alg_dropdown,
             self.random_checkbox, self.density_slider, self.density_label,
             self.car_input, self.bus_input, self.truck_input,
             self.electric_input, self.gasoline_input, self.gas_input,
@@ -174,6 +188,7 @@ class SettingsScreen:
 
         if os.path.exists("settings.json"):
             self.load_from_json("settings.json")
+            # Refresh all UI fields to reflect loaded values
 
     def handle_events(self, event):
         if event.type == pygame.QUIT:
@@ -205,6 +220,14 @@ class SettingsScreen:
             else:
                 field.enable()
         self.density_slider.disable() if active else self.density_slider.enable()
+
+        # Check that Display algorithm and Compared algorithm are not the same
+        display_alg = self.display_alg_dropdown.selected_option
+        compared_alg = self.compared_alg_dropdown.selected_option
+        if display_alg == compared_alg:
+            self.save_button.disable()
+            self.error_label.set_text("Display and Compared algorithm must be different")
+            return
 
         if not active:
             try:
@@ -253,6 +276,22 @@ class SettingsScreen:
             selected_map = selected_map[0] if selected_map else ""
         print(f"[DEBUG] Saving map: {selected_map}")
         
+        # Get selected algorithms
+        selected_display_alg = self.display_alg_dropdown.selected_option
+        selected_compared_alg = self.compared_alg_dropdown.selected_option
+        # Handle different types of selected_display_alg
+        if isinstance(selected_display_alg, tuple):
+            selected_display_alg = selected_display_alg[0]
+        elif isinstance(selected_display_alg, list):
+            selected_display_alg = selected_display_alg[0] if selected_display_alg else ""
+        print(f"[DEBUG] Saving display algorithm: {selected_display_alg}")
+        # Handle different types of selected_compared_alg
+        if isinstance(selected_compared_alg, tuple):
+            selected_compared_alg = selected_compared_alg[0]
+        elif isinstance(selected_compared_alg, list):
+            selected_compared_alg = selected_compared_alg[0] if selected_compared_alg else ""
+        print(f"[DEBUG] Saving compared algorithm: {selected_compared_alg}")
+        
         data = {
             "Time to shutdown simulation": {"value": self.time_input.get_text()},
             "Map for simulation": {"value": selected_map},
@@ -262,7 +301,8 @@ class SettingsScreen:
             "Electric": {"value": self.electric_input.get_text()},
             "Gasoline": {"value": self.gasoline_input.get_text()},
             "Gas": {"value": self.gas_input.get_text()},
-            # "Alg": {"value": self.algorithm_checklist.get_single_selection()}  # TODO: check if line doesnt cause bugs
+            "Display algorithm": {"value": selected_display_alg},
+            "Compared algorithm": {"value": selected_compared_alg}
         }
         # Clear the file by opening in 'w' mode and then write new data
         with open("settings.json", "w") as f:
@@ -274,7 +314,9 @@ class SettingsScreen:
             with open(file_path, 'r') as f:
                 data = json.load(f)
                 self.time_input.set_text(data.get("Time to shutdown simulation", {}).get("value", ""))
-                
+                select_map = None
+                display_alg = None
+                compared_alg = None
                 # Get the map value from JSON and ensure it's a string
                 map_value = data.get("Map for simulation", {}).get("value", "")
                 # Handle case where map_value might be a list
@@ -283,9 +325,9 @@ class SettingsScreen:
                 
                 # Check if the map exists in available maps
                 if map_value in self.available_maps:
-                    self.map_dropdown.selected_option = map_value
+                    select_map = map_value
                 elif self.available_maps:  # If map not found but we have other maps
-                    self.map_dropdown.selected_option = self.available_maps[0]
+                    select_map = self.available_maps[0]
                     print(f"[WARNING] Map {map_value} not found, using {self.available_maps[0]} instead")
                 else:
                     print("[WARNING] No maps available")
@@ -296,7 +338,44 @@ class SettingsScreen:
                 self.electric_input.set_text(data.get("Electric", {}).get("value", ""))
                 self.gasoline_input.set_text(data.get("Gasoline", {}).get("value", ""))
                 self.gas_input.set_text(data.get("Gas", {}).get("value", ""))
-                # TODO: set default alg from json file
+                # Set default algorithms from json file
+                display_alg_value = data.get("Display algorithm", {}).get("value", self.available_algorithms[0])
+                compared_alg_value = data.get("Compared algorithm", {}).get("value", self.available_algorithms[0])
+                if display_alg_value in self.available_algorithms:
+                    display_alg = display_alg_value
+                else:
+                    display_alg = self.available_algorithms[1]
+                    print(f"[WARNING] Display algorithm {display_alg_value} not found, using {self.available_algorithms[0]} instead")
+                if compared_alg_value in self.available_algorithms:
+                    compared_alg = compared_alg_value
+                else:
+                    compared_alg = self.available_algorithms[0]
+                    print(f"[WARNING] Compared algorithm {compared_alg_value} not found, using {self.available_algorithms[0]} instead")
+
                 print(f"[DEBUG] Loaded settings from {file_path}")
+
+                self.map_dropdown = pygame_gui.elements.UIDropDownMenu(
+                    options_list=self.available_maps,
+                    starting_option= select_map,
+                    relative_rect=pygame.Rect((240, 100), (200, 30)),
+                    manager=self.ui_manager,
+                    object_id='#map_dropdown'
+                )
+
+                # Algorithm dropdowns
+                self.display_alg_dropdown = pygame_gui.elements.UIDropDownMenu(
+                    options_list=self.available_algorithms,
+                    starting_option= display_alg,
+                    relative_rect=pygame.Rect((800, 50), (250, 30)),
+                    manager=self.ui_manager,
+                    object_id='#display_alg_dropdown'
+                )
+                self.compared_alg_dropdown = pygame_gui.elements.UIDropDownMenu(
+                    options_list=self.available_algorithms,
+                    starting_option=compared_alg,
+                    relative_rect=pygame.Rect((800, 100), (250, 30)),
+                    manager=self.ui_manager,
+                    object_id='#compared_alg_dropdown'
+                )
         except Exception as e:
             print(f"[ERROR] Failed to load JSON: {e}")

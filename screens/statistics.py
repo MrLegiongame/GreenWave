@@ -3,14 +3,15 @@ import pygame_gui
 from classes.Enums.Color import Color
 
 class StatisticsScreen:
-    def __init__(self, screen, ui_manager, total_vehicles, simulation_time, vehicle_stats, consumption_stats=None):
+    def __init__(self, screen, ui_manager, total_vehicles, simulation_time, vehicle_stats, display_stats=None, compare_stats=None):
         self.screen = screen
         self.ui_manager = ui_manager
         self.next_screen = None
         self.total_vehicles = total_vehicles
         self.simulation_time = simulation_time
         self.vehicle_stats = vehicle_stats
-        self.consumption_stats = consumption_stats or {}
+        self.display_stats = display_stats or {}
+        self.compare_stats = compare_stats or {}
         
         # Scroll state
         self.scroll_offset = 0
@@ -34,8 +35,8 @@ class StatisticsScreen:
         
         # Card dimensions (scaled)
         self.card_width = int(280 * self.scale_factor)
-        self.card_height = int(140 * self.scale_factor)
-        self.margin = int(20 * self.scale_factor)
+        self.card_height = int(280 * 0.8 * self.scale_factor)  # 20% smaller
+        self.margin = int(20 * 1.15 * self.scale_factor)  # 15% more space
         self.cards_per_row = 3
         
         # Calculate total width of cards in a row
@@ -43,7 +44,7 @@ class StatisticsScreen:
         
         # Calculate starting x position to center the cards
         self.start_x = (self.WINDOW_WIDTH - total_cards_width) // 2
-        
+
         # Create back button with better styling
         button_width = int(200 * self.scale_factor)
         button_height = int(50 * self.scale_factor)
@@ -68,8 +69,8 @@ class StatisticsScreen:
         
         # Update card dimensions
         self.card_width = int(280 * self.scale_factor)
-        self.card_height = int(140 * self.scale_factor)
-        self.margin = int(20 * self.scale_factor)
+        self.card_height = int(280 * 0.8 * self.scale_factor)
+        self.margin = int(20 * 1.15 * self.scale_factor)
         
         # Recalculate total width and starting position
         total_cards_width = (self.card_width * self.cards_per_row) + (self.margin * (self.cards_per_row - 1))
@@ -84,6 +85,23 @@ class StatisticsScreen:
         )
         self.back_button.set_dimensions((button_width, button_height))
 
+    def wrap_text(self, text, font, max_width):
+        """Wrap text to fit within a given width when rendered with the specified font."""
+        words = text.split(' ')
+        lines = []
+        current_line = ''
+        for word in words:
+            test_line = current_line + (' ' if current_line else '') + word
+            if font.size(test_line)[0] <= max_width:
+                current_line = test_line
+            else:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+        if current_line:
+            lines.append(current_line)
+        return lines
+
     def draw_card(self, x, y, width, height, title, content_items, surface=None):
         if surface is None:
             surface = self.screen
@@ -97,25 +115,30 @@ class StatisticsScreen:
         # Draw title
         title_font = pygame.font.SysFont("Arial", int(18 * self.scale_factor), bold=True)
         title_surface = title_font.render(title, True, self.TITLE_COLOR)
-        title_rect = title_surface.get_rect(midtop=(x + width//2, y + int(10 * self.scale_factor)))
+        # Move the title further down to fit the taller card
+        title_rect = title_surface.get_rect(midtop=(x + width//2, y + int(24 * self.scale_factor)))
         surface.blit(title_surface, title_rect)
         
         # Draw content
         content_font = pygame.font.SysFont("Arial", int(16 * self.scale_factor))
-        y_offset = y + int(40 * self.scale_factor)
+        y_offset = y + int(64 * self.scale_factor)
+        max_text_width = width - int(30 * self.scale_factor)
         for label, value in content_items:
-            text = f"{label}: {value}"
-            text_surface = content_font.render(text, True, self.TEXT_COLOR)
-            text_rect = text_surface.get_rect(midleft=(x + int(15 * self.scale_factor), y_offset))
-            surface.blit(text_surface, text_rect)
-            y_offset += int(25 * self.scale_factor)
+            text = f"{label}: {value}" if label else f"{value}"
+            wrapped_lines = self.wrap_text(text, content_font, max_text_width)
+            for line in wrapped_lines:
+                text_surface = content_font.render(line, True, self.TEXT_COLOR)
+                text_rect = text_surface.get_rect(midleft=(x + int(15 * self.scale_factor), y_offset))
+                surface.blit(text_surface, text_rect)
+                y_offset += int(22 * self.scale_factor)
 
     def draw_section_title(self, x, y, title, surface=None):
         if surface is None:
             surface = self.screen
         title_font = pygame.font.SysFont("Arial", int(24 * self.scale_factor), bold=True)
         title_surface = title_font.render(title, True, self.SECTION_TITLE_COLOR)
-        title_rect = title_surface.get_rect(midleft=(x, y))
+        # Move section titles further down for better spacing with larger cards
+        title_rect = title_surface.get_rect(midleft=(x, y + int(16 * self.scale_factor)))
         surface.blit(title_surface, title_rect)
 
     def handle_events(self, event):
@@ -137,9 +160,11 @@ class StatisticsScreen:
 
     def draw(self):
         # Calculate total content height (estimate based on cards/sections)
-        content_height = int(700 * self.scale_factor)  # Adjust as needed for all cards
-        if self.consumption_stats:
-            content_height = int(900 * self.scale_factor)
+        content_height = int(700 * self.scale_factor)
+        if self.display_stats or self.compare_stats:
+            content_height = int(1200 * self.scale_factor)
+        # Add extra height for the new score row
+        content_height += self.card_height + self.margin
         self.max_scroll = max(0, content_height - self.WINDOW_HEIGHT + 100)
 
         # Create a scrollable surface
@@ -155,18 +180,73 @@ class StatisticsScreen:
         title_rect = title.get_rect(center=(self.WINDOW_WIDTH//2, int(40 * self.scale_factor)))
         scroll_surface.blit(title_shadow, (title_rect.x + int(2 * self.scale_factor), title_rect.y + int(2 * self.scale_factor)))
         scroll_surface.blit(title, title_rect)
-        
+
+        # --- NEW: Draw Algorithm Score Row ---
+        score_y = int(80 * self.scale_factor)
+        score_card_width = int((self.card_width * 1.2))
+        score_margin = int(self.margin * 2)
+        # Calculate x positions for two cards centered
+        total_score_width = score_card_width * 2 + score_margin
+        score_start_x = (self.WINDOW_WIDTH - total_score_width) // 2
+
+        # Calculate scores (lower is better)
+        def calc_score(stats):
+            if not stats:
+                return 0
+            return stats.get('total_pollution', 0) + stats.get('total_energy_consumed', 0)
+
+        display_score = calc_score(self.display_stats)
+        compare_score = calc_score(self.compare_stats)
+
+        # Get algorithm names (fallback to 'Display'/'Compare')
+        display_alg_name = getattr(self, 'display_alg_name', 'Display Algorithm')
+        compare_alg_name = getattr(self, 'compare_alg_name', 'Compare Algorithm')
+        # Try to get from stats if available
+        if 'alg_name' in self.display_stats:
+            display_alg_name = self.display_stats['alg_name']
+        if 'alg_name' in self.compare_stats:
+            compare_alg_name = self.compare_stats['alg_name']
+
+        self.draw_card(
+            score_start_x,
+            score_y,
+            score_card_width,
+            self.card_height,
+            display_alg_name,
+            [("Final Score", f"{display_score:.1f}"), ("Goal", "Lower = Better")],
+            surface=scroll_surface
+        )
+        self.draw_card(
+            score_start_x + score_card_width + score_margin,
+            score_y,
+            score_card_width,
+            self.card_height,
+            compare_alg_name,
+            [("Final Score", f"{compare_score:.1f}"), ("Goal", "Lower = Better")],
+            surface=scroll_surface
+        )
+
+        # Y positions for each row
+        y_row1 = int(130 * self.scale_factor) + self.card_height + self.margin
+        y_row2 = y_row1 + self.card_height + self.margin
+        y_row3 = y_row2 + self.card_height + self.margin
+        y_section2 = y_row2 - int(30 * self.scale_factor)  # Section title above row 2
+        y_section3 = y_row3 - int(30 * self.scale_factor)  # Section title above row 3
+
         # Draw Simulation Overview section
-        self.draw_section_title(self.start_x, int(100 * self.scale_factor), "Simulation Overview", surface=scroll_surface)
+        self.draw_section_title(self.start_x, int(340 * self.scale_factor), "Simulation Overview", surface=scroll_surface)
         
         # Draw Overview Cards
         overview_items = [
             ("Total Vehicles", self.total_vehicles),
-            ("Simulation Time", f"{self.simulation_time:.2f} seconds")
+            ("Simulation Time", f"{self.simulation_time:.2f} seconds"),
         ]
+        if self.display_stats and self.compare_stats:
+            overview_items.append(("", "--- Compare Algorithm ---"))
+            overview_items.append(("Simulation Time", f"{self.simulation_time:.2f} seconds"))
         self.draw_card(
             self.start_x,
-            int(130 * self.scale_factor),
+            y_row1,
             self.card_width,
             self.card_height,
             "General Info",
@@ -182,7 +262,7 @@ class StatisticsScreen:
         ]
         self.draw_card(
             self.start_x + self.card_width + self.margin,
-            int(130 * self.scale_factor),
+            y_row1,
             self.card_width,
             self.card_height,
             "Vehicle Types",
@@ -198,7 +278,7 @@ class StatisticsScreen:
         ]
         self.draw_card(
             self.start_x + (self.card_width + self.margin) * 2,
-            int(130 * self.scale_factor),
+            y_row1,
             self.card_width,
             self.card_height,
             "Energy Distribution",
@@ -207,20 +287,25 @@ class StatisticsScreen:
         )
         
         # Draw Consumption and Pollution section if data is available
-        if self.consumption_stats:
-            self.draw_section_title(self.start_x, int(300 * self.scale_factor), "Consumption & Pollution Analysis", surface=scroll_surface)
+        if self.display_stats and self.compare_stats:
+            self.draw_section_title(self.start_x, y_row2 - int(30 * self.scale_factor), "Consumption & Pollution Analysis", surface=scroll_surface)
             
             # Draw Total Consumption Card
-            total_consumption = self.consumption_stats.get("total_energy_consumed", 0)
+            display_total_consumption = self.display_stats.get("total_energy_consumed", 0)
+            compare_total_consumption = self.compare_stats.get("total_energy_consumed", 0)
             energy_unit = "kWh" if any("Electric" in str(v) for v in self.vehicle_stats.values()) else "L"
             consumption_items = [
-                ("Total Energy", f"{total_consumption:.2f} {energy_unit}"),
-                ("Total Distance", f"{self.consumption_stats.get('total_distance', 0):.1f} m"),
-                ("Avg Efficiency", f"{self.consumption_stats.get('average_energy_efficiency', 0):.3f}")
+                ("Total Energy", f"{display_total_consumption:.2f} {energy_unit}"),
+                ("Total Distance", f"{self.display_stats.get('total_distance', 0):.1f} m"),
+                ("Avg Efficiency", f"{self.display_stats.get('average_energy_efficiency', 0):.3f}"),
+                ("", "--- Compare Algorithm ---"),
+                ("Total Energy", f"{compare_total_consumption:.2f} {energy_unit}"),
+                ("Total Distance", f"{self.compare_stats.get('total_distance', 0):.1f} m"),
+                ("Avg Efficiency", f"{self.compare_stats.get('average_energy_efficiency', 0):.3f}")
             ]
             self.draw_card(
                 self.start_x,
-                int(330 * self.scale_factor),
+                y_row2,
                 self.card_width,
                 self.card_height,
                 "Energy Consumption",
@@ -229,15 +314,20 @@ class StatisticsScreen:
             )
             
             # Draw Total Pollution Card
-            total_pollution = self.consumption_stats.get("total_pollution", 0)
+            display_total_pollution = self.display_stats.get("total_pollution", 0)
+            compare_total_pollution = self.compare_stats.get("total_pollution", 0)
             pollution_items = [
-                ("Total CO2", f"{total_pollution:.1f} g"),
-                ("Avg Emission", f"{self.consumption_stats.get('average_pollution_efficiency', 0):.1f} g/km"),
-                ("Stops Count", self.consumption_stats.get("total_stops", 0))
+                ("Total CO2", f"{display_total_pollution:.1f} g"),
+                ("Avg Emission", f"{self.display_stats.get('average_pollution_efficiency', 0):.1f} g/km"),
+                ("Stops Count", self.display_stats.get("total_stops", 0)),
+                ("", "--- Compare Algorithm ---"),
+                ("Total CO2", f"{compare_total_pollution:.1f} g"),
+                ("Avg Emission", f"{self.compare_stats.get('average_pollution_efficiency', 0):.1f} g/km"),
+                ("Stops Count", self.compare_stats.get("total_stops", 0))
             ]
             self.draw_card(
                 self.start_x + self.card_width + self.margin,
-                int(330 * self.scale_factor),
+                y_row2,
                 self.card_width,
                 self.card_height,
                 "Pollution Emissions",
@@ -246,19 +336,28 @@ class StatisticsScreen:
             )
             
             # Draw Traffic Behavior Card
-            idle_time = self.consumption_stats.get("total_idle_time", 0)
-            accel_events = self.consumption_stats.get("total_acceleration_events", 0)
-            total_distance = self.consumption_stats.get("total_distance", 0)
-            total_time = self.consumption_stats.get("total_time", self.simulation_time)
-            avg_speed = (total_distance / total_time * 3.6) if total_time > 0 else 0  # Convert m/s to km/h
+            display_idle_time = self.display_stats.get("total_idle_time", 0)
+            display_accel_events = self.display_stats.get("total_acceleration_events", 0)
+            display_total_distance = self.display_stats.get("total_distance", 0)
+            display_total_time = self.display_stats.get("total_time", self.simulation_time)
+            display_avg_speed = (display_total_distance / display_total_time * 3.6) if display_total_time > 0 else 0
+            compare_idle_time = self.compare_stats.get("total_idle_time", 0)
+            compare_accel_events = self.compare_stats.get("total_acceleration_events", 0)
+            compare_total_distance = self.compare_stats.get("total_distance", 0)
+            compare_total_time = self.compare_stats.get("total_time", self.simulation_time)
+            compare_avg_speed = (compare_total_distance / compare_total_time * 3.6) if compare_total_time > 0 else 0
             behavior_items = [
-                ("Idle Time", f"{idle_time:.1f} s"),
-                ("Accel Events", accel_events),
-                ("Avg Speed", f"{avg_speed:.1f} km/h")
+                ("Idle Time", f"{display_idle_time:.1f} s"),
+                ("Accel Events", display_accel_events),
+                ("Avg Speed", f"{display_avg_speed:.1f} km/h"),
+                ("", "--- Compare Algorithm ---"),
+                ("Idle Time", f"{compare_idle_time:.1f} s"),
+                ("Accel Events", compare_accel_events),
+                ("Avg Speed", f"{compare_avg_speed:.1f} km/h")
             ]
             self.draw_card(
                 self.start_x + (self.card_width + self.margin) * 2,
-                int(330 * self.scale_factor),
+                y_row2,
                 self.card_width,
                 self.card_height,
                 "Traffic Behavior",
@@ -267,18 +366,23 @@ class StatisticsScreen:
             )
             
             # Draw Energy Type Breakdown section
-            self.draw_section_title(self.start_x, int(500 * self.scale_factor), "Energy Type Breakdown", surface=scroll_surface)
+            self.draw_section_title(self.start_x, y_row3 - int(30 * self.scale_factor), "Energy Type Breakdown", surface=scroll_surface)
             
             # Draw Energy Consumption by Type
-            energy_consumption = self.consumption_stats.get("energy_consumption", {})
+            display_energy_consumption = self.display_stats.get("energy_consumption", {})
+            compare_energy_consumption = self.compare_stats.get("energy_consumption", {})
             energy_consumption_items = [
-                ("Electric", f"{energy_consumption.get('Electric', 0):.2f} kWh"),
-                ("Gasoline", f"{energy_consumption.get('Gasoline', 0):.2f} L"),
-                ("Gas", f"{energy_consumption.get('Gas', 0):.2f} L")
+                ("Electric", f"{display_energy_consumption.get('Electric', 0):.2f} kWh"),
+                ("Gasoline", f"{display_energy_consumption.get('Gasoline', 0):.2f} L"),
+                ("Gas", f"{display_energy_consumption.get('Gas', 0):.2f} L"),
+                ("", "--- Compare Algorithm ---"),
+                ("Electric", f"{compare_energy_consumption.get('Electric', 0):.2f} kWh"),
+                ("Gasoline", f"{compare_energy_consumption.get('Gasoline', 0):.2f} L"),
+                ("Gas", f"{compare_energy_consumption.get('Gas', 0):.2f} L")
             ]
             self.draw_card(
                 self.start_x,
-                int(530 * self.scale_factor),
+                y_row3,
                 self.card_width,
                 self.card_height,
                 "Energy by Type",
@@ -287,15 +391,20 @@ class StatisticsScreen:
             )
             
             # Draw Pollution by Energy Type
-            energy_pollution = self.consumption_stats.get("energy_pollution", {})
+            display_energy_pollution = self.display_stats.get("energy_pollution", {})
+            compare_energy_pollution = self.compare_stats.get("energy_pollution", {})
             energy_pollution_items = [
-                ("Electric", f"{energy_pollution.get('Electric', 0):.1f} g CO2"),
-                ("Gasoline", f"{energy_pollution.get('Gasoline', 0):.1f} g CO2"),
-                ("Gas", f"{energy_pollution.get('Gas', 0):.1f} g CO2")
+                ("Electric", f"{display_energy_pollution.get('Electric', 0):.1f} g CO2"),
+                ("Gasoline", f"{display_energy_pollution.get('Gasoline', 0):.1f} g CO2"),
+                ("Gas", f"{display_energy_pollution.get('Gas', 0):.1f} g CO2"),
+                ("", "--- Compare Algorithm ---"),
+                ("Electric", f"{compare_energy_pollution.get('Electric', 0):.1f} g CO2"),
+                ("Gasoline", f"{compare_energy_pollution.get('Gasoline', 0):.1f} g CO2"),
+                ("Gas", f"{compare_energy_pollution.get('Gas', 0):.1f} g CO2")
             ]
             self.draw_card(
                 self.start_x + self.card_width + self.margin,
-                int(530 * self.scale_factor),
+                y_row3,
                 self.card_width,
                 self.card_height,
                 "Pollution by Type",
@@ -304,15 +413,20 @@ class StatisticsScreen:
             )
             
             # Draw Vehicle Type Impact
-            vehicle_consumption = self.consumption_stats.get("vehicle_consumption", {})
+            display_vehicle_consumption = self.display_stats.get("vehicle_consumption", {})
+            compare_vehicle_consumption = self.compare_stats.get("vehicle_consumption", {})
             vehicle_impact_items = [
-                ("Cars", f"{vehicle_consumption.get('Car', 0):.2f}"),
-                ("Buses", f"{vehicle_consumption.get('Bus', 0):.2f}"),
-                ("Trucks", f"{vehicle_consumption.get('Truck', 0):.2f}")
+                ("Cars", f"{display_vehicle_consumption.get('Car', 0):.2f}"),
+                ("Buses", f"{display_vehicle_consumption.get('Bus', 0):.2f}"),
+                ("Trucks", f"{display_vehicle_consumption.get('Truck', 0):.2f}"),
+                ("", "--- Compare Algorithm ---"),
+                ("Cars", f"{compare_vehicle_consumption.get('Car', 0):.2f}"),
+                ("Buses", f"{compare_vehicle_consumption.get('Bus', 0):.2f}"),
+                ("Trucks", f"{compare_vehicle_consumption.get('Truck', 0):.2f}")
             ]
             self.draw_card(
                 self.start_x + (self.card_width + self.margin) * 2,
-                int(530 * self.scale_factor),
+                y_row3,
                 self.card_width,
                 self.card_height,
                 "Consumption by Vehicle",

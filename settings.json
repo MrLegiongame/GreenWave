@@ -22,5 +22,11 @@
     },
     "Gas": {
         "value": "40"
+    },
+    "Display algorithm": {
+        "value": "ADAPTIVE_ALG"
+    },
+    "Compared algorithm": {
+        "value": "FIXED_TIMING_CYCLE"
     }
 }
