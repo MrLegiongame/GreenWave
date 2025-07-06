@@ -59,7 +59,7 @@ while running:
         elif next_screen == "main_menu":
             current_screen = MainMenuScreen(screen)
         elif next_screen == "simulation":
-            display_alg = Alg.ADAPTIVE_ALG  # TODO: change to get from settings
+            display_alg = Alg.GREEN_WAVE  # TODO: change to get from settings
             compare_alg = Alg.FIXED_TIMING_CYCLE  # TODO: change to get from settings
             current_screen = SimulationScreen(screen, ui_manager, display_alg, compare_alg)
         elif isinstance(next_screen, StatisticsScreen):

@@ -193,6 +193,9 @@ class Junction:
             traffic_light.set_state(State.GREEN)
 
     def update_state(self, next_active_index):
+        if next_active_index == self.active_state:
+            return
+
         next_active_state = self.available_states[next_active_index]
         traffic_lights_to_turn_red = tuple(set(self.active_state) - set(next_active_state))
         traffic_lights_to_turn_green = tuple(set(next_active_state) - set(self.active_state))
@@ -247,6 +250,29 @@ class Junction:
                     temp_vehicle_count += len(lane.vehicles_queue)
             if temp_vehicle_count > max_vehicle_count:
                 max_vehicle_count = temp_vehicle_count
+                res_index = state_index
+        return res_index
+
+    def get_max_score_state_index(self):
+        max_score = 0
+        res_index = 0
+        for state_index in range(self.states_size):
+            temp_score = 0
+            for traffic_light in self.available_states[state_index]:
+                for lane in traffic_light.lanes:
+                    for vehicle in lane.vehicles_queue:
+                        match vehicle.vehicle_type:
+                            case "Car":
+                                temp_score += vehicle.weight * 1.5
+                            case "Bus":
+                                temp_score += vehicle.weight * 2
+                            case "Truck":
+                                temp_score += vehicle.weight * 2.5
+                            case _:
+                                temp_score += vehicle.weight
+
+            if temp_score > max_score:
+                max_score = temp_score
                 res_index = state_index
         return res_index
 

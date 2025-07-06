@@ -179,7 +179,8 @@ class Graph:
         try:
             lane_path = nx.shortest_path(self.graph, source=source, target=target, weight="weight")
             print(f"\nFound path: {lane_path}")
-        except nx.exception.NetworkXNoPath as e:
+        # except nx.exception.NetworkXNoPath as e:
+        except Exception as e:
             print(f"\nNo path available between {source} and {target}")
             # print("\nGraph structure:")
             # print("Nodes:", sorted(self.graph.nodes()))
