@@ -56,6 +56,8 @@ class Graph:
 
         # Draw vehicles (without moving them)
         for vehicle in self.vehicles:
+            if hasattr(vehicle, 'has_arrived') and vehicle.has_arrived():
+                continue
             pygame.draw.circle(screen, Color.RED.value, vehicle.get_cur_point().get_point(), 6)
 
     def get(self, node, default=None):

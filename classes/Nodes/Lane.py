@@ -1,3 +1,5 @@
+import time
+
 from itertools import count
 
 from classes.Edges.RoadLane import RoadLane
@@ -89,6 +91,7 @@ class Lane:
 
     def add_to_queue(self, vehicle):
         if isinstance(vehicle, Vehicle):
+
             time_to_cross = 1
             match vehicle.vehicle_type:
                 case "Car":
@@ -103,7 +106,18 @@ class Lane:
     def pop_head_from_queue(self):
         if [] is not self.vehicles_queue and [] is not self.time_to_cross_queue:
             return self.vehicles_queue.pop(0), self.time_to_cross_queue.pop(0)
+
         return False
+
+    def is_vehicle_in_queue(self, vehicle):
+        """Check if a vehicle is in the queue"""
+        return vehicle in self.vehicles_queue
+
+    def get_vehicle_queue_position(self, vehicle):
+        """Get the position of a vehicle in the queue (0-based index)"""
+        if vehicle in self.vehicles_queue:
+            return self.vehicles_queue.index(vehicle)
+        return -1
 
     def get_lane_color(self):
         match self.cur_state:
