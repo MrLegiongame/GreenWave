@@ -26,7 +26,7 @@ clock = pygame.time.Clock()
 running = True
 
 while running:
-    time_delta = clock.tick(60) / 1000.0
+    time_delta = clock.tick(60) / 1000000.0
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

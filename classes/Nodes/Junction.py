@@ -232,7 +232,7 @@ class Junction:
         for traffic_light in traffic_lights_to_turn_green:
             traffic_light.update_state()  # active_state lanes to GREEN
 
-        threading.Thread(target=self.wait, args=(3, index)).start()
+        threading.Thread(target=self.wait, args=(3,)).start()
 
     def get_max_weighted_state_index(self):
         max_weight = 0
