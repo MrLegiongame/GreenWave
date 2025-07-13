@@ -12,59 +12,39 @@ class Algorithm:
         self.nodes_size = len(nodes)
         self.terminate_flag = False
 
+
     def set(self, alg, nodes):
         self.alg = alg
         self.nodes = nodes
+        self.nodes_size = len(nodes)
 
-    def update_fixed_timing_cycle(self):
-        time.sleep(2)
-        threads = []
-        for index in range(self.nodes_size):
-            active_index = (self.nodes[index].active_index + 1) % self.nodes[index].states_size
-            threads.append(threading.Thread(target=self.nodes[index].update_state, args=(active_index,)))
-            threads[index].start()
-        for index in range(self.nodes_size):
-            threads[index].join()
-
-    def update_adaptive_alg(self):
-        threads = []
-        start_time = time.time()
-        for index in range(self.nodes_size):
-            active_index = self.nodes[index].get_max_vehicle_count_state_index()
-            threads.append(threading.Thread(target=self.nodes[index].update_state, args=(active_index,)))
-            threads[index].start()
-        for index in range(self.nodes_size):
-            threads[index].join()
-        end_time = time.time()
-        delta_time = end_time - start_time
-        if delta_time < 0.5:
-            time.sleep(0.5 - delta_time)
-
-    def update_green_wave(self):
-        threads = []
-        start_time = time.time()
-        for index in range(self.nodes_size):
-            active_index = self.nodes[index].get_max_score_state_index()
-            threads.append(threading.Thread(target=self.nodes[index].update_state, args=(active_index,)))
-            threads[index].start()
-        for index in range(self.nodes_size):
-            threads[index].join()
-        end_time = time.time()
-        delta_time = end_time - start_time
-        if delta_time < 0.5:
-            time.sleep(0.5 - delta_time)
-
-    def update(self):
+    def get_next_active_index(self, index):
         match self.alg:
             case Alg.FIXED_TIMING_CYCLE:
-                return self.update_fixed_timing_cycle()
+                return (self.nodes[index].active_index + 1) % self.nodes[index].states_size
             case Alg.ADAPTIVE_ALG:
-                return self.update_adaptive_alg()
-            case Alg.GREEN_WAVE:
-                return self.update_green_wave()
+                return self.nodes[index].get_max_vehicle_count_state_index()
+            case Alg.GREEN_WAVE_ENERGY:
+                return self.nodes[index].get_min_expected_filter_state_index("energy")
+            case Alg.GREEN_WAVE_POLLUTION:
+                return self.nodes[index].get_min_expected_filter_state_index("pollution")
             case _:
                 print(f"Algorithm couldn't update due to invalid Alg")
                 return None
+
+    def update(self):
+        threads = []
+        start_time = time.time()
+        for index in range(self.nodes_size):
+            if not self.nodes[index].prevent_state_change:
+                self.nodes[index].prevent_state_change = True
+                next_active_index = self.get_next_active_index(index)
+                threads.append(threading.Thread(target=self.nodes[index].update_state, args=(next_active_index,)))
+                threads[index].start()
+        end_time = time.time()
+        delta_time = end_time - start_time
+        if delta_time < 0.5:
+            time.sleep(0.5 - delta_time)
 
     def run(self):
         for node in self.nodes:

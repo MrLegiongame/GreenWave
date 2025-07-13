@@ -156,7 +156,7 @@ class SimulationScreen:
         speed = 0.15  # rotation speed
 
         running = True
-        while self.all_vehicles_arrived and running:
+        while not self.all_vehicles_arrived and running:
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -649,7 +649,8 @@ class SimulationScreen:
                     vehicle_type=v_type,
                     energy_type=energy,
                     acceleration=0,  # or adjust per type if needed
-                    maximum_speed=100
+                    maximum_speed=100,
+                    liters_per_100km=random.randint(5, 15)
                 ))
 
         # --- Set states --- #

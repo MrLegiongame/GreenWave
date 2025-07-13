@@ -25,7 +25,7 @@ class Vehicle(ABC):
     _next_vehicle_id = 1
     
     def __init__(self, length, weight, start_node, end_node, image, vehicle_type, energy_type, maximum_speed,
-                 acceleration=0):
+                 liters_per_100km, acceleration=0):
         # Assign unique vehicle ID
         self.vehicle_id = Vehicle._next_vehicle_id
         Vehicle._next_vehicle_id += 1
@@ -38,10 +38,12 @@ class Vehicle(ABC):
         self.end_point = None
         self.set_start_and_end_nodes(start_node, end_node)
         self.cur_road_lane = None
+        self.cur_road_lane_length = 0
         self.cur_point = self.start_point
         self.vehicle_type = vehicle_type
         self.energy_type = energy_type
         self.maximum_speed = maximum_speed
+        self.liters_per_100km = liters_per_100km
         # self.velocity = min(self.cur_road_lane.maximum_speed, self.maximum_speed)
         self.velocity = None
         self.acceleration = acceleration
@@ -211,6 +213,7 @@ class Vehicle(ABC):
                 self.__last_lane = self.lanes_path[self.__lanes_passed]
                 print(f"Setup path len: {len(self.lanes_path)}")
                 self.__lanes_passed += 1
+                self.__last_lane.road_lane.vehicle_enter_lane(self)
                 # print(f"[setup_move] Set last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
             except Exception as e:
                 print(f"[setup_move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
@@ -226,6 +229,7 @@ class Vehicle(ABC):
         self.__last_lane.free_to_leave_queue = True
         self.__last_lane = self.lanes_path[self.__lanes_passed]
         self.__lanes_passed += 1
+        self.__last_lane.road_lane.vehicle_enter_lane(self)
         print(f"[DEBUG] IN-lane: After increment __lanes_passed={self.__lanes_passed}")
 
     def move(self, dt):
@@ -281,7 +285,11 @@ class Vehicle(ABC):
                     raise
 
                 if self.__last_lane is not self.__end_in_lane:
-                    self.__last_lane.add_to_queue(self)
+                    if [] is self.__last_lane.vehicles_queue and self.__last_lane.cur_state in [State.GREEN, State.GREEN_FLICKERING]:  # no queue and clear to go
+                        self.__last_lane = self.lanes_path[self.__lanes_passed]
+                        self.__lanes_passed += 1
+                    else:
+                        self.__last_lane.add_to_queue(self)
                 new_x, new_y = self.__last_lane.parent_junction.point.get_point()
             else:
                 # print("[move] moving along current OUT-lane")
@@ -332,9 +340,11 @@ class Vehicle(ABC):
         # print(f"[move] computing next junction distance using lanes_path[{self.__lanes_passed}]")
         try:
             nxt = self.lanes_path[self.__lanes_passed].parent_junction.point
-            dist = self.cur_point.get_distance_from_point(nxt)
-            # print(f"[move] new last_distance_to_next_junction={dist}")
-            self.__last_distance_to_next_junction = dist
+            last_junction_point = self.__last_lane.parent_junction.point
+            if last_junction_point.get_distance_from_point(nxt) != 0:
+                dist = self.cur_point.get_distance_from_point(nxt) * self.cur_road_lane_length / last_junction_point.get_distance_from_point(nxt)
+                # print(f"[move] new last_distance_to_next_junction={dist}")
+                self.__last_distance_to_next_junction = dist  # in km
         except Exception as e:
             print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}] for distance: {e}")
             raise
@@ -358,6 +368,41 @@ class Vehicle(ABC):
 
     # print(f"[move] Vehicle new position: {self.cur_point.x:.2f}, {self.cur_point.y:.2f}")
 
+    def is_away_from_next_junction_by_less_than_3_seconds(self):
+        if LaneFacing.IN == self.__last_lane.facing:
+            return False
+        time = (self.__last_distance_to_next_junction / self.velocity)
+        return 3 > time
+
+    def is_away_from_next_junction_by_between_3_and_7_seconds(self):
+        if LaneFacing.IN == self.__last_lane.facing:
+            return False
+        time = (self.__last_distance_to_next_junction / self.velocity)
+        return 7 >= time >= 3
+
+    def is_away_from_next_junction_by_between_7_and_10_seconds(self):
+        if LaneFacing.IN == self.__last_lane.facing:
+            return False
+        time = (self.__last_distance_to_next_junction / self.velocity)
+        return 10 > time > 7
+
+    def get_energy_consumption_to_velocity(self, to_velocity):  # returns the kinetic energy in Joule
+        return 0.5 * self.weight * (to_velocity ** 2)
+
+    def get_pollution_to_velocity(self, to_velocity):  # CO2 in grams
+        if "Electric" == self.energy_type:
+            return 0
+        energy_densities = {
+            "Gasoline": 34.2,
+            "Gas": 38.6
+        }
+        emission_factors = {
+            "Gasoline": 2310,
+            "Gas": 2680
+        }
+        fuel_in_liters = get_energy_consumption_to_velocity(to_velocity) / (0.25 * energy_densities[self.energy_type])
+        return emission_factors[self.energy_type] * fuel_in_liters
+
     def __str__(self):
         return f"(x, y) = {self.get_cur_point().get_point()}"
 
@@ -376,6 +421,14 @@ class Vehicle(ABC):
                 self.has_reached_destination = True
                 return True
         return False
+
+    """
+    def get_energy_consumption(self, distance_in_km):
+        return self.liters_per_100km * distance_in_km / 100.0
+
+    def get_pollution_emissions(self, distance_in_km):  # CO2 in grams
+        return distance_in_km * 2,310  # gasoline prefix (CO2 grams / Liter)
+    """
 
     def get_queue_position(self):
         """Get the vehicle's position in its current lane's queue.
@@ -504,3 +557,7 @@ class Vehicle(ABC):
         total_pollution = pollution * vehicle_multiplier
         
         return total_pollution
+
+    def calculate_pollution_in_acceleration(self):
+        # TODO: complete the func
+        pass

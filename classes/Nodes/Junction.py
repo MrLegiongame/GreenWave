@@ -1,5 +1,6 @@
 import time
 from typing import Set, List
+import threading
 
 from classes.Entities.Point import Point
 from classes.Enums.State import State
@@ -48,6 +49,7 @@ class Junction:
 
         self.distance = None  # for bfs use only
         self.source_junction = None  # for bfs use only
+        self.prevent_state_change = False
 
         if None is not directions:
             try:
@@ -178,6 +180,10 @@ class Junction:
         for index in range(self.size):
             self.directions[index].module_index = (self.directions[index].module_index - module_index) % self.size
 
+    def wait(self, seconds):
+        time.sleep(seconds)
+        self.prevent_state_change = False
+
     def set_states(self):
         self.available_states = self.create_states()
         self.states_size = len(self.available_states)
@@ -226,6 +232,8 @@ class Junction:
         for traffic_light in traffic_lights_to_turn_green:
             traffic_light.update_state()  # active_state lanes to GREEN
 
+        threading.Thread(target=self.wait, args=(3, index)).start()
+
     def get_max_weighted_state_index(self):
         max_weight = 0
         res_index = 0
@@ -253,6 +261,7 @@ class Junction:
                 res_index = state_index
         return res_index
 
+    """
     def get_max_score_state_index(self):
         max_score = 0
         res_index = 0
@@ -274,6 +283,55 @@ class Junction:
             if temp_score > max_score:
                 max_score = temp_score
                 res_index = state_index
+        return res_index
+    """
+
+    def get_min_expected_filter_state_index(self, filter):
+
+        traffic_lights_which_are_currently_red = tuple(set(self.traffic_lights) - set(self.active_state))
+
+        min_pollution = float("inf")
+        res_index = 0
+
+        for next_active_index in range(self.states_size):
+            temp_pollution = 0
+
+            next_active_state = self.available_states[next_active_index]
+            traffic_lights_to_turn_red = tuple(set(self.active_state) - set(next_active_state))  # only vehicles which are left with 3 seconds could cross without stopping
+            traffic_lights_to_turn_green = tuple(set(next_active_state) - set(self.active_state))  # only vehicles which are left with 7 to 10 seconds could cross without stopping
+            traffic_lights_to_stay_red = tuple(set(traffic_lights_which_are_currently_red) - set(traffic_lights_to_turn_green))  # all vehicles will come to stop up to at least 10 seconds
+            # traffic_lights_to_stay_green = tuple(set(self.active_state) - set(traffic_lights_to_turn_red))  # all vehicles will cross without stopping
+
+            for traffic_light in traffic_lights_to_stay_red:  # we want to focus on the vehicles coming between 7 and 10 seconds, all other vehicles will stop ANYWAYS
+                for lane in traffic_light.lanes:
+                    vehicles = lane.road_lane.vehicles
+                    for vehicle in vehicles:
+                        if vehicle.is_away_from_next_junction_by_between_7_and_10_seconds():
+                            match filter:
+                                case "energy":
+                                    to_velocity = min(vehicle.roads_path[vehicle.roads_path[vehicle.roads_passed]].maximum_speed, vehicle.maximum_speed)
+                                    temp_pollution += vehicle.get_energy_consumption_to_velocity(to_velocity)
+                                case "pollution":
+                                    to_velocity = min(vehicle.roads_path[vehicle.roads_path[vehicle.roads_passed]].maximum_speed, vehicle.maximum_speed)
+                                    temp_pollution += vehicle.get_pollution_to_velocity(to_velocity)
+
+            for traffic_light in traffic_lights_to_turn_red:  # we want to focus on the vehicles coming between 3 and 10 seconds, all other vehicles will pass ANYWAYS
+                for lane in traffic_light.lanes:
+                    vehicles = lane.road_lane.vehicles
+                    for vehicle in vehicles:
+                        if vehicle.is_away_from_next_junction_by_between_3_and_7_seconds() or vehicle.is_away_from_next_junction_by_between_7_and_10_seconds():
+                            match filter:
+                                case "energy":
+                                    to_velocity = min(vehicle.roads_path[vehicle.roads_path[vehicle.roads_passed]].maximum_speed, vehicle.maximum_speed)
+                                    temp_pollution += vehicle.get_energy_consumption_to_velocity(to_velocity)
+                                case "pollution":
+                                    to_velocity = min(vehicle.roads_path[vehicle.roads_path[vehicle.roads_passed]].maximum_speed, vehicle.maximum_speed)
+                                    temp_pollution += vehicle.get_pollution_to_velocity(to_velocity)
+
+            if temp_pollution < min_pollution:
+                min_pollution = temp_pollution
+                res_index = state_index
+
         return res_index
 
     def __str__(self):

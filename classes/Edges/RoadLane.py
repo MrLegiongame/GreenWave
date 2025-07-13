@@ -41,22 +41,9 @@ class RoadLane:
         if not isinstance(vehicle, Vehicle):
             return False
 
-        closest_distance_behind = float('inf')  # infinity
-        closest_distance_after = float('inf')  # infinity
-        order = 0
-
-        for v in range(self.vehicles_size):
-            # TODO finish the loop
-            distance_between = vehicle.distance_on_road_lane - self.vehicles[v].distance_on_road_lane
-            if distance_between < closest_distance_behind and vehicle.distance_on_road_lane > self.vehicles[v].distance_on_road_lane:
-                closest_distance_behind = distance_between
-
-            distance_between = self.vehicles[v].distance_on_road_lane - vehicle.distance_on_road_lane
-            if distance_between < closest_distance_after and vehicle.distance_on_road_lane < self.vehicles[v].distance_on_road_lane:
-                closest_distance_after = distance_between
-
-        vehicle.road_lane = self
-        self.vehicles.insert(order, vehicle)
+        vehicle.cur_road_lane = self
+        vehicle.cur_road_lane_length = self.length
+        self.vehicles.append(vehicle)
         self.vehicles_size += 1
         return True
 
@@ -65,7 +52,7 @@ class RoadLane:
             return False
         for v in self.vehicles:
             if v is vehicle:
-                vehicle.road_lane = None
+                vehicle.cur_road_lane = None
                 self.vehicles.remove(vehicle)
                 self.vehicles_size -= 1
                 return True

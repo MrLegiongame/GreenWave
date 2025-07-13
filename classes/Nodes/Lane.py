@@ -46,9 +46,10 @@ class Lane:
         self.facing = facing
         self.cur_state = None
         self.road_lane = None
+
         self.vehicles_queue = []  # used as in FIFO (index 0 is head)
         self.time_to_cross_queue = []  # used as in FIFO (index 0 is head)
-        self.free_to_leave_queue = True
+        self.free_to_leave_queue = True  # used for scheduling vehicles junction crossings
 
         if None is not to_lanes:
             try:
@@ -91,7 +92,6 @@ class Lane:
 
     def add_to_queue(self, vehicle):
         if isinstance(vehicle, Vehicle):
-
             time_to_cross = 1
             match vehicle.vehicle_type:
                 case "Car":
@@ -100,6 +100,7 @@ class Lane:
                     time_to_cross = 3
                 case "Truck":
                     time_to_cross = 4
+            self.road_lane.vehicle_leave_lane(vehicle)
             self.vehicles_queue.append(vehicle)
             self.time_to_cross_queue.append(time_to_cross)
 
@@ -118,6 +119,27 @@ class Lane:
         if vehicle in self.vehicles_queue:
             return self.vehicles_queue.index(vehicle)
         return -1
+
+    def get_vehicles_on_their_way_expected_to_arrive_in_less_than_3_seconds(self):
+        res = []
+        for vehicle in self.road_lane.vehicles:
+            if vehicle.is_away_from_next_junction_by_less_than_3_seconds():
+                res.append(vehicle)
+        return res
+
+    def get_vehicles_on_their_way_expected_to_arrive_between_3_and_7_seconds(self):
+        res = []
+        for vehicle in self.road_lane.vehicles:
+            if vehicle.is_away_from_next_junction_by_between_3_and_7_seconds():
+                res.append(vehicle)
+        return res
+
+    def get_vehicles_on_their_way_expected_to_arrive_between_7_and_10_seconds(self):
+        res = []
+        for vehicle in self.road_lane.vehicles:
+            if vehicle.is_away_from_next_junction_by_between_7_and_10_seconds():
+                res.append(vehicle)
+        return res
 
     def get_lane_color(self):
         match self.cur_state:

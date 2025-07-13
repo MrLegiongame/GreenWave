@@ -40,7 +40,7 @@ class Road:
             self.name = name
             self.first_direction = first_direction
             self.second_direction = second_direction
-            self.length = length
+            self.length = length / 1000.0
             self.maximum_speed = maximum_speed
             self.road_lanes_first_direction = []
             self.road_lanes_second_direction = []
