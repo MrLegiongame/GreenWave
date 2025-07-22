@@ -1,5 +1,6 @@
 import pygame
 import os
+from screens.help import HelpScreen, open_help_window
 
 class MainMenuScreen:
     def __init__(self, screen):
@@ -9,6 +10,13 @@ class MainMenuScreen:
         self.desc_font = pygame.font.SysFont("Segoe UI", 22)
 
         self.next_screen = None
+        self.show_help = False
+        self.help_overlay = HelpScreen(screen, self.close_help)
+        # Add Help button at bottom left
+        help_button_width, help_button_height = 120, 40
+        self.help_button_rect = pygame.Rect(20, self.screen.get_height() - help_button_height - 20, help_button_width, help_button_height)
+        # Track help window process if needed
+        self.help_window_process = None
 
         # Load and scale background
         base_path = os.path.dirname(os.path.dirname(__file__))  # Project root
@@ -49,6 +57,9 @@ class MainMenuScreen:
         frame_y = 140
         self.frame_rect = pygame.Rect(frame_x, frame_y, frame_width, frame_height)
 
+        # Update Help button position on resize
+        self.help_button_rect = pygame.Rect(20, self.screen.get_height() - 60, 120, 40)
+
     def handle_resize(self, new_width, new_height):
         """Handle window resize"""
         # Update background scaling
@@ -86,6 +97,9 @@ class MainMenuScreen:
         return scaled_img, (offset_x, offset_y)
 
     def handle_events(self, event):
+        if self.show_help:
+            self.help_overlay.handle_event(event)
+            return
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
@@ -96,6 +110,12 @@ class MainMenuScreen:
             elif self.buttons["Change Parameters"].collidepoint(event.pos):
                 print("Go to Settings screen")
                 self.next_screen = "settings"
+            elif self.help_button_rect.collidepoint(event.pos):
+                if self.help_window_process is None or not self.help_window_process.is_alive():
+                    self.help_window_process = open_help_window()
+
+    def close_help(self):
+        self.show_help = False
 
     def update(self, time_delta):
         pass  # or update logic later if needed
@@ -133,6 +153,14 @@ class MainMenuScreen:
             label = self.font.render(text, True, (255, 255, 255))
             label_pos = (rect.x + (rect.width - label.get_width()) // 2, rect.y + 12)
             self.screen.blit(label, label_pos)
+
+        # Draw Help button at bottom left
+        mouse_pos = pygame.mouse.get_pos()
+        is_hovered = self.help_button_rect.collidepoint(mouse_pos)
+        color = self.button_hover if is_hovered else self.button_color
+        pygame.draw.rect(self.screen, color, self.help_button_rect, border_radius=8)
+        help_label = self.font.render('Help', True, (255, 255, 255))
+        self.screen.blit(help_label, (self.help_button_rect.x + 20, self.help_button_rect.y + 8))
 
     def center_x(self, surface):
         return (self.screen.get_width() - surface.get_width()) // 2
