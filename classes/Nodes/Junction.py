@@ -200,6 +200,7 @@ class Junction:
 
     def update_state(self, next_active_index):
         if next_active_index == self.active_state:
+            self.prevent_state_change = False
             return
 
         next_active_state = self.available_states[next_active_index]
@@ -236,7 +237,7 @@ class Junction:
 
     def get_max_weighted_state_index(self):
         max_weight = 0
-        res_index = 0
+        res_index = self.active_index
         for state_index in range(self.states_size):
             temp_weight = 0
             for traffic_light in self.available_states[state_index]:
@@ -288,12 +289,11 @@ class Junction:
 
     def get_min_expected_filter_state_index(self, filter):
 
-        can_optimize_based_on_vehicles_on_their_way_flag = False
-
         traffic_lights_which_are_currently_red = tuple(set(self.traffic_lights) - set(self.active_state))
 
         min_filter_value = float("inf")
-        res_index = 0
+        res_index = self.active_index
+        res_index_changed = False
 
         for next_active_index in range(self.states_size):
             temp_filter_changed = False
@@ -309,36 +309,36 @@ class Junction:
                 for lane in traffic_light.lanes:
                     vehicles = lane.road_lane.vehicles
                     for vehicle in vehicles:
-                        if vehicle.is_away_from_next_junction_by_between_7_and_10_seconds():
+                        if vehicle.is_away_from_next_junction_by_between_7_and_10_seconds() and not vehicle.is_next_lane_the_final_lane():
                             temp_filter_changed = True
                             match filter:
                                 case "energy":
-                                    to_velocity = min(vehicle.roads_path[vehicle.roads_path[vehicle.roads_passed]].maximum_speed, vehicle.maximum_speed)
+                                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
                                     temp_filter_value += vehicle.get_energy_consumption_to_velocity(to_velocity)
                                 case "pollution":
-                                    to_velocity = min(vehicle.roads_path[vehicle.roads_path[vehicle.roads_passed]].maximum_speed, vehicle.maximum_speed)
+                                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
                                     temp_filter_value += vehicle.get_pollution_to_velocity(to_velocity)
 
             for traffic_light in traffic_lights_to_turn_red:  # we want to focus on the vehicles coming between 3 and 10 seconds, all other vehicles will pass ANYWAYS
                 for lane in traffic_light.lanes:
                     vehicles = lane.road_lane.vehicles
                     for vehicle in vehicles:
-                        if vehicle.is_away_from_next_junction_by_between_3_and_7_seconds() or vehicle.is_away_from_next_junction_by_between_7_and_10_seconds():
+                        if (vehicle.is_away_from_next_junction_by_between_3_and_7_seconds() or vehicle.is_away_from_next_junction_by_between_7_and_10_seconds()) and not vehicle.is_next_lane_the_final_lane():
                             temp_filter_changed = True
                             match filter:
                                 case "energy":
-                                    to_velocity = min(vehicle.roads_path[vehicle.roads_path[vehicle.roads_passed]].maximum_speed, vehicle.maximum_speed)
+                                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
                                     temp_filter_value += vehicle.get_energy_consumption_to_velocity(to_velocity)
                                 case "pollution":
-                                    to_velocity = min(vehicle.roads_path[vehicle.roads_path[vehicle.roads_passed]].maximum_speed, vehicle.maximum_speed)
+                                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
                                     temp_filter_value += vehicle.get_pollution_to_velocity(to_velocity)
 
             if temp_filter_value < min_filter_value and temp_filter_changed:
-                can_optimize_based_on_vehicles_on_their_way_flag = True
                 min_filter_value = temp_filter_value
                 res_index = next_active_index
+                res_index_changed = True
 
-        if can_optimize_based_on_vehicles_on_their_way_flag:
+        if res_index_changed:
             return res_index
 
         return self.get_max_vehicle_count_state_index()  # TODO: can do better by adding pollution consumption while waiting and deciding by the vehicles (if do so, add compatible code in Vehicle.move()
