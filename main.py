@@ -26,32 +26,31 @@ def main():
     clock = pygame.time.Clock()
     running = True
 
-while running:
-    time_delta = clock.tick(60) / 1000.0  # / 1000000.0
-    
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.VIDEORESIZE:
-            # Update screen and UI manager for new size
-            screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
-            ui_manager.set_window_resolution((event.w, event.h))
-            # Notify current screen of resize if it has the method
-            if hasattr(current_screen, 'handle_resize'):
-                current_screen.handle_resize(event.w, event.h)
-        elif hasattr(current_screen, 'handle_events'):
-            current_screen.handle_events(event)
-            if hasattr(current_screen, 'ui_manager'):
-                current_screen.ui_manager.process_events(event)
-        
+    while running:
+        time_delta = clock.tick(60) / 1000.0  # / 1000000.0
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.VIDEORESIZE:
+                # Update screen and UI manager for new size
+                screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+                ui_manager.set_window_resolution((event.w, event.h))
+                # Notify current screen of resize if it has the method
+                if hasattr(current_screen, 'handle_resize'):
+                    current_screen.handle_resize(event.w, event.h)
+            elif hasattr(current_screen, 'handle_events'):
+                current_screen.handle_events(event)
+                if hasattr(current_screen, 'ui_manager'):
+                    current_screen.ui_manager.process_events(event)
+
+        # These should be called ONCE per frame, not per event:
         if hasattr(current_screen, 'update'):
             current_screen.update(time_delta)
-            
         if hasattr(current_screen, 'draw'):
             current_screen.draw()
-        
         pygame.display.flip()
-        
+
         # Screen switching logic
         next_screen = current_screen.get_next_screen()
         if next_screen:
