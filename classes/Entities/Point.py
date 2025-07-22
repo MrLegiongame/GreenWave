@@ -3,10 +3,9 @@ import math
 from enum import Enum
 
 
-class RelativeDirection:
+class RelativeDirection(Enum):
     UP = 0
     DOWN = 1
-
 
 class Point(ABC):
 
@@ -23,7 +22,7 @@ class Point(ABC):
 
     def get_distance_from_point(self, point):
         # print("point.x: " + str(point.x), "self.x: " + str(self.x), "point.y:" + str(point.y), "self.y:" + str(self.y))
-        return math.sqrt((point.x - self.x) ** 2 + (point.y - self.y) ** 2)
+        return math.sqrt(float((point.x - self.x) ** 2) + float((point.y - self.y) ** 2))
 
     def set_point(self, x, y):
         self.x = x

@@ -25,7 +25,7 @@ class Vehicle(ABC):
     _next_vehicle_id = 1
     
     def __init__(self, length, weight, start_node, end_node, image, vehicle_type, energy_type, maximum_speed,
-                 acceleration=0):
+                 liters_per_100km, acceleration=0):
         # Assign unique vehicle ID
         self.vehicle_id = Vehicle._next_vehicle_id
         Vehicle._next_vehicle_id += 1
@@ -38,10 +38,13 @@ class Vehicle(ABC):
         self.end_point = None
         self.set_start_and_end_nodes(start_node, end_node)
         self.cur_road_lane = None
+        self.cur_road_lane_length = 0
+        self.roads_passed = 0
         self.cur_point = self.start_point
         self.vehicle_type = vehicle_type
         self.energy_type = energy_type
         self.maximum_speed = maximum_speed
+        self.liters_per_100km = liters_per_100km
         # self.velocity = min(self.cur_road_lane.maximum_speed, self.maximum_speed)
         self.velocity = None
         self.acceleration = acceleration
@@ -74,7 +77,7 @@ class Vehicle(ABC):
         self.stops_count = 0
         self.acceleration_events = 0
         self.idle_time = 0
-        self.creation_time = time.time()
+        self.creation_time = None
         self.last_stop_time = None
         self.is_stopped = False
         self.last_velocity = 0
@@ -178,8 +181,8 @@ class Vehicle(ABC):
         current_pt = self.cur_point.get_point()
 
         # Calculate distance along the road path
-        self.from_junction = self.lanes_path[self.__lanes_passed - 1].parent_junction
-        self.from_node = self.lanes_path[self.__lanes_passed - 1].parent_junction.point
+        self.from_junction = self.__last_lane.parent_junction
+        self.from_node = self.from_junction.point
         self.to_node = next_junc
         road_length = self.cur_road_lane.parent_road.length
         pixel_length = self.from_node.get_distance_from_point(self.to_node)
@@ -203,6 +206,9 @@ class Vehicle(ABC):
 
     def setup_move(self):
         # print(f"[setup_move] Starting with __lanes_passed={self.__lanes_passed}, last_lane={self.__last_lane}")
+        if self.creation_time is None:
+            self.creation_time = time.time()
+
         if self.__last_move_time_stamp is None:
             self.__last_move_time_stamp = time.time()
 
@@ -211,6 +217,7 @@ class Vehicle(ABC):
                 self.__last_lane = self.lanes_path[self.__lanes_passed]
                 print(f"Setup path len: {len(self.lanes_path)}")
                 self.__lanes_passed += 1
+                self.__last_lane.road_lane.vehicle_enter_lane(self)
                 # print(f"[setup_move] Set last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
             except Exception as e:
                 print(f"[setup_move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
@@ -220,20 +227,30 @@ class Vehicle(ABC):
             self.velocity = min(self.cur_road_lane.parent_road.maximum_speed, self.maximum_speed)
             # print(f"[setup_move] initialized velocity to {self.velocity}")
 
-    def cross_junction(self):
-        vehicle, time_to_sleep = self.__last_lane.pop_head_from_queue()
-        time.sleep(time_to_sleep)
-        self.__last_lane.free_to_leave_queue = True
+    def cross_junction(self, from_stop: bool):
+        if from_stop:
+            vehicle, time_to_sleep = self.__last_lane.pop_head_from_queue()
+            time.sleep(time_to_sleep)
+            self.__last_lane.free_to_leave_queue = True
+
+        if not from_stop:  # because self.__last_lane is OUT Lane
+            self.__lanes_passed += 1
+
         self.__last_lane = self.lanes_path[self.__lanes_passed]
         self.__lanes_passed += 1
+        self.__last_lane.road_lane.vehicle_enter_lane(self)
+
+        if from_stop:
+            to_velocity = min(self.__last_lane.road_lane.parent_road.maximum_speed, self.maximum_speed)
+            self.total_energy_consumed += self.get_energy_consumption_to_velocity(to_velocity)
+            self.total_pollution += self.get_pollution_to_velocity(to_velocity)
+
         print(f"[DEBUG] IN-lane: After increment __lanes_passed={self.__lanes_passed}")
 
     def move(self, dt):
+        dt = dt / 1_000.0
         # print(f"\n[move] Starting move with __lanes_passed={self.__lanes_passed}, last_lane={self.__last_lane}")
         self.setup_move()
-        
-        # Update total time
-        self.update_total_time()
 
         # Check if we've reached the end of the path
         if self.__lanes_passed >= len(self.lanes_path):
@@ -251,21 +268,26 @@ class Vehicle(ABC):
             try:
                 # print(f"IN path len: {len(self.lanes_path)}")
                 # print(f"[DEBUG] IN-lane: states {self.lanes_path[self.__lanes_passed+1].cur_state} and the queue {self.__last_lane.vehicles_queue}")
-                if (self.__last_lane.cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self.__last_lane.vehicles_queue is not [] and self.__last_lane.free_to_leave_queue:  # if junction is available for crossing and the vehicle is the first in the lane's queue
+                if (self.__last_lane.cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self.__last_lane.vehicles_queue != [] and self.__last_lane.free_to_leave_queue:  # if junction is available for crossing and the vehicle is the first in the lane's queue
                     if self is self.__last_lane.vehicles_queue[0]:
                         self.__last_lane.free_to_leave_queue = False
-                        crossing_thread = threading.Thread(target=self.cross_junction)
+                        crossing_thread = threading.Thread(target=self.cross_junction, args=((True,)))
                         crossing_thread.start()
             except Exception as e:
                 print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
                 raise
             self.__last_move_time_stamp = time.time()
+
+            # Update total time
+            self.update_total_time()
             return
 
         elif self.__last_lane.facing == LaneFacing.OUT:
             # print(f"[move] OUT-lane logic with __lanes_passed={self.__lanes_passed}")
             if self.__is_passed_junction():
                 try:
+                    self.roads_passed += 1
+                    self.__last_lane.road_lane.vehicle_leave_lane(self)
                     # print(f" OUT path len: {len(self.lanes_path)}")
                     # Check if next lane is the final destination
                     if self.__lanes_passed > len(self.lanes_path):
@@ -281,7 +303,10 @@ class Vehicle(ABC):
                     raise
 
                 if self.__last_lane is not self.__end_in_lane:
-                    self.__last_lane.add_to_queue(self)
+                    if self.__last_lane.vehicles_queue == [] and self.__last_lane.cur_state in [State.GREEN, State.GREEN_FLICKERING]:  # no queue and clear to go
+                        self.cross_junction(False)
+                    else:
+                        self.__last_lane.add_to_queue(self)
                 new_x, new_y = self.__last_lane.parent_junction.point.get_point()
             else:
                 # print("[move] moving along current OUT-lane")
@@ -292,10 +317,10 @@ class Vehicle(ABC):
                 to_node = self.lanes_path[self.__lanes_passed].parent_junction.point
                 # print(f"[move] from_node={from_node.get_point()}, to_node={to_node.get_point()}")
 
-                distance = self.velocity * dt + 0.5 * self.acceleration * dt ** 2
+                distance = self.velocity * dt + 0.5 * self.acceleration * (dt ** 2)
                 road_length = self.cur_road_lane.parent_road.length
                 pixel_length = from_node.get_distance_from_point(to_node)
-                length = distance * pixel_length / road_length
+                length = (distance * pixel_length) / road_length
                 alpha = from_node.get_slope_angle_in_rad(to_node)
 
                 dx = length * math.cos(alpha)
@@ -310,13 +335,14 @@ class Vehicle(ABC):
                 self.total_distance += length
                 
                 # Calculate and update energy consumption and pollution
-                energy_consumed = self.calculate_energy_consumption(length)
-                pollution_generated = self.calculate_pollution(length)
-                self.total_energy_consumed += energy_consumed
-                self.total_pollution += pollution_generated
+                self.total_energy_consumed += self.calculate_energy_consumption(distance)
+                self.total_pollution += self.calculate_pollution(distance)
 
         else:
             raise TypeError("move method is invalid: Invalid order in path: facing is None")
+
+        # Update total time
+        self.update_total_time()
 
         # update position
         # print(f"[move] updating position to ({new_x}, {new_y})")
@@ -332,9 +358,11 @@ class Vehicle(ABC):
         # print(f"[move] computing next junction distance using lanes_path[{self.__lanes_passed}]")
         try:
             nxt = self.lanes_path[self.__lanes_passed].parent_junction.point
-            dist = self.cur_point.get_distance_from_point(nxt)
-            # print(f"[move] new last_distance_to_next_junction={dist}")
-            self.__last_distance_to_next_junction = dist
+            last_junction_point = self.__last_lane.parent_junction.point
+            if last_junction_point.get_distance_from_point(nxt) != 0:
+                dist = self.cur_point.get_distance_from_point(nxt) * self.cur_road_lane_length / last_junction_point.get_distance_from_point(nxt)
+                # print(f"[move] new last_distance_to_next_junction={dist}")
+                self.__last_distance_to_next_junction = dist  # in km
         except Exception as e:
             print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}] for distance: {e}")
             raise
@@ -358,6 +386,41 @@ class Vehicle(ABC):
 
     # print(f"[move] Vehicle new position: {self.cur_point.x:.2f}, {self.cur_point.y:.2f}")
 
+    def is_away_from_next_junction_by_less_than_3_seconds(self):
+        if LaneFacing.IN == self.__last_lane.facing:
+            return False
+        time = (self.__last_distance_to_next_junction / self.velocity)
+        return 3 > time
+
+    def is_away_from_next_junction_by_between_3_and_7_seconds(self):
+        if LaneFacing.IN == self.__last_lane.facing:
+            return False
+        time = (self.__last_distance_to_next_junction / self.velocity)
+        return 7 >= time >= 3
+
+    def is_away_from_next_junction_by_between_7_and_10_seconds(self):
+        if LaneFacing.IN == self.__last_lane.facing:
+            return False
+        time = (self.__last_distance_to_next_junction / self.velocity)
+        return 10 > time > 7
+
+    def get_energy_consumption_to_velocity(self, to_velocity):  # returns the kinetic energy in Joule
+        return 0.5 * self.weight * (to_velocity ** 2)
+
+    def get_pollution_to_velocity(self, to_velocity):  # CO2 in grams
+        if "Electric" == self.energy_type:
+            return 0
+        energy_densities = {
+            "Gasoline": 34.2,
+            "Gas": 38.6
+        }
+        emission_factors = {
+            "Gasoline": 2310,
+            "Gas": 2680
+        }
+        fuel_in_liters = self.get_energy_consumption_to_velocity(to_velocity) / (0.25 * energy_densities[self.energy_type])
+        return emission_factors[self.energy_type] * fuel_in_liters
+
     def __str__(self):
         return f"(x, y) = {self.get_cur_point().get_point()}"
 
@@ -376,6 +439,14 @@ class Vehicle(ABC):
                 self.has_reached_destination = True
                 return True
         return False
+
+    """
+    def get_energy_consumption(self, distance_in_km):
+        return self.liters_per_100km * distance_in_km / 100.0
+
+    def get_pollution_emissions(self, distance_in_km):  # CO2 in grams
+        return distance_in_km * 2,310  # gasoline prefix (CO2 grams / Liter)
+    """
 
     def get_queue_position(self):
         """Get the vehicle's position in its current lane's queue.
@@ -403,10 +474,10 @@ class Vehicle(ABC):
             dict: Dictionary containing consumption and pollution statistics
         """
         return {
-            "total_energy_consumed": self.total_energy_consumed,
-            "total_pollution": self.total_pollution,
-            "total_distance": self.total_distance,
-            "total_time": self.total_time,
+            "total_energy_consumed": self.total_energy_consumed / 1_000_000.0,  # in Megajoule
+            "total_pollution": self.total_pollution / 1_000.0,  # CO2 in Kg
+            "total_distance": self.total_distance,  # in Km
+            "total_time": self.total_time,  # in seconds
             "stops_count": self.stops_count,
             "acceleration_events": self.acceleration_events,
             "idle_time": self.idle_time,
@@ -442,8 +513,68 @@ class Vehicle(ABC):
         """Update total time from creation to current time"""
         self.total_time = time.time() - self.creation_time
 
+    def calculate_energy_consumption(self, distance_km,
+                                C_rr=0.01,
+                                C_d=0.3,
+                                A=2.2,
+                                air_density=1.225,
+                                g=9.81):
+        """
+        calculates the energy consumption in Joule for driving distance_km kilometers in the same velocity
+
+        param: distance_km: distance in kilometers
+        return: Energy in Joule
+        """
+        distance_m = distance_km * 1000  # distance in meters
+
+        # Rolling Resistance
+        F_rr = C_rr * self.weight * g
+
+        # Drag or Air Resistance
+        F_drag = 0.5 * air_density * C_d * A * self.velocity ** 2
+
+        # Total force
+        F_total = F_rr + F_drag
+
+        energy_joules = F_total * distance_m
+
+        return energy_joules
+
+    def calculate_pollution(self, distance_km):
+        """
+        calculates the CO2 pollution in Grams for driving distance_km kilometers in the same velocity
+
+        param: distance_km: distance in kilometers
+        return: CO2 pollution in Grams
+        """
+        if "Electric" == self.energy_type:
+            return 0
+        energy_densities = {
+            "Gasoline": 34.2,  # MJ per liter
+            "Gas": 38.6  # MJ per liter
+        }
+
+        emission_factors = {
+            "Gasoline": 2310,  # g CO2 per liter
+            "Gas": 2680  # g CO2 per liter
+        }
+
+        if self.energy_type not in energy_densities:
+            raise ValueError("Fuel type must be either 'Gasoline' or 'Gas'.")
+
+        # calcuates the consumed energy
+        energy_j = self.calculate_energy_consumption(distance_km)
+        energy_mj = energy_j / 1_000_000.0
+
+        liters_used = energy_mj / energy_densities[self.energy_type]
+
+        emissions_grams = liters_used * emission_factors[self.energy_type]
+
+        return emissions_grams
+
+    """
     def calculate_energy_consumption(self, distance_traveled):
-        """Calculate energy consumption based on vehicle weight, type, distance, and stops"""
+        # Calculate energy consumption based on vehicle weight, type, distance, and stops
         # Base consumption per meter based on vehicle type and weight
         base_consumption = {
             "Car": 0.0001,  # kWh per meter per kg
@@ -471,7 +602,7 @@ class Vehicle(ABC):
         return total_energy
 
     def calculate_pollution(self, distance_traveled):
-        """Calculate pollution based on energy type, distance, and vehicle type"""
+        # Calculate pollution based on energy type, distance, and vehicle type
         # CO2 emissions per kWh/L based on energy type
         emissions_per_unit = {
             "Electric": 0.5,    # g CO2 per kWh (assuming grid mix)
@@ -504,3 +635,8 @@ class Vehicle(ABC):
         total_pollution = pollution * vehicle_multiplier
         
         return total_pollution
+    """
+
+    def calculate_pollution_in_acceleration(self):
+        # TODO: complete the func
+        pass
