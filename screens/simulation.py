@@ -684,12 +684,10 @@ class SimulationScreen:
                     weight=weight,
                     start_node=src_node,
                     end_node=dst_node,
-                    image=image,
                     vehicle_type=v_type,
                     energy_type=energy,
                     acceleration=0,  # or adjust per type if needed
-                    maximum_speed=100,
-                    liters_per_100km=random.randint(5, 15)
+                    maximum_speed=100
                 ))
 
         # --- Set states --- #

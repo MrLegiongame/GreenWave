@@ -33,8 +33,7 @@ class Vehicle(ABC):
     # Class variable to track the next available vehicle ID
     _next_vehicle_id = 1
     
-    def __init__(self, length, weight, start_node, end_node, image, vehicle_type, energy_type, maximum_speed,
-                 liters_per_100km, acceleration=0):
+    def __init__(self, length, weight, start_node, end_node, vehicle_type, energy_type, maximum_speed, acceleration=0):
         # Assign unique vehicle ID
         self.vehicle_id = Vehicle._next_vehicle_id
         Vehicle._next_vehicle_id += 1
@@ -47,22 +46,17 @@ class Vehicle(ABC):
         self.end_point = None
         self.set_start_and_end_nodes(start_node, end_node)
         self.cur_road_lane = None
+        self.road_lanes = None
         self.cur_road_lane_length = 0
         self.roads_passed = 0
         self.cur_point = self.start_point
         self.vehicle_type = vehicle_type
         self.energy_type = energy_type
         self.maximum_speed = maximum_speed
-        self.liters_per_100km = liters_per_100km
         # self.velocity = min(self.cur_road_lane.maximum_speed, self.maximum_speed)
         self.velocity = None
         self.acceleration = acceleration
         self.has_reached_destination = False  # Add flag for destination arrival
-
-        if isinstance(image, str):
-            self.image = pygame.image.load(image).convert_alpha()
-        else:
-            self.image = image
 
         self.distance_on_road_lane = 0
         self.lanes_path = []
@@ -143,7 +137,7 @@ class Vehicle(ABC):
 
         print(f"Final path: {self.roads_path}")
 
-        cur_road_lanes = []
+        self.road_lanes = []
         for lane1, lane2 in self.roads_path:
             if LaneFacing.IN == lane1.facing and LaneFacing.OUT == lane2.facing:
                 in_lane = lane1
@@ -153,13 +147,14 @@ class Vehicle(ABC):
                 out_lane = lane1
             else:
                 raise TypeError("set_path method is invalid: Invalid order in path: Lane with facing equals to None")
-            cur_road_lanes.append(graph.find_road_lanes_by_lanes(out_lane=out_lane, in_lane=in_lane))
+            self.road_lanes.append(graph.find_road_lanes_by_lanes(in_lane=in_lane))
 
-        if not cur_road_lanes:
+        if not self.road_lanes:
             print("Warning: No road lanes found for path")
             return
 
-        self.cur_road_lane = cur_road_lanes[0][0]
+        self.cur_road_lane = self.road_lanes[self.roads_passed]
+        self.cur_road_lane_length = self.cur_road_lane.parent_road.length
         self.__last_lane = self.lanes_path[self.__lanes_passed]
         print(f"set_path path len: {len(self.lanes_path)}")
         self.__lanes_passed += 1
@@ -208,7 +203,7 @@ class Vehicle(ABC):
 
         passed = False
         if self.__last_distance_to_next_junction is not None:
-            passed = progress > 0.95
+            passed = progress > 0.99
             # print(f"[__is_passed_junction] passed={passed} (progress > 0.95: {progress > 0.95})")
 
         if passed:
@@ -224,6 +219,7 @@ class Vehicle(ABC):
         # print(f"[setup_move] Starting with __lanes_passed={self.__lanes_passed}, last_lane={self.__last_lane}")
         if self.creation_time is None:
             self.creation_time = time.time()
+            self.track_movement()
 
         if self.__last_move_time_stamp is None:
             self.__last_move_time_stamp = time.time()
@@ -243,6 +239,9 @@ class Vehicle(ABC):
             self.velocity = min(self.cur_road_lane.parent_road.maximum_speed, self.maximum_speed)
             # print(f"[setup_move] initialized velocity to {self.velocity}")
 
+        if self.__last_distance_to_next_junction is None:
+            self.__last_distance_to_next_junction = self.cur_road_lane_length
+
     def cross_junction(self, from_stop: bool):
         try:
             log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} | from_stop={from_stop} | __lanes_passed={self.__lanes_passed} | __last_lane={self.__last_lane} | queue={getattr(self.__last_lane, 'vehicles_queue', None)}")
@@ -251,6 +250,7 @@ class Vehicle(ABC):
                 log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} popped from queue, sleeping {time_to_sleep:.2f}s")
                 time.sleep(time_to_sleep)
                 self.__last_lane.free_to_leave_queue = True
+                self.track_movement()
                 log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} set free_to_leave_queue=True after crossing from stop.")
 
             # Fix: Prevent IndexError by checking bounds
@@ -263,9 +263,14 @@ class Vehicle(ABC):
                 log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} has reached destination. Exiting cross_junction.")
                 return
 
+            self.roads_passed += 1
             self.__last_lane = self.lanes_path[self.__lanes_passed]
             self.__lanes_passed += 1
             self.__last_lane.road_lane.vehicle_enter_lane(self)
+            self.cur_road_lane = self.road_lanes[self.roads_passed]
+            self.cur_road_lane_length = self.cur_road_lane.parent_road.length
+            self.__last_distance_to_next_junction = self.cur_road_lane_length
+            self.velocity = min(self.cur_road_lane.parent_road.maximum_speed, self.maximum_speed)
             log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} entered new lane: {self.__last_lane}")
 
             if from_stop:
@@ -318,7 +323,6 @@ class Vehicle(ABC):
         elif self.__last_lane.facing == LaneFacing.OUT:
             if self.__is_passed_junction():
                 try:
-                    self.roads_passed += 1
                     self.__last_lane.road_lane.vehicle_leave_lane(self)
                     if self.__lanes_passed > len(self.lanes_path):
                         self.__lanes_passed -= 1
@@ -338,6 +342,7 @@ class Vehicle(ABC):
                         self.cross_junction(False)
                     else:
                         self.__last_lane.add_to_queue(self)
+                        self.track_stop()
                         if at_front:
                             log_vehicle_event(f"[move] Vehicle #{self.vehicle_id} is at the front of the queue, lane is green, free_to_leave_queue={free_to_leave}. Waiting for green.")
                 new_x, new_y = self.__last_lane.parent_junction.point.get_point()
@@ -359,6 +364,10 @@ class Vehicle(ABC):
                 
                 # Update distance traveled
                 self.total_distance += distance
+                if self.__last_distance_to_next_junction - distance >= 0:
+                    self.__last_distance_to_next_junction -= distance
+                else:
+                    self.__last_distance_to_next_junction = 0
                 
                 self.total_energy_consumed += self.calculate_energy_consumption(distance)
                 self.total_pollution += self.calculate_pollution(distance)
@@ -374,7 +383,7 @@ class Vehicle(ABC):
             last_junction_point = self.__last_lane.parent_junction.point
             if last_junction_point.get_distance_from_point(nxt) != 0:
                 dist = self.cur_point.get_distance_from_point(nxt) * self.cur_road_lane_length / last_junction_point.get_distance_from_point(nxt)
-                self.__last_distance_to_next_junction = dist  # in km
+                # self.__last_distance_to_next_junction = dist  # in km
         except Exception as e:
             log_vehicle_event(f"[move][EXCEPTION] Vehicle #{self.vehicle_id} in distance calc: {e}")
             raise
@@ -396,23 +405,14 @@ class Vehicle(ABC):
 
     # print(f"[move] Vehicle new position: {self.cur_point.x:.2f}, {self.cur_point.y:.2f}")
 
-    def is_away_from_next_junction_by_less_than_3_seconds(self):
-        if LaneFacing.IN == self.__last_lane.facing:
-            return False
-        time = (self.__last_distance_to_next_junction / self.velocity)
-        return 3 > time
+    def get_time_to_next_junction_in_sec(self):
+        return (self.__last_distance_to_next_junction / self.velocity) * 3600.0
 
-    def is_away_from_next_junction_by_between_3_and_7_seconds(self):
+    def is_away_from_next_junction_by_between_start_and_end_seconds(self, start, end):
         if LaneFacing.IN == self.__last_lane.facing:
             return False
-        time = (self.__last_distance_to_next_junction / self.velocity)
-        return 7 >= time >= 3
-
-    def is_away_from_next_junction_by_between_7_and_10_seconds(self):
-        if LaneFacing.IN == self.__last_lane.facing:
-            return False
-        time = (self.__last_distance_to_next_junction / self.velocity)
-        return 10 > time > 7
+        time = self.get_time_to_next_junction_in_sec()
+        return end - 0.25 >= time >= start + 0.25
 
     def get_energy_consumption_to_velocity(self, to_velocity):  # returns the kinetic energy in Joule
         return 0.5 * self.weight * (to_velocity ** 2)
