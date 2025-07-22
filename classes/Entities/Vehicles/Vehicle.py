@@ -10,6 +10,15 @@ import pygame
 from classes.Enums.LaneFacing import LaneFacing
 from classes.Enums.State import State
 
+LOG_PATH = os.path.join(os.path.dirname(__file__), '../logs/vehicle_debug.log')
+
+def log_vehicle_event(msg):
+    log_dir = os.path.dirname(LOG_PATH)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+    with open(LOG_PATH, 'a', encoding='utf-8') as f:
+        f.write(msg + '\n')
+
 
 def get_image_list(folder_path):
     supported_exts = (".png", ".jpg", ".jpeg", ".jfif", ".webp")
@@ -235,153 +244,141 @@ class Vehicle(ABC):
             # print(f"[setup_move] initialized velocity to {self.velocity}")
 
     def cross_junction(self, from_stop: bool):
-        if from_stop:
-            vehicle, time_to_sleep = self.__last_lane.pop_head_from_queue()
-            time.sleep(time_to_sleep)
-            self.__last_lane.free_to_leave_queue = True
+        try:
+            log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} | from_stop={from_stop} | __lanes_passed={self.__lanes_passed} | __last_lane={self.__last_lane} | queue={getattr(self.__last_lane, 'vehicles_queue', None)}")
+            if from_stop:
+                vehicle, time_to_sleep = self.__last_lane.pop_head_from_queue()
+                log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} popped from queue, sleeping {time_to_sleep:.2f}s")
+                time.sleep(time_to_sleep)
+                self.__last_lane.free_to_leave_queue = True
+                log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} set free_to_leave_queue=True after crossing from stop.")
 
-        if self.__lanes_passed >= len(self.lanes_path):
-            if self.get_queue_position() == 0:
-                self.__last_lane.pop_head_from_queue()
-            self.has_reached_destination = True
-            return
+            # Fix: Prevent IndexError by checking bounds
+            if self.__lanes_passed >= len(self.lanes_path):
+                if self.get_queue_position() == 0:
+                    self.__last_lane.pop_head_from_queue()
+                    log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} popped from queue at end of path.")
+                self.has_reached_destination = True
+                self.__last_lane.free_to_leave_queue = True
+                log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} has reached destination. Exiting cross_junction.")
+                return
 
-        self.__last_lane = self.lanes_path[self.__lanes_passed]
-        self.__lanes_passed += 1
-        self.__last_lane.road_lane.vehicle_enter_lane(self)
+            self.__last_lane = self.lanes_path[self.__lanes_passed]
+            self.__lanes_passed += 1
+            self.__last_lane.road_lane.vehicle_enter_lane(self)
+            log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} entered new lane: {self.__last_lane}")
 
-        if from_stop:
-            to_velocity = min(self.__last_lane.road_lane.parent_road.maximum_speed, self.maximum_speed)
-            self.total_energy_consumed += self.get_energy_consumption_to_velocity(to_velocity)
-            self.total_pollution += self.get_pollution_to_velocity(to_velocity)
-
-        print(f"[DEBUG] IN-lane: After increment __lanes_passed={self.__lanes_passed}")
+            if from_stop:
+                to_velocity = min(self.__last_lane.road_lane.parent_road.maximum_speed, self.maximum_speed)
+                self.total_energy_consumed += self.get_energy_consumption_to_velocity(to_velocity)
+                self.total_pollution += self.get_pollution_to_velocity(to_velocity)
+                log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} updated energy={self.total_energy_consumed}, pollution={self.total_pollution}")
+        except Exception as e:
+            log_vehicle_event(f"[cross_junction][EXCEPTION] Vehicle #{self.vehicle_id}: {e}")
 
     def move(self, dt):
         dt = dt / 3_600.0
-
-        print(self.__last_lane.vehicles_queue)
-
-        # print(f"\n[move] Starting move with __lanes_passed={self.__lanes_passed}, last_lane={self.__last_lane}")
         self.setup_move()
 
-        # Check if we've reached the end of the path
         if self.__lanes_passed >= len(self.lanes_path):
             if self.get_queue_position() == 0:
                 self.has_reached_destination = True
                 self.__last_lane.pop_head_from_queue()
-            # print("[DEBUG] Reached end of path - no more lanes to follow")
+                log_vehicle_event(f"[move] Vehicle #{self.vehicle_id} popped from queue at end of path.")
             return
 
         if self.__last_lane.facing == LaneFacing.IN:
-            # print(f"[move] IN-lane logic with __lanes_passed={self.__lanes_passed}")
+            log_vehicle_event(
+                f"[move] Vehicle #{self.vehicle_id} | __lanes_passed={self.__lanes_passed} | __last_lane={self.__last_lane} | queue={getattr(self.__last_lane, 'vehicles_queue', None)}")
+
             if self.__last_lane is self.__end_in_lane:
-                print("[DEBUG] Reached final destination IN lane")
                 return
             try:
-                # print(f"IN path len: {len(self.lanes_path)}")
-                # print(f"[DEBUG] IN-lane: states {self.lanes_path[self.__lanes_passed+1].cur_state} and the queue {self.__last_lane.vehicles_queue}")
-                if (self.__last_lane.cur_state in [State.GREEN, State.GREEN_FLICKERING]) and self.__last_lane.vehicles_queue != [] and self.__last_lane.free_to_leave_queue:  # if junction is available for crossing and the vehicle is the first in the lane's queue
-                    if self is self.__last_lane.vehicles_queue[0]:
+                at_front = (self.__last_lane.vehicles_queue != [] and self is self.__last_lane.vehicles_queue[0])
+                lane_green = self.__last_lane.cur_state in [State.GREEN, State.GREEN_FLICKERING]
+                free_to_leave = self.__last_lane.free_to_leave_queue
+                log_vehicle_event(f"[move] Vehicle #{self.vehicle_id} IN-lane: at_front={at_front}, lane_green={lane_green}, free_to_leave={free_to_leave}")
+                if lane_green and self.__last_lane.vehicles_queue != [] and free_to_leave:
+                    if at_front:
+                        log_vehicle_event(f"[move] Vehicle #{self.vehicle_id} is at the front of the queue, lane is green, free_to_leave_queue={free_to_leave}. Starting cross_junction thread.")
                         self.__last_lane.free_to_leave_queue = False
-                        crossing_thread = threading.Thread(target=self.cross_junction, args=((True,)))
-                        crossing_thread.start()
+                        try:
+                            crossing_thread = threading.Thread(target=self.cross_junction, args=(True,))
+                            crossing_thread.start()
+                            log_vehicle_event(f"[move] Started cross_junction thread for Vehicle #{self.vehicle_id}")
+                        except Exception as e:
+                            log_vehicle_event(f"[move][EXCEPTION] Vehicle #{self.vehicle_id} when starting thread: {e}")
             except Exception as e:
-                print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
+                log_vehicle_event(f"[move][EXCEPTION] Vehicle #{self.vehicle_id} in IN-lane logic: {e}")
                 raise
             self.__last_move_time_stamp = time.time()
-
-            # Update total time
             self.update_total_time()
             return
 
         elif self.__last_lane.facing == LaneFacing.OUT:
-            # print(f"[move] OUT-lane logic with __lanes_passed={self.__lanes_passed}")
             if self.__is_passed_junction():
                 try:
                     self.roads_passed += 1
                     self.__last_lane.road_lane.vehicle_leave_lane(self)
-                    # print(f" OUT path len: {len(self.lanes_path)}")
-                    # Check if next lane is the final destination
                     if self.__lanes_passed > len(self.lanes_path):
-                        print("[DEBUG] Next lane is final destination")
                         self.__lanes_passed -= 1
-
                     self.__last_lane = self.lanes_path[self.__lanes_passed]
-                    # print(f"[move] OUT-lane: Setting last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
                     self.__lanes_passed += 1
-                    print(f"[DEBUG] OUT-lane: After increment __lanes_passed={self.__lanes_passed}")
+                    log_vehicle_event(f"[move] Vehicle #{self.vehicle_id} OUT-lane: After increment __lanes_passed={self.__lanes_passed}")
                 except Exception as e:
-                    print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
+                    log_vehicle_event(f"[move][EXCEPTION] Vehicle #{self.vehicle_id} in OUT-lane logic: {e}")
                     raise
-
                 if self.__last_lane is not self.__end_in_lane:
-                    if self.__last_lane.vehicles_queue == [] and self.__last_lane.cur_state in [State.GREEN, State.GREEN_FLICKERING]:  # no queue and clear to go
+                    lane_green = self.__last_lane.cur_state in [State.GREEN, State.GREEN_FLICKERING]
+                    free_to_leave = self.__last_lane.free_to_leave_queue
+                    at_front = (self.__last_lane.vehicles_queue != [] and self is self.__last_lane.vehicles_queue[0])
+                    log_vehicle_event(f"[move] Vehicle #{self.vehicle_id} OUT-lane: at_front={at_front}, lane_green={lane_green}, free_to_leave={free_to_leave}")
+                    if self.__last_lane.vehicles_queue == [] and lane_green and free_to_leave:
+                        log_vehicle_event(f"[move] Vehicle #{self.vehicle_id} can cross junction without queue. Calling cross_junction.")
                         self.cross_junction(False)
                     else:
                         self.__last_lane.add_to_queue(self)
+                        if at_front:
+                            log_vehicle_event(f"[move] Vehicle #{self.vehicle_id} is at the front of the queue, lane is green, free_to_leave_queue={free_to_leave}. Waiting for green.")
                 new_x, new_y = self.__last_lane.parent_junction.point.get_point()
             else:
-                # print("[move] moving along current OUT-lane")
-                # print(f"[move] current velocity={self.velocity}, acceleration={self.acceleration}")
                 self.to_junction = self.lanes_path[self.__lanes_passed].parent_junction
                 self.from_junction = self.lanes_path[self.__lanes_passed - 1].parent_junction
                 from_node = self.lanes_path[self.__lanes_passed - 1].parent_junction.point
                 to_node = self.lanes_path[self.__lanes_passed].parent_junction.point
-                # print(f"[move] from_node={from_node.get_point()}, to_node={to_node.get_point()}")
-
                 distance = self.velocity * dt + 0.5 * self.acceleration * (dt ** 2)
                 road_length = self.cur_road_lane.parent_road.length
                 pixel_length = from_node.get_distance_from_point(to_node)
                 length = (distance * pixel_length) / road_length
                 alpha = from_node.get_slope_angle_in_rad(to_node)
-
                 dx = length * math.cos(alpha)
                 dy = length * math.sin(alpha)
                 new_x = self.cur_point.x + dx
                 new_y = self.cur_point.y + dy
-                
-                # Track acceleration events
                 self.track_acceleration(self.acceleration)
                 
                 # Update distance traveled
                 self.total_distance += distance
                 
-                # Calculate and update energy consumption and pollution
                 self.total_energy_consumed += self.calculate_energy_consumption(distance)
                 self.total_pollution += self.calculate_pollution(distance)
-
         else:
             raise TypeError("move method is invalid: Invalid order in path: facing is None")
-
-        # Update total time
         self.update_total_time()
-
-        # update position
-        # print(f"[move] updating position to ({new_x}, {new_y})")
         self.cur_point = Point(new_x, new_y)
         self.__last_move_time_stamp = time.time()
-
-        # Check if we've reached the end of the path
         if self.__lanes_passed >= len(self.lanes_path):
-            print("[DEBUG] Reached end of path after position update")
             return
-
-        # compute next junction distance
-        # print(f"[move] computing next junction distance using lanes_path[{self.__lanes_passed}]")
         try:
             nxt = self.lanes_path[self.__lanes_passed].parent_junction.point
             last_junction_point = self.__last_lane.parent_junction.point
             if last_junction_point.get_distance_from_point(nxt) != 0:
                 dist = self.cur_point.get_distance_from_point(nxt) * self.cur_road_lane_length / last_junction_point.get_distance_from_point(nxt)
-                # print(f"[move] new last_distance_to_next_junction={dist}")
                 self.__last_distance_to_next_junction = dist  # in km
         except Exception as e:
-            print(f"[move] ERROR accessing lanes_path[{self.__lanes_passed}] for distance: {e}")
+            log_vehicle_event(f"[move][EXCEPTION] Vehicle #{self.vehicle_id} in distance calc: {e}")
             raise
-
         self.velocity += self.acceleration * dt
-        # print(f"END path len: {len(self.lanes_path)}")
 
     # print(f"[move] end of move: velocity now={self.velocity}")
     # if self.__last_distance_to_next_junction is None and self.__next_junction_point:
@@ -653,3 +650,11 @@ class Vehicle(ABC):
     def calculate_pollution_in_acceleration(self):
         # TODO: complete the func
         pass
+
+    @staticmethod
+    def print_vehicles_on_map(vehicles):
+        print("\n[VEHICLES ON MAP]")
+        for v in vehicles:
+            if not v.has_arrived():
+                print(f"Vehicle #{v.vehicle_id}: type={v.vehicle_type}, energy={v.energy_type}, cur_point={v.get_cur_point().get_point() if v.get_cur_point() else None}, lane={v.get_cur_lane()}, queue_pos={v.get_queue_position()}")
+        print("[END VEHICLES ON MAP]\n")

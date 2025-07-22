@@ -196,10 +196,21 @@ class SimulationScreen:
             
             # Check if all vehicles have arrived
             all_arrived = True
+            arrived_count = 0
+            total_count = len(self.graph.vehicles)
             for vehicle in self.graph.vehicles:
                 vehicle.move(delta_time)
                 if not vehicle.has_arrived():  # You'll need to implement this method in Vehicle class
                     all_arrived = False
+                else:
+                    arrived_count += 1
+
+            # Print vehicles on map after 50% have arrived (only once)
+            if not hasattr(self, '_printed_vehicles_on_map'):
+                self._printed_vehicles_on_map = False
+            if not self._printed_vehicles_on_map and arrived_count >= total_count // 2:
+                Vehicle.print_vehicles_on_map(self.graph.vehicles)
+                self._printed_vehicles_on_map = True
 
             # Also move vehicles for the compare algorithm
             for vehicle in self.graph_for_algorithm_to_compare.vehicles:
