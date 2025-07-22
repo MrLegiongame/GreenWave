@@ -66,7 +66,15 @@ class SimulationScreen:
         self.clock = pygame.time.Clock()
         self.dt = 0
         self.simulation_time = 0  # Add simulation time tracking
+        self.main_simulation_time = 0  # Track main sim duration
+        self.compare_simulation_time = 0  # Track compare sim duration
         self.all_vehicles_arrived = False  # Add flag for vehicle arrival
+        self.all_vehicles_arrived_main = False  # Track main sim
+        self.all_vehicles_arrived_compare = False  # Track compare sim
+        self.show_loading_screen = False
+        self.loading_angle = 0  # For spinner animation
+        self.loading_screen_started = False
+        # self.loading_thread = None  # No longer needed
 
         root = tk.Tk()
         root.withdraw()
@@ -149,25 +157,25 @@ class SimulationScreen:
                     #     return
 
     def loading_screen(self):
-        center = (self.WINDOW_WIDTH // 2, self.WINDOW_HEIGHT // 2)
+        # Use the simulation screen area for the loading overlay
+        rect = self.SIMULATION_SCREEN
+        center = (rect.x + rect.width // 2, rect.y + rect.height // 2)
         radius = 30
         num_dots = 12
         angle = 0
         speed = 0.15  # rotation speed
 
-        running = True
-        while not self.all_vehicles_arrived and running:
-
+        while not (self.all_vehicles_arrived_main and self.all_vehicles_arrived_compare):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    return
 
-            rect = pygame.Rect(center[0] - 250, center[1] - 150, center[0] + 250, center[1] + 150)
+            # Draw a large background over the simulation area
             pygame.draw.rect(self.screen, Color.LIGHT_GREY.value, rect)
             pygame.display.flip()
             print("background printed")  # TODO: delete later - for test purposes only
 
-            # draw spinner
+            # draw spinner centered in the simulation screen
             for i in range(num_dots):
                 a = angle + i * (2 * math.pi / num_dots)
                 x = int(center[0] + radius * math.cos(a))
@@ -175,11 +183,11 @@ class SimulationScreen:
                 shade = 255 - int((i / num_dots) * 200)
                 pygame.draw.circle(self.screen, (shade, shade, shade), (x, y), 5)
                 pygame.display.flip()
-                # time.sleep(0.2)  # TODO: delete later - for test purposes only
 
             print("spinner printed")  # TODO: delete later - for test purposes only
             angle += speed
             pygame.display.flip()
+            time.sleep(0.05)  # Add a small sleep to avoid 100% CPU
 
     def is_cursor_in_circle(self, center_point, radius):
         mouse_pos = pygame.mouse.get_pos()
@@ -188,52 +196,69 @@ class SimulationScreen:
         return (dx ** 2 + dy ** 2) <= radius ** 2
 
     def update(self, delta_time):
-        #print(f"[DEBUG] update() called. is_stopped = {self.is_stopped}")
         self.dt = delta_time
         if not self.is_stopped:
-            # Update simulation time
-            self.simulation_time += delta_time
-            
-            # Check if all vehicles have arrived
-            all_arrived = True
-            arrived_count = 0
-            total_count = len(self.graph.vehicles)
-            for vehicle in self.graph.vehicles:
-                vehicle.move(delta_time)
-                if not vehicle.has_arrived():  # You'll need to implement this method in Vehicle class
-                    all_arrived = False
-                else:
-                    arrived_count += 1
+            if not self.algorithm.terminate_flag:
+                self.main_simulation_time += delta_time
+            if not self.algorithm_to_compare.terminate_flag:
+                self.compare_simulation_time += delta_time
+            # --- Main simulation ---
+            all_arrived_main = True
+            arrived_count_main = 0
+            total_count_main = len(self.graph.vehicles)
+            if not self.algorithm.terminate_flag:
+                for vehicle in self.graph.vehicles:
+                    vehicle.move(delta_time)
+                    if not vehicle.has_arrived():
+                        all_arrived_main = False
+                    else:
+                        arrived_count_main += 1
 
-            # Print vehicles on map after 50% have arrived (only once)
+            # --- Compare simulation ---
+            all_arrived_compare = True
+            arrived_count_compare = 0
+            if not self.algorithm_to_compare.terminate_flag:
+                total_count_compare = len(self.graph_for_algorithm_to_compare.vehicles)
+                for vehicle in self.graph_for_algorithm_to_compare.vehicles:
+                    vehicle.move(delta_time)
+                    if not vehicle.has_arrived():
+                        all_arrived_compare = False
+                    else:
+                        arrived_count_compare += 1
+
+            # Print vehicles on map after 50% have arrived (main sim)
             if not hasattr(self, '_printed_vehicles_on_map'):
                 self._printed_vehicles_on_map = False
-            if not self._printed_vehicles_on_map and arrived_count >= total_count // 2:
+            if not self._printed_vehicles_on_map and arrived_count_main >= total_count_main // 2:
                 Vehicle.print_vehicles_on_map(self.graph.vehicles)
                 self._printed_vehicles_on_map = True
 
-            # Also move vehicles for the compare algorithm
-            for vehicle in self.graph_for_algorithm_to_compare.vehicles:
-                vehicle.move(delta_time)
-            
-            if all_arrived and not self.all_vehicles_arrived:
+            # --- Stop main algorithm if done ---
+            if all_arrived_main and not self.algorithm.terminate_flag:
                 self.algorithm.terminate_flag = True
-                self.algorithm_to_compare.terminate_flag = True
-
-                loading_thread = threading.Thread(target=self.loading_screen)
-                print("starting loading thread")  # TODO: delete later - for test purposes only
-                loading_thread.start()
-
-                self.stop_event.set()
+                print(f"[DEBUG] Main algorithm time {self.main_simulation_time}")
                 self.algorithm_thread.join()
+                self.all_vehicles_arrived_main = True
+                # Start loading screen thread if not already started
+                if not self.loading_screen_started:
+                    self.loading_screen_started = True
+                    self.show_loading_screen = True
+
+            # --- Stop compare algorithm if done ---
+            if all_arrived_compare and not self.algorithm_to_compare.terminate_flag:
+                self.algorithm_to_compare.terminate_flag = True
+                print(f"[DEBUG] Compare algorithm time {self.compare_simulation_time}")
                 self.algorithm_to_compare_thread.join()
-                self.all_vehicles_arrived = True
+                self.all_vehicles_arrived_compare = True
 
-                time.sleep(2)  # TODO: delete later - for test purposes only
-                print("ending loading thread")  # TODO: delete later - for test purposes only
-                loading_thread.join()
-
-                # Collect consumption statistics before transitioning
+            # --- When both are done, show statistics ---
+            if (
+                self.all_vehicles_arrived_main
+                and self.all_vehicles_arrived_compare
+                and not self.all_vehicles_arrived
+            ):
+                self.show_loading_screen = False
+                # Collect stats
                 self.display_stats = self.collect_consumption_statistics(self.graph)
                 self.compare_stats = self.collect_consumption_statistics(self.graph_for_algorithm_to_compare)
 
@@ -243,15 +268,18 @@ class SimulationScreen:
                     self.screen,
                     self.ui_manager,
                     len(self.graph.vehicles),
-                    self.simulation_time,
-                    self.vehicle_stats,  # Pass vehicle statistics
-                    self.display_stats,    # Pass display algorithm statistics
-                    self.compare_stats     # Pass compare algorithm statistics
+                    self.main_simulation_time,
+                    self.compare_simulation_time,
+                    self.vehicle_stats,
+                    self.display_stats,
+                    self.compare_stats
                 )
-        else:
-            print("[UPDATE] Simulation paused.")
+                self.all_vehicles_arrived = True
 
     def draw(self):
+        if self.show_loading_screen:
+            self.draw_loading_spinner()
+            return
 
         #print("[DRAW] Redrawing screen...")
         self.screen.fill(Color.WHITE.value)
@@ -838,3 +866,21 @@ class SimulationScreen:
             "average_energy_efficiency": total_energy_consumed / total_distance if total_distance > 0 else 0,
             "average_pollution_efficiency": total_pollution / total_distance if total_distance > 0 else 0
         }
+
+    def draw_loading_spinner(self):
+        rect = self.SIMULATION_SCREEN
+        center = (rect.x + rect.width // 2, rect.y + rect.height // 2)
+        radius = 30
+        num_dots = 12
+        angle = self.loading_angle
+        speed = 0.15
+
+        pygame.draw.rect(self.screen, Color.LIGHT_GREY.value, rect)
+        for i in range(num_dots):
+            a = angle + i * (2 * math.pi / num_dots)
+            x = int(center[0] + radius * math.cos(a))
+            y = int(center[1] + radius * math.sin(a))
+            shade = 255 - int((i / num_dots) * 200)
+            pygame.draw.circle(self.screen, (shade, shade, shade), (x, y), 5)
+        self.loading_angle += speed
+        pygame.display.flip()
