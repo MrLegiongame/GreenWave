@@ -197,6 +197,19 @@ class Graph:
 
         return lane_path, edge_path
 
+    def find_road_lanes_by_lanes(self, in_lane):
+        for road in self.edges:
+            for road_lane in road.road_lanes_first_direction:
+                if in_lane is road_lane.destination_lane:
+                    return road_lane
+
+            for road_lane in road.road_lanes_second_direction:
+                if in_lane is road_lane.destination_lane:
+                    return road_lane
+
+        return None
+
+    """
     def find_road_lanes_by_lanes(self, out_lane, in_lane):
         for road in self.edges:
             out_lane_found = False
@@ -220,4 +233,4 @@ class Graph:
                 return road.road_lanes_second_direction
 
         return None
-
+    """
