@@ -10,6 +10,7 @@ class Algorithm:
         self.alg = alg
         self.nodes = nodes
         self.nodes_size = len(nodes)
+        self.threads = [None] * self.nodes_size
         self.terminate_flag = False
 
 
@@ -33,18 +34,17 @@ class Algorithm:
                 return None
 
     def update(self):
-        threads = []
-        start_time = time.time()
+        # start_time = time.time()
         for index in range(self.nodes_size):
             if not self.nodes[index].prevent_state_change:
                 self.nodes[index].prevent_state_change = True
                 next_active_index = self.get_next_active_index(index)
-                threads.append(threading.Thread(target=self.nodes[index].update_state, args=(next_active_index,)))
-                threads[index].start()
-        end_time = time.time()
-        delta_time = end_time - start_time
-        if delta_time < 0.5:
-            time.sleep(0.5 - delta_time)
+                self.threads[index] = (threading.Thread(target=self.nodes[index].update_state, args=(next_active_index,)))
+                self.threads[index].start()
+        # end_time = time.time()
+        # delta_time = end_time - start_time
+        # if delta_time < 0.5:
+        #     time.sleep(0.5 - delta_time)
 
     def run(self):
         for node in self.nodes:

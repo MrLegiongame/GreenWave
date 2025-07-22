@@ -87,6 +87,9 @@ class Vehicle(ABC):
             f"to {self.end_point}")
         print(f"[Vehicle Init] Vehicle #{self.vehicle_id} - cur_point: {self.cur_point}")
 
+    def is_next_lane_the_final_lane(self):
+        return self.__end_in_lane is self.lanes_path[self.__lanes_passed]
+
     def set_start_and_end_nodes(self, start, end):
         self.start_node = start
         self.start_point = start.point
@@ -204,6 +207,10 @@ class Vehicle(ABC):
                 f"[__is_passed_junction] passed={passed}, setting __last_distance_to_next_junction={current_distance}")
         return passed
 
+    def adapt_out_lanes_to_in_lanes(self):
+        # TODO: complete function
+        pass
+
     def setup_move(self):
         # print(f"[setup_move] Starting with __lanes_passed={self.__lanes_passed}, last_lane={self.__last_lane}")
         if self.creation_time is None:
@@ -233,8 +240,11 @@ class Vehicle(ABC):
             time.sleep(time_to_sleep)
             self.__last_lane.free_to_leave_queue = True
 
-        if not from_stop:  # because self.__last_lane is OUT Lane
-            self.__lanes_passed += 1
+        if self.__lanes_passed >= len(self.lanes_path):
+            if self.get_queue_position() == 0:
+                self.__last_lane.pop_head_from_queue()
+            self.has_reached_destination = True
+            return
 
         self.__last_lane = self.lanes_path[self.__lanes_passed]
         self.__lanes_passed += 1
@@ -248,7 +258,10 @@ class Vehicle(ABC):
         print(f"[DEBUG] IN-lane: After increment __lanes_passed={self.__lanes_passed}")
 
     def move(self, dt):
-        dt = dt / 1_000.0
+        dt = dt / 3_600.0
+
+        print(self.__last_lane.vehicles_queue)
+
         # print(f"\n[move] Starting move with __lanes_passed={self.__lanes_passed}, last_lane={self.__last_lane}")
         self.setup_move()
 
@@ -332,7 +345,7 @@ class Vehicle(ABC):
                 self.track_acceleration(self.acceleration)
                 
                 # Update distance traveled
-                self.total_distance += length
+                self.total_distance += distance
                 
                 # Calculate and update energy consumption and pollution
                 self.total_energy_consumed += self.calculate_energy_consumption(distance)
