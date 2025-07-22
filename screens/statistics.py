@@ -293,14 +293,14 @@ class StatisticsScreen:
             # Draw Total Consumption Card
             display_total_consumption = self.display_stats.get("total_energy_consumed", 0)
             compare_total_consumption = self.compare_stats.get("total_energy_consumed", 0)
-            energy_unit = "kWh" if any("Electric" in str(v) for v in self.vehicle_stats.values()) else "L"
+            energy_unit = "Megajoule" #  if any("Electric" in str(v) for v in self.vehicle_stats.values()) else "L"
             consumption_items = [
                 ("Total Energy", f"{display_total_consumption:.2f} {energy_unit}"),
-                ("Total Distance", f"{self.display_stats.get('total_distance', 0):.1f} m"),
+                ("Total Distance", f"{self.display_stats.get('total_distance', 0):.1f} Km"),
                 ("Avg Efficiency", f"{self.display_stats.get('average_energy_efficiency', 0):.3f}"),
                 ("", "--- Compare Algorithm ---"),
                 ("Total Energy", f"{compare_total_consumption:.2f} {energy_unit}"),
-                ("Total Distance", f"{self.compare_stats.get('total_distance', 0):.1f} m"),
+                ("Total Distance", f"{self.compare_stats.get('total_distance', 0):.1f} Km"),
                 ("Avg Efficiency", f"{self.compare_stats.get('average_energy_efficiency', 0):.3f}")
             ]
             self.draw_card(
@@ -317,12 +317,12 @@ class StatisticsScreen:
             display_total_pollution = self.display_stats.get("total_pollution", 0)
             compare_total_pollution = self.compare_stats.get("total_pollution", 0)
             pollution_items = [
-                ("Total CO2", f"{display_total_pollution:.1f} g"),
-                ("Avg Emission", f"{self.display_stats.get('average_pollution_efficiency', 0):.1f} g/km"),
+                ("Total CO2", f"{display_total_pollution:.1f} Kg"),
+                ("Avg Emission", f"{self.display_stats.get('average_pollution_efficiency', 0):.1f} Kg/km"),
                 ("Stops Count", self.display_stats.get("total_stops", 0)),
                 ("", "--- Compare Algorithm ---"),
-                ("Total CO2", f"{compare_total_pollution:.1f} g"),
-                ("Avg Emission", f"{self.compare_stats.get('average_pollution_efficiency', 0):.1f} g/km"),
+                ("Total CO2", f"{compare_total_pollution:.1f} Kg"),
+                ("Avg Emission", f"{self.compare_stats.get('average_pollution_efficiency', 0):.1f} Kg/km"),
                 ("Stops Count", self.compare_stats.get("total_stops", 0))
             ]
             self.draw_card(
@@ -372,13 +372,13 @@ class StatisticsScreen:
             display_energy_consumption = self.display_stats.get("energy_consumption", {})
             compare_energy_consumption = self.compare_stats.get("energy_consumption", {})
             energy_consumption_items = [
-                ("Electric", f"{display_energy_consumption.get('Electric', 0):.2f} kWh"),
-                ("Gasoline", f"{display_energy_consumption.get('Gasoline', 0):.2f} L"),
-                ("Gas", f"{display_energy_consumption.get('Gas', 0):.2f} L"),
+                ("Electric", f"{display_energy_consumption.get('Electric', 0):.2f} Megajoule"),
+                ("Gasoline", f"{display_energy_consumption.get('Gasoline', 0):.2f} Megajoule"),
+                ("Gas", f"{display_energy_consumption.get('Gas', 0):.2f} Megajoule"),
                 ("", "--- Compare Algorithm ---"),
-                ("Electric", f"{compare_energy_consumption.get('Electric', 0):.2f} kWh"),
-                ("Gasoline", f"{compare_energy_consumption.get('Gasoline', 0):.2f} L"),
-                ("Gas", f"{compare_energy_consumption.get('Gas', 0):.2f} L")
+                ("Electric", f"{compare_energy_consumption.get('Electric', 0):.2f} Megajoule"),
+                ("Gasoline", f"{compare_energy_consumption.get('Gasoline', 0):.2f} Megajoule"),
+                ("Gas", f"{compare_energy_consumption.get('Gas', 0):.2f} Megajoule")
             ]
             self.draw_card(
                 self.start_x,
@@ -394,13 +394,13 @@ class StatisticsScreen:
             display_energy_pollution = self.display_stats.get("energy_pollution", {})
             compare_energy_pollution = self.compare_stats.get("energy_pollution", {})
             energy_pollution_items = [
-                ("Electric", f"{display_energy_pollution.get('Electric', 0):.1f} g CO2"),
-                ("Gasoline", f"{display_energy_pollution.get('Gasoline', 0):.1f} g CO2"),
+                ("Electric", f"{display_energy_pollution.get('Electric', 0):.1f} CO2 Kg"),
+                ("Gasoline", f"{display_energy_pollution.get('Gasoline', 0):.1f} CO2 Kg"),
                 ("Gas", f"{display_energy_pollution.get('Gas', 0):.1f} g CO2"),
                 ("", "--- Compare Algorithm ---"),
-                ("Electric", f"{compare_energy_pollution.get('Electric', 0):.1f} g CO2"),
-                ("Gasoline", f"{compare_energy_pollution.get('Gasoline', 0):.1f} g CO2"),
-                ("Gas", f"{compare_energy_pollution.get('Gas', 0):.1f} g CO2")
+                ("Electric", f"{compare_energy_pollution.get('Electric', 0):.1f} CO2 Kg"),
+                ("Gasoline", f"{compare_energy_pollution.get('Gasoline', 0):.1f} CO2 Kg"),
+                ("Gas", f"{compare_energy_pollution.get('Gas', 0):.1f} CO2 Kg")
             ]
             self.draw_card(
                 self.start_x + self.card_width + self.margin,

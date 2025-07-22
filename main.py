@@ -26,7 +26,7 @@ clock = pygame.time.Clock()
 running = True
 
 while running:
-    time_delta = clock.tick(60) / 1000000.0
+    time_delta = clock.tick(60) / 1000.0  # / 1000000.0
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -61,14 +61,14 @@ while running:
             current_screen = MainMenuScreen(screen)
         elif next_screen == "simulation":
             # Read algorithms from settings.json
-            display_alg = Alg.ADAPTIVE_ALG
+            display_alg = Alg.GREEN_WAVE_ENERGY
             compare_alg = Alg.FIXED_TIMING_CYCLE
             try:
                 with open("settings.json", "r") as f:
                     settings = json.load(f)
-                    display_alg_str = settings.get("Display algorithm", {}).get("value", "ADAPTIVE_ALG")
+                    display_alg_str = settings.get("Display algorithm", {}).get("value", "GREEN_WAVE_ENERGY")
                     compare_alg_str = settings.get("Compared algorithm", {}).get("value", "FIXED_TIMING_CYCLE")
-                    display_alg = Alg[display_alg_str] if display_alg_str in Alg.__members__ else Alg.ADAPTIVE_ALG
+                    display_alg = Alg[display_alg_str] if display_alg_str in Alg.__members__ else Alg.GREEN_WAVE_ENERGY
                     compare_alg = Alg[compare_alg_str] if compare_alg_str in Alg.__members__ else Alg.FIXED_TIMING_CYCLE
             except Exception as e:
                 print(f"[ERROR] Failed to read algorithms from settings.json: {e}")

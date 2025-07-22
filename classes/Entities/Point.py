@@ -3,10 +3,9 @@ import math
 from enum import Enum
 
 
-class RelativeDirection:
+class RelativeDirection(Enum):
     UP = 0
     DOWN = 1
-
 
 class Point(ABC):
 

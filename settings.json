@@ -6,7 +6,7 @@
         "value": "map2"
     },
     "Private car amount": {
-        "value": "5"
+        "value": "50"
     },
     "Buses amount": {
         "value": "5"
@@ -24,7 +24,7 @@
         "value": "40"
     },
     "Display algorithm": {
-        "value": "ADAPTIVE_ALG"
+        "value": "GREEN_WAVE_ENERGY"
     },
     "Compared algorithm": {
         "value": "FIXED_TIMING_CYCLE"

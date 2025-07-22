@@ -597,7 +597,7 @@ class SimulationScreen:
         for road_name, road_data in roads.items():
             first_direction = directions_in_map[road_data["direction1_index_in_map"]]
             second_direction = directions_in_map[road_data["direction2_index_in_map"]]
-            length = road_data["length"]
+            length = road_data["length"]  # in meters
             max_speed = road_data["max_speed"]
             road = Road(road_name, first_direction, second_direction, length, max_speed)
             first_direction.set_road(road)
@@ -786,12 +786,12 @@ class SimulationScreen:
         total_idle_time = 0
         
         # Energy type breakdown
-        energy_consumption = {"Electric": 0, "Gasoline": 0, "Gas": 0}
-        energy_pollution = {"Electric": 0, "Gasoline": 0, "Gas": 0}
+        energy_consumption_by_energy_type = {"Electric": 0, "Gasoline": 0, "Gas": 0}
+        vehicles_pollution_by_energy_type = {"Electric": 0, "Gasoline": 0, "Gas": 0}
         
         # Vehicle type breakdown
-        vehicle_consumption = {"Car": 0, "Bus": 0, "Truck": 0}
-        vehicle_pollution = {"Car": 0, "Bus": 0, "Truck": 0}
+        energy_consumption_by_vehicle_type = {"Car": 0, "Bus": 0, "Truck": 0}
+        vehicles_pollution_by_vehicle_type = {"Car": 0, "Bus": 0, "Truck": 0}
         
         for vehicle in graph.vehicles:
             # Get consumption summary for this vehicle
@@ -806,12 +806,12 @@ class SimulationScreen:
             total_idle_time += summary["idle_time"]
             
             # Add to energy type breakdown
-            energy_consumption[vehicle.energy_type] += summary["total_energy_consumed"]
-            energy_pollution[vehicle.energy_type] += summary["total_pollution"]
+            energy_consumption_by_energy_type[vehicle.energy_type] += summary["total_energy_consumed"]
+            vehicles_pollution_by_energy_type[vehicle.energy_type] += summary["total_pollution"]
             
             # Add to vehicle type breakdown
-            vehicle_consumption[vehicle.vehicle_type] += summary["total_energy_consumed"]
-            vehicle_pollution[vehicle.vehicle_type] += summary["total_pollution"]
+            energy_consumption_by_vehicle_type[vehicle.vehicle_type] += summary["total_energy_consumed"]
+            vehicles_pollution_by_vehicle_type[vehicle.vehicle_type] += summary["total_pollution"]
         
         return {
             "total_energy_consumed": total_energy_consumed,
@@ -820,10 +820,10 @@ class SimulationScreen:
             "total_stops": total_stops,
             "total_acceleration_events": total_acceleration_events,
             "total_idle_time": total_idle_time,
-            "energy_consumption": energy_consumption,
-            "energy_pollution": energy_pollution,
-            "vehicle_consumption": vehicle_consumption,
-            "vehicle_pollution": vehicle_pollution,
+            "energy_consumption": energy_consumption_by_energy_type,
+            "energy_pollution": vehicles_pollution_by_energy_type,
+            "vehicle_consumption": energy_consumption_by_vehicle_type,
+            "vehicle_pollution": vehicles_pollution_by_vehicle_type,
             "average_energy_efficiency": total_energy_consumed / total_distance if total_distance > 0 else 0,
             "average_pollution_efficiency": total_pollution / total_distance if total_distance > 0 else 0
         }
