@@ -6,13 +6,13 @@
         "value": "map2"
     },
     "Private car amount": {
-        "value": "5"
+        "value": "10"
     },
     "Buses amount": {
-        "value": "0"
+        "value": "10"
     },
     "Trucks amount": {
-        "value": "0"
+        "value": "10"
     },
     "Electric": {
         "value": "30"

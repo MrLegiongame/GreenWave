@@ -37,16 +37,16 @@ class Algorithm:
         self.nodes[index].update_state(next_active_index)
 
     def update(self):
-        # start_time = time.time()
+        start_time = time.time()
         for index in range(self.nodes_size):
             if not self.nodes[index].prevent_state_change:
                 self.nodes[index].prevent_state_change = True
                 self.threads[index] = (threading.Thread(target=self.get_next_active_index, args=(index,)))
                 self.threads[index].start()
-        # end_time = time.time()
-        # delta_time = end_time - start_time
-        # if delta_time < 0.5:
-        #     time.sleep(0.5 - delta_time)
+        end_time = time.time()
+        delta_time = end_time - start_time
+        if delta_time < 0.1:
+            time.sleep(0.1 - delta_time)
 
     def run(self):
         for node in self.nodes:

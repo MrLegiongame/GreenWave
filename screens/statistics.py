@@ -3,12 +3,13 @@ import pygame_gui
 from classes.Enums.Color import Color
 
 class StatisticsScreen:
-    def __init__(self, screen, ui_manager, total_vehicles, simulation_time, vehicle_stats, display_stats=None, compare_stats=None):
+    def __init__(self, screen, ui_manager, total_vehicles, main_simulation_time, compare_simulation_time, vehicle_stats, display_stats=None, compare_stats=None):
         self.screen = screen
         self.ui_manager = ui_manager
         self.next_screen = None
         self.total_vehicles = total_vehicles
-        self.simulation_time = simulation_time
+        self.main_simulation_time = main_simulation_time
+        self.compare_simulation_time = compare_simulation_time
         self.vehicle_stats = vehicle_stats
         self.display_stats = display_stats or {}
         self.compare_stats = compare_stats or {}
@@ -239,11 +240,11 @@ class StatisticsScreen:
         # Draw Overview Cards
         overview_items = [
             ("Total Vehicles", self.total_vehicles),
-            ("Simulation Time", f"{self.simulation_time:.2f} seconds"),
+            ("Simulation Time", f"{self.main_simulation_time:.2f} seconds"),
         ]
         if self.display_stats and self.compare_stats:
             overview_items.append(("", "--- Compare Algorithm ---"))
-            overview_items.append(("Simulation Time", f"{self.simulation_time:.2f} seconds"))
+            overview_items.append(("Simulation Time", f"{self.compare_simulation_time:.2f} seconds"))
         self.draw_card(
             self.start_x,
             y_row1,
@@ -339,12 +340,12 @@ class StatisticsScreen:
             display_idle_time = self.display_stats.get("total_idle_time", 0)
             display_accel_events = self.display_stats.get("total_acceleration_events", 0)
             display_total_distance = self.display_stats.get("total_distance", 0)
-            display_total_time = self.display_stats.get("total_time", self.simulation_time)
+            display_total_time = self.display_stats.get("total_time", self.main_simulation_time)
             display_avg_speed = (display_total_distance / display_total_time * 3.6) if display_total_time > 0 else 0
             compare_idle_time = self.compare_stats.get("total_idle_time", 0)
             compare_accel_events = self.compare_stats.get("total_acceleration_events", 0)
             compare_total_distance = self.compare_stats.get("total_distance", 0)
-            compare_total_time = self.compare_stats.get("total_time", self.simulation_time)
+            compare_total_time = self.compare_stats.get("total_time", self.compare_simulation_time)
             compare_avg_speed = (compare_total_distance / compare_total_time * 3.6) if compare_total_time > 0 else 0
             behavior_items = [
                 ("Idle Time", f"{display_idle_time:.1f} s"),
