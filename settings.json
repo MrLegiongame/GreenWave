@@ -24,9 +24,9 @@
         "value": "40"
     },
     "Display algorithm": {
-        "value": "ADAPTIVE_ALG"
+        "value": "GREEN_WAVE_ENERGY"
     },
     "Compared algorithm": {
-        "value": "FIXED_TIMING_CYCLE"
+        "value": "ADAPTIVE_ALG"
     }
 }

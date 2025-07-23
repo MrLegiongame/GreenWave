@@ -16,7 +16,7 @@ from classes.Edges.Road import Road
 from classes.Entities.Algorithm import Algorithm
 from classes.Entities.Graph import Graph, find_out_lane_by_index_in_junction
 from classes.Entities.Point import Point
-from classes.Entities.Vehicles.Vehicle import Vehicle, get_image_list
+from classes.Entities.Vehicles.Vehicle import Vehicle
 from classes.Enums.Alg import Alg, ALGORITHM_SIZE
 from classes.Enums.Color import Color
 from classes.Entities.Simulation import Simulation
@@ -678,18 +678,15 @@ class SimulationScreen:
                 dst_node = random.choice([n for n in nodes if n != src_node])
                 weight = random.randint(1200, 2400)
                 energy = energy_distribution.pop()
-                image = random.choice(get_image_list("assets/vehicles/cars"))
                 vehicles.append(Vehicle(
                     length=2,
                     weight=weight,
                     start_node=src_node,
                     end_node=dst_node,
-                    image=image,
                     vehicle_type=v_type,
                     energy_type=energy,
                     acceleration=0,  # or adjust per type if needed
-                    maximum_speed=100,
-                    liters_per_100km=random.randint(5, 15)
+                    maximum_speed=100
                 ))
 
         # --- Set states --- #
