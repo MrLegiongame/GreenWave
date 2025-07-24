@@ -20,15 +20,6 @@ def log_vehicle_event(msg):
         f.write(msg + '\n')
 
 
-def get_image_list(folder_path):
-    supported_exts = (".png", ".jpg", ".jpeg", ".jfif", ".webp")
-    return [
-        os.path.join(folder_path, f)
-        for f in os.listdir(folder_path)
-        if f.lower().endswith(supported_exts)
-    ]
-
-
 class Vehicle(ABC):
     # Class variable to track the next available vehicle ID
     _next_vehicle_id = 1
@@ -90,8 +81,11 @@ class Vehicle(ABC):
             f"to {self.end_point}")
         print(f"[Vehicle Init] Vehicle #{self.vehicle_id} - cur_point: {self.cur_point}")
 
-    def is_next_lane_the_final_lane(self):
-        return self.__end_in_lane is self.lanes_path[self.__lanes_passed]
+    def is_next_lane_the_final_lane(self):  # architecture due to multithreading
+        lanes_passed = self.__lanes_passed
+        if lanes_passed >= len(self.lanes_path):
+            return True
+        return self.__end_in_lane is self.lanes_path[lanes_passed]
 
     def set_start_and_end_nodes(self, start, end):
         self.start_node = start
@@ -412,7 +406,7 @@ class Vehicle(ABC):
         if LaneFacing.IN == self.__last_lane.facing:
             return False
         time = self.get_time_to_next_junction_in_sec()
-        return end - 0.25 >= time >= start + 0.25
+        return end - 0.1 >= time >= start + 0.1
 
     def get_energy_consumption_to_velocity(self, to_velocity):  # returns the kinetic energy in Joule
         return 0.5 * self.weight * (to_velocity ** 2)

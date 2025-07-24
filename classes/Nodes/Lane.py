@@ -8,6 +8,7 @@ from classes.Enums.Color import Color
 from screens.functions import sort_and_remove_duplicates_in_tuple
 from classes.Enums.State import State, STATE_SIZE
 from classes.Enums.LaneFacing import LaneFacing
+from enum import Enum
 import bisect
 
 
@@ -22,6 +23,21 @@ def check_lane_validity(to_lanes):  # to_lanes: list[Lane]
         if not LaneFacing.OUT == to_lane.facing:
             raise TypeError("Lane is invalid: Non-Out_Lane value")
     return True
+
+class TimeToCross(Enum):
+    CAR = 2,
+    BUS = 3,
+    TRUCK = 4
+
+
+def get_time_to_cross_by_vehicle_type(vehicle):
+    match vehicle.vehicle_type:
+        case "Car":
+            return 2
+        case "Bus":
+            return 2.5
+        case "Truck":
+            return 3
 
 
 class Lane:
@@ -56,6 +72,26 @@ class Lane:
                 self.set_to_lanes(to_lanes)
             except TypeError as e:
                 print(f"Lane couldn't be created due to this error: {e}")
+
+    def get_time_to_free_current_queue(self):
+        return sum(self.time_to_cross_queue)
+
+    def will_there_be_queue_in_given_seconds(self, seconds, type):  # seconds <= 13, type (to_stay_green or to_turn_green)
+        time_to_free_queue =  self.get_time_to_free_current_queue()
+        match type:
+            case "to_stay":  # green for 13 seconds
+                time_to_free_queue += 0
+            case "to_turn":  # green in 7 until 13 seconds
+                time_to_free_queue += 7
+
+        for vehicle in self.road_lane.get_list_of_vehicles_sorted_by_arrival_time_up_to_seconds(seconds):
+            arrival_time = vehicle.get_time_to_next_junction_in_sec()
+            if time_to_free_queue >= arrival_time:
+                time_to_free_queue += get_time_to_cross_by_vehicle_type(vehicle)
+            else:
+                time_to_free_queue = arrival_time + get_time_to_cross_by_vehicle_type(vehicle)
+
+        return time_to_free_queue >= seconds
 
     def set_to_lanes(self, to_lanes):  # only for in-facing lanes
         if LaneFacing.OUT == self.facing:
@@ -92,14 +128,7 @@ class Lane:
 
     def add_to_queue(self, vehicle):
         if isinstance(vehicle, Vehicle):
-            time_to_cross = 1
-            match vehicle.vehicle_type:
-                case "Car":
-                    time_to_cross = 2
-                case "Bus":
-                    time_to_cross = 3
-                case "Truck":
-                    time_to_cross = 4
+            time_to_cross = get_time_to_cross_by_vehicle_type(vehicle)
             self.road_lane.vehicle_leave_lane(vehicle)
             self.vehicles_queue.append(vehicle)
             self.time_to_cross_queue.append(time_to_cross)

@@ -337,7 +337,7 @@ class Junction:
                 for lane in traffic_light.lanes:
                     vehicles = lane.road_lane.vehicles
                     for vehicle in vehicles:
-                        if vehicle.is_away_from_next_junction_by_between_start_and_end_seconds(3, 13) and not vehicle.is_next_lane_the_final_lane():
+                        if vehicle.is_away_from_next_junction_by_between_start_and_end_seconds(3, 13) and not vehicle.is_next_lane_the_final_lane() and not lane.will_there_be_queue_in_given_seconds(vehicle.get_time_to_next_junction_in_sec(), "to_stay"):
                             temp_filter_changed = True
                             match filter:
                                 case "energy":
@@ -351,7 +351,7 @@ class Junction:
                 for lane in traffic_light.lanes:
                     vehicles = lane.road_lane.vehicles
                     for vehicle in vehicles:
-                        if vehicle.is_away_from_next_junction_by_between_start_and_end_seconds(7, 13) and not vehicle.is_next_lane_the_final_lane():
+                        if vehicle.is_away_from_next_junction_by_between_start_and_end_seconds(7, 13) and not vehicle.is_next_lane_the_final_lane() and not lane.will_there_be_queue_in_given_seconds(vehicle.get_time_to_next_junction_in_sec(), "to_turn"):
                             temp_filter_changed = True
                             match filter:
                                 case "energy":

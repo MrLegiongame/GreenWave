@@ -37,6 +37,9 @@ class RoadLane:
         except TypeError as e:
             print(f"RoadLane couldn't be created due to this error: {e}")
 
+    def get_list_of_vehicles_sorted_by_arrival_time_up_to_seconds(self, seconds):
+        return sorted(self.vehicles, key=lambda obj: getattr(obj, "is_away_from_next_junction_by_between_start_and_end_seconds")(-0.1, seconds))
+
     def vehicle_enter_lane(self, vehicle):
         if not isinstance(vehicle, Vehicle):
             return False
