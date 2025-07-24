@@ -38,6 +38,7 @@ def get_time_to_cross_by_vehicle_type(vehicle):
             return 2.5
         case "Truck":
             return 3
+
     return 2
 
 

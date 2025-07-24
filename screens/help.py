@@ -27,7 +27,7 @@ class HelpScreen:
             "   › Click a vehicle for details",
             "",
             " ■ SETTINGS",
-            "   • Duration     • Map choice   • Density",
+            "   • Number of cars     • Map choice   • Algorithms control",
             "",
             " ■ CONTROLS",
             "   • Drag window by title bar",
@@ -36,8 +36,7 @@ class HelpScreen:
             "   • ESC / Close: exit help",
             "",
             " ■ SUPPORT",
-            "   Docs: docs.greenwave.com",
-            "   Email: support@greenwave.com",
+            "   GitHub: https://github.com/MrLegiongame/GreenWave",
             "",
             " ── Thank you for using GreenWave! ──",
         ]
