@@ -33,11 +33,11 @@ class TimeToCross(Enum):
 def get_time_to_cross_by_vehicle_type(vehicle):
     match vehicle.vehicle_type:
         case "Car":
-            return TimeToCross.CAR.value
+            return 2
         case "Bus":
-            return TimeToCross.BUS.value
+            return 2.5
         case "Truck":
-            return TimeToCross.TRUCK.value
+            return 3
 
 
 class Lane:

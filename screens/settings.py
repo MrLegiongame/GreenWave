@@ -59,16 +59,13 @@ class SettingsScreen:
 
         # Labels
         labels = [
-            ("Time to shutdown simulation", (40, 50)),
             ("Map for simulation", (40, 100)),
             ("Private car amount", (40, 250)),
             ("Buses amount", (40, 300)),
             ("Trucks amount", (40, 350)),
             ("Type:", (40, 400)),
             ("Display algorithm", (600, 50)),
-            ("Compared algorithm", (600, 100)),
-            ("Random vehicles JSON", (600, 180)),
-            ("Density", (600, 250))
+            ("Compared algorithm", (600, 100))
         ]
         for text, pos in labels:
             label = pygame_gui.elements.UILabel(
@@ -119,10 +116,7 @@ class SettingsScreen:
         )
 
         # Inputs
-        self.time_input = pygame_gui.elements.UITextEntryLine(pygame.Rect((240, 50), (200, 30)), self.ui_manager)
-        self.time_input.set_text("2")
-        self.time_input.set_allowed_characters("numbers")
-
+        # Remove time_input, random_checkbox, density_slider, density_label
         # Initialize dropdown with available maps
         print(f"[DEBUG] Available maps: {self.available_maps}")
         self.map_dropdown = pygame_gui.elements.UIDropDownMenu(
@@ -149,11 +143,6 @@ class SettingsScreen:
             object_id='#compared_alg_dropdown'
         )
 
-        self.random_checkbox = pygame_gui.elements.UISelectionList(pygame.Rect((800, 180), (30, 30)), ["V"], self.ui_manager)
-        self.density_slider = pygame_gui.elements.UIHorizontalSlider(pygame.Rect((800, 250), (150, 30)), start_value=3, value_range=(1, 5), manager=self.ui_manager)
-
-        self.density_label = pygame_gui.elements.UILabel(pygame.Rect((960, 250), (30, 30)), "3", self.ui_manager, object_id="#black_label")
-
         self.car_input = pygame_gui.elements.UITextEntryLine(pygame.Rect((240, 250), (200, 30)), self.ui_manager)
         self.bus_input = pygame_gui.elements.UITextEntryLine(pygame.Rect((240, 300), (200, 30)), self.ui_manager)
         self.truck_input = pygame_gui.elements.UITextEntryLine(pygame.Rect((240, 350), (200, 30)), self.ui_manager)
@@ -177,8 +166,7 @@ class SettingsScreen:
         self.error_label = pygame_gui.elements.UILabel(pygame.Rect((300, 560), (400, 30)), "", self.ui_manager, object_id="#error_label")
 
         self.elements.extend([
-            self.time_input, self.map_dropdown, self.display_alg_dropdown, self.compared_alg_dropdown,
-            self.random_checkbox, self.density_slider, self.density_label,
+            self.map_dropdown, self.display_alg_dropdown, self.compared_alg_dropdown,
             self.car_input, self.bus_input, self.truck_input,
             self.electric_input, self.gasoline_input, self.gas_input,
             self.upload_button, self.save_button, self.cancel_button, self.error_label,
@@ -212,37 +200,28 @@ class SettingsScreen:
 
     def update(self, time_delta):
         self.ui_manager.update(time_delta)
-        self.density_label.set_text(str(int(self.density_slider.get_current_value())))
-        active = self.random_checkbox.get_single_selection() not in (None, "")
-        for field in [self.car_input, self.bus_input, self.truck_input, self.electric_input, self.gasoline_input, self.gas_input]:
-            if active:
-                field.disable()
-            else:
-                field.enable()
-        self.density_slider.disable() if active else self.density_slider.enable()
-
-        # Check that Display algorithm and Compared algorithm are not the same
+        # Remove density_label and density_slider logic
+        # Remove random_checkbox logic
+        # Only keep the check for algorithms and energy percentages
         display_alg = self.display_alg_dropdown.selected_option
         compared_alg = self.compared_alg_dropdown.selected_option
         if display_alg == compared_alg:
             self.save_button.disable()
             self.error_label.set_text("Display and Compared algorithm must be different")
             return
-
-        if not active:
-            try:
-                total = int(self.electric_input.get_text() or 0) + \
-                        int(self.gasoline_input.get_text() or 0) + \
-                        int(self.gas_input.get_text() or 0)
-                if total != 100:
-                    self.save_button.disable()
-                    self.error_label.set_text("Energy percentages must sum to 100%")
-                else:
-                    self.save_button.enable()
-                    self.error_label.set_text("")
-            except ValueError:
+        try:
+            total = int(self.electric_input.get_text() or 0) + \
+                    int(self.gasoline_input.get_text() or 0) + \
+                    int(self.gas_input.get_text() or 0)
+            if total != 100:
                 self.save_button.disable()
-                self.error_label.set_text("Percentages must be numeric")
+                self.error_label.set_text("Energy percentages must sum to 100%")
+            else:
+                self.save_button.enable()
+                self.error_label.set_text("")
+        except ValueError:
+            self.save_button.disable()
+            self.error_label.set_text("Percentages must be numeric")
 
     def draw(self):
         self.screen.fill(self.bg_color)
@@ -293,7 +272,6 @@ class SettingsScreen:
         print(f"[DEBUG] Saving compared algorithm: {selected_compared_alg}")
         
         data = {
-            "Time to shutdown simulation": {"value": self.time_input.get_text()},
             "Map for simulation": {"value": selected_map},
             "Private car amount": {"value": self.car_input.get_text()},
             "Buses amount": {"value": self.bus_input.get_text()},
@@ -313,7 +291,7 @@ class SettingsScreen:
         try:
             with open(file_path, 'r') as f:
                 data = json.load(f)
-                self.time_input.set_text(data.get("Time to shutdown simulation", {}).get("value", ""))
+                # Remove time_input reference
                 select_map = None
                 display_alg = None
                 compared_alg = None
