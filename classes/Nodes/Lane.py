@@ -39,6 +39,78 @@ def get_time_to_cross_by_vehicle_type(vehicle):
         case "Truck":
             return 3
 
+    return 2
+
+
+def update_time_to_free_queue(latest_time_queue_will_be_released, arrival_time, time_to_cross, is_to_green, is_to_stay):
+    result = latest_time_queue_will_be_released
+
+
+    if is_to_stay and is_to_green:  # green for 13 seconds
+
+        if latest_time_queue_will_be_released >= arrival_time:
+            result += time_to_cross
+        else:
+            result = arrival_time + time_to_cross
+
+        if result > 13:
+            return float("inf")
+
+    elif (not is_to_stay) and is_to_green:  # green in 7 until 13 seconds
+
+        time_to_turn_green = 7
+
+        if time_to_turn_green <= arrival_time and time_to_turn_green <= latest_time_queue_will_be_released:
+            if latest_time_queue_will_be_released >= arrival_time: # time_to_turn_green ---> arrival_time ---> latest_time_queue_will_be_released
+                result += time_to_cross
+            else: # time_to_turn_green ---> latest_time_queue_will_be_released ---> arrival_time
+                result = arrival_time + time_to_cross
+
+        elif arrival_time <= time_to_turn_green <= latest_time_queue_will_be_released: # arrival_time ---> time_to_turn_green ---> latest_time_queue_will_be_released
+            result += time_to_cross
+        elif latest_time_queue_will_be_released <= time_to_turn_green <= arrival_time:  # latest_time_queue_will_be_released ---> time_to_turn_green ---> arrival_time
+            return float("inf")  # unreachable due to updating latest_time_queue_will_be_released accoring to to_turn_green group case in will_stop_anyway_in_given_seconds (latest_time_queue_will_be_released >= time_to_turn_green)
+
+        elif arrival_time <= time_to_turn_green and latest_time_queue_will_be_released <= time_to_turn_green:
+            # latest_time_queue_will_be_released ---> arrival_time ---> time_to_turn_green
+            # arrival_time ---> latest_time_queue_will_be_released ---> time_to_turn_green
+            return float("inf")  # unreachable due to updating latest_time_queue_will_be_released accoring to to_turn_green group case in will_stop_anyway_in_given_seconds (latest_time_queue_will_be_released >= time_to_turn_green)
+
+        if result > 13:
+            return float("inf")
+
+    elif is_to_stay and (not is_to_green):  # NO green for 17 seconds
+
+        return float("inf")  # unreachable due to will_stop_anyway_in_given_seconds handled in to_stay_red group case in will_be_non_green_in_given_seconds
+
+    else:  # if (not is_to_stay) and (not is_to_green)  # green for 3 seconds
+
+        if latest_time_queue_will_be_released >= arrival_time:
+            result += time_to_cross
+        else:
+            result = arrival_time + time_to_cross
+
+        if result > 3:
+            return float("inf")
+
+
+
+    return result
+
+
+def will_be_non_green_in_given_seconds(seconds, is_to_green, is_to_stay):
+    if is_to_stay and is_to_green:  # green for 13 seconds
+        if seconds > 13:
+            return True
+    elif (not is_to_stay) and is_to_green:  # green in 7 until 13 seconds
+        if seconds > 13 or 7 > seconds:
+            return True
+    elif is_to_stay and (not is_to_green):  # NO green for 17 seconds
+        return True
+    else:  # if (not is_to_stay) and (not is_to_green)  # green for 3 seconds
+        if seconds > 3:
+            return True
+
 
 class Lane:
     static_index = count(0)
@@ -76,22 +148,70 @@ class Lane:
     def get_time_to_free_current_queue(self):
         return sum(self.time_to_cross_queue)
 
-    def will_there_be_queue_in_given_seconds(self, seconds, type):  # seconds <= 13, type (to_stay_green or to_turn_green)
-        time_to_free_queue =  self.get_time_to_free_current_queue()
-        match type:
-            case "to_stay":  # green for 13 seconds
-                time_to_free_queue += 0
-            case "to_turn":  # green in 7 until 13 seconds
-                time_to_free_queue += 7
+    def will_be_there_queue_in_given_seconds(self, seconds, is_to_green, is_to_stay):  # assuming 0 <= seconds <= 13
+        latest_time_queue_will_be_released = self.get_time_to_free_current_queue()  # queue will be held from 0 to time to free current queue at least
 
-        for vehicle in self.road_lane.get_list_of_vehicles_sorted_by_arrival_time_up_to_seconds(seconds):
+        if is_to_stay and is_to_green:  # green for 13 seconds
+            latest_time_queue_will_be_released += 0  # queue will be held from 0 to time to free current queue at least
+        elif (not is_to_stay) and is_to_green:  # green in 7 until 13 seconds
+            latest_time_queue_will_be_released += 7  # queue will be held from 0 to time to free current queue + 7 at least
+        elif is_to_stay and (not is_to_green):  # NO green for 17 seconds
+            latest_time_queue_will_be_released += 17  # queue will be held from 0 to time to free current queue + 17 at least
+        else:  # if (not is_to_stay) and (not is_to_green)  # green for 3 seconds
+            latest_time_queue_will_be_released += 0  # queue will be held from 0 to time to free current queue at least
+
+        for vehicle in self.road_lane.get_list_of_vehicles_sorted_by_arrival_time_from_and_to_seconds(0, seconds):
             arrival_time = vehicle.get_time_to_next_junction_in_sec()
-            if time_to_free_queue >= arrival_time:
-                time_to_free_queue += get_time_to_cross_by_vehicle_type(vehicle)
-            else:
-                time_to_free_queue = arrival_time + get_time_to_cross_by_vehicle_type(vehicle)
+            time_to_cross = get_time_to_cross_by_vehicle_type(vehicle)
+            latest_time_queue_will_be_released = update_time_to_free_queue(latest_time_queue_will_be_released, arrival_time, time_to_cross, is_to_green, is_to_stay)
 
-        return time_to_free_queue >= seconds
+        return latest_time_queue_will_be_released >= seconds
+
+    def will_stop_or_pass_anyway_in_given_seconds(self, seconds):
+        """
+
+        checks reasons to stop after arriving in 'seconds' seconds to this lane.
+
+        reasons to stop:
+            non-green light
+            existing queue
+
+        :param seconds: exact time in real seconds which right after it's duration - the lane is checked for reasons to stop
+        :param is_to_green: to_turn_green or to_stay_green group flag
+        :param is_to_stay: to_stay_red or to_stay_green group flag
+        :return: (whether or not the lane will be non-green) or (it's queue won't be empty in 'seconds' seconds)
+        """
+        # if will_be_non_green_in_given_seconds(seconds, is_to_green, is_to_stay):
+        #     return True
+        # if self.will_be_there_queue_in_given_seconds(seconds, is_to_green, is_to_stay):
+        #     return True
+
+        will_pass_anyway = True
+        will_stop_anyway = True
+        for is_to_green, is_to_stay in ((False, False), (False, True), (True, False), (True, True)):
+            queue_existence = self.will_be_there_queue_in_given_seconds(seconds, is_to_green, is_to_stay)
+            will_pass_anyway = will_pass_anyway and not queue_existence
+            will_stop_anyway = will_stop_anyway and queue_existence
+
+        return will_pass_anyway or will_stop_anyway
+
+    def will_stop_or_pass_due_to_state_in_given_seconds(self, seconds, is_to_green_flag, is_to_stay_flag):
+        queue_existence = self.will_be_there_queue_in_given_seconds(seconds, is_to_green_flag, is_to_stay_flag)
+
+        will_stop = queue_existence
+        will_pass = not queue_existence
+
+        will_stop_due_to_state = False
+        will_pass_due_to_state = False
+
+        for is_to_green, is_to_stay in ((not is_to_green_flag, not is_to_stay_flag), (not is_to_green_flag, is_to_stay_flag), (is_to_green_flag, not is_to_stay_flag)):
+            queue_existence = self.will_be_there_queue_in_given_seconds(seconds, is_to_green, is_to_stay)
+            if will_stop and not queue_existence:
+                will_stop_due_to_state = True
+            if will_pass and queue_existence:
+                will_pass_due_to_state = True
+
+        return will_stop_due_to_state, will_pass_due_to_state
 
     def set_to_lanes(self, to_lanes):  # only for in-facing lanes
         if LaneFacing.OUT == self.facing:

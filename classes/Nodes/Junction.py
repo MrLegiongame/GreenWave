@@ -25,6 +25,50 @@ def check_junction_validity(directions):  # directions: tuple[Direction]
         raise TypeError("Junction is invalid: Not enough directions")
     return True
 
+def is_vehicle_relevant(vehicle, start_seconds, end_seconds, lane):
+    result = True
+    result = result and vehicle.is_away_from_next_junction_by_between_start_and_end_seconds(start_seconds, end_seconds)
+    result = result and not vehicle.is_next_lane_the_final_lane()
+    result = result and not lane.will_stop_or_pass_anyway_in_given_seconds(vehicle.get_time_to_next_junction_in_sec())
+
+    return result
+
+def get_filter_value(filter, traffic_lights, is_to_green, is_to_stay, same_state_check_flag, seconds=None):
+    value = 0
+
+    filter_changed = False
+    filter_value = 0
+
+    start_seconds = 3 if (is_to_green and is_to_stay) or (not is_to_green and not is_to_stay) else 7
+    end_seconds = 13 if is_to_green else 17
+
+    if same_state_check_flag:
+        start_seconds = 0
+        end_seconds = seconds
+
+    for traffic_light in traffic_lights:
+        for lane in traffic_light.lanes:
+            vehicles = lane.road_lane.vehicles
+            for vehicle in vehicles:
+                if is_vehicle_relevant(vehicle, start_seconds, end_seconds, lane):
+                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
+                    match filter:
+                        case "energy":
+                            value = vehicle.get_energy_consumption_to_velocity(to_velocity)
+                        case "pollution":
+                            value = vehicle.get_pollution_to_velocity(to_velocity)
+
+                    will_stop, will_pass = lane.will_stop_or_pass_due_to_state_in_given_seconds(vehicle.get_time_to_next_junction_in_sec(), is_to_green, is_to_stay)
+                    if will_stop:
+                        filter_value += value
+                    elif is_to_green or will_pass:
+                        filter_value -= value
+                    else:
+                        filter_value += value
+                    filter_changed = True
+
+    return filter_value, filter_changed
+
 
 class Junction:
 
@@ -199,7 +243,7 @@ class Junction:
             traffic_light.set_state(State.GREEN)
 
     def update_state(self, next_active_index):
-        if next_active_index == self.active_state:
+        if next_active_index == self.active_index:
             self.prevent_state_change = False
             return
 
@@ -262,114 +306,85 @@ class Junction:
                 res_index = state_index
         return res_index
 
-    """
-    def get_max_score_state_index(self):
-        max_score = 0
-        res_index = 0
+    def get_max_vehicle_count_state_index_in_road_lane(self):
+        max_vehicle_count = 0
+        res_index = self.active_index
+        res_index_changed = False
+
         for state_index in range(self.states_size):
-            temp_score = 0
+            temp_vehicle_count = 0
             for traffic_light in self.available_states[state_index]:
                 for lane in traffic_light.lanes:
-                    for vehicle in lane.vehicles_queue:
-                        match vehicle.vehicle_type:
-                            case "Car":
-                                temp_score += vehicle.weight * 1.5
-                            case "Bus":
-                                temp_score += vehicle.weight * 2
-                            case "Truck":
-                                temp_score += vehicle.weight * 2.5
-                            case _:
-                                temp_score += vehicle.weight
-
-            if temp_score > max_score:
-                max_score = temp_score
+                    if traffic_light in self.active_state:
+                        temp_vehicle_count += len(lane.road_lane.get_list_of_vehicles_which_are_left_with_more_than_one_junction_sorted_by_arrival_time_from_and_to_seconds(3, 13))
+                    else:
+                        temp_vehicle_count += len(lane.road_lane.get_list_of_vehicles_which_are_left_with_more_than_one_junction_sorted_by_arrival_time_from_and_to_seconds(7, 13))
+            if temp_vehicle_count > max_vehicle_count:
+                max_vehicle_count = temp_vehicle_count
                 res_index = state_index
-        return res_index
-    """
+                res_index_changed = True
+
+        if res_index_changed:
+            return res_index
+        return self.get_max_vehicle_count_state_index()
 
     def get_min_expected_filter_state_index(self, filter):
-
-        traffic_lights_which_are_currently_red = tuple(set(self.traffic_lights) - set(self.active_state))
-
         min_filter_value = float("inf")
         res_index = self.active_index
         res_index_changed = False
+
+        traffic_lights_which_are_currently_red = tuple(set(self.traffic_lights) - set(self.active_state))
 
         for next_active_index in range(self.states_size):
             temp_filter_changed = False
             temp_filter_value = 0
 
+            # Creates relevant traffic lights groups
             next_active_state = self.available_states[next_active_index]
             traffic_lights_to_turn_red = tuple(set(self.active_state) - set(next_active_state))  # only vehicles which are left with 3 seconds could cross without stopping
             traffic_lights_to_turn_green = tuple(set(next_active_state) - set(self.active_state))  # only vehicles which are left with 7 to 10 seconds could cross without stopping
             traffic_lights_to_stay_red = tuple(set(traffic_lights_which_are_currently_red) - set(traffic_lights_to_turn_green))  # all vehicles will come to stop up to at least 10 seconds
             traffic_lights_to_stay_green = tuple(set(self.active_state) - set(traffic_lights_to_turn_red))  # all vehicles will cross without stopping
 
-            for traffic_light in traffic_lights_to_stay_red:  # we want to focus on the vehicles coming between 7 and 13 seconds, all other vehicles will stop ANYWAY
-                for lane in traffic_light.lanes:
-                    vehicles = lane.road_lane.vehicles
-                    for vehicle in vehicles:
-                        if vehicle.is_away_from_next_junction_by_between_start_and_end_seconds(7, 13) and not vehicle.is_next_lane_the_final_lane():
-                            temp_filter_changed = True
-                            match filter:
-                                case "energy":
-                                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
-                                    temp_filter_value += vehicle.get_energy_consumption_to_velocity(to_velocity)
-                                case "pollution":
-                                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
-                                    temp_filter_value += vehicle.get_pollution_to_velocity(to_velocity)
+            # traffic_lights_group = ((traffic_lights_to_stay_red, False, True), (traffic_lights_to_turn_red, False, False), (traffic_lights_to_stay_green, True, True), (traffic_lights_to_turn_green, True, False))
+            traffic_lights_group = ((traffic_lights_to_stay_green, True, True), (traffic_lights_to_turn_green, True, False))
+            for traffic_lights, is_to_green, is_to_stay in traffic_lights_group:
+                val, flag = get_filter_value(filter, traffic_lights, is_to_green=is_to_green, is_to_stay=is_to_stay, same_state_check_flag=False)  # we want to focus on the vehicles coming between 7 and 13 seconds, all other vehicles will stop ANYWAY
+                temp_filter_value += val
+                temp_filter_changed = temp_filter_changed or flag
 
-            for traffic_light in traffic_lights_to_turn_red:  # we want to focus on the vehicles coming between 3 and 13 seconds, all other vehicles will pass ANYWAY
-                for lane in traffic_light.lanes:
-                    vehicles = lane.road_lane.vehicles
-                    for vehicle in vehicles:
-                        if vehicle.is_away_from_next_junction_by_between_start_and_end_seconds(3, 13) and not vehicle.is_next_lane_the_final_lane():
-                            temp_filter_changed = True
-                            match filter:
-                                case "energy":
-                                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
-                                    temp_filter_value += vehicle.get_energy_consumption_to_velocity(to_velocity)
-                                case "pollution":
-                                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
-                                    temp_filter_value += vehicle.get_pollution_to_velocity(to_velocity)
-
-            for traffic_light in traffic_lights_to_stay_green:  # we want to focus on the vehicles coming between 3 and 13 seconds, all other vehicles will pass ANYWAY
-                for lane in traffic_light.lanes:
-                    vehicles = lane.road_lane.vehicles
-                    for vehicle in vehicles:
-                        if vehicle.is_away_from_next_junction_by_between_start_and_end_seconds(3, 13) and not vehicle.is_next_lane_the_final_lane() and not lane.will_there_be_queue_in_given_seconds(vehicle.get_time_to_next_junction_in_sec(), "to_stay"):
-                            temp_filter_changed = True
-                            match filter:
-                                case "energy":
-                                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
-                                    temp_filter_value -= vehicle.get_energy_consumption_to_velocity(to_velocity)
-                                case "pollution":
-                                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
-                                    temp_filter_value -= vehicle.get_pollution_to_velocity(to_velocity)
-
-            for traffic_light in traffic_lights_to_turn_green:  # we want to focus on the vehicles coming between 7 and 13 seconds, all other vehicles will stop ANYWAY
-                for lane in traffic_light.lanes:
-                    vehicles = lane.road_lane.vehicles
-                    for vehicle in vehicles:
-                        if vehicle.is_away_from_next_junction_by_between_start_and_end_seconds(7, 13) and not vehicle.is_next_lane_the_final_lane() and not lane.will_there_be_queue_in_given_seconds(vehicle.get_time_to_next_junction_in_sec(), "to_turn"):
-                            temp_filter_changed = True
-                            match filter:
-                                case "energy":
-                                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
-                                    temp_filter_value -= vehicle.get_energy_consumption_to_velocity(to_velocity)
-                                case "pollution":
-                                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
-                                    temp_filter_value -= vehicle.get_pollution_to_velocity(to_velocity)
-
+            # print(f"DEBUG PARAMETERS: next_active_index = {next_active_index}, junction_index_in_map = {self.junction_index}, temp_filter_value = {temp_filter_value}, temp_filter_changed = {temp_filter_changed}")  # TODO: delete later- for debug use
+            if temp_filter_changed:
+                print(f"DEBUG temp_filter_value = {temp_filter_value}, min_filter_value = {min_filter_value}")
             if temp_filter_value < min_filter_value and temp_filter_changed:
                 min_filter_value = temp_filter_value
                 res_index = next_active_index
                 res_index_changed = True
 
+        for seconds in range(3, 17):
+            temp_filter_changed = False
+            temp_filter_value = 0
+
+            # Creates relevant traffic lights groups
+            traffic_lights_to_stay_red = traffic_lights_which_are_currently_red  # all vehicles will come to stop up to at least 10 seconds
+            traffic_lights_to_stay_green = self.active_state  # all vehicles will cross without stopping
+
+            # traffic_lights_group = (traffic_lights_to_stay_red, False, True), (traffic_lights_to_stay_green, True, True)
+            traffic_lights_group = ((traffic_lights_to_stay_green, True, True), )
+            for traffic_lights, is_to_green, is_to_stay in traffic_lights_group:
+                val, flag = get_filter_value(filter, traffic_lights, is_to_green=is_to_green, is_to_stay=is_to_stay, same_state_check_flag=True, seconds=seconds)  # we want to focus on the vehicles coming between 7 and 13 seconds, all other vehicles will stop ANYWAY
+                temp_filter_value += val
+                temp_filter_changed = temp_filter_changed or flag
+
+            if temp_filter_value < min_filter_value and temp_filter_changed:
+                min_filter_value = temp_filter_value
+                res_index = self.active_index
+                res_index_changed = True
+
         if res_index_changed:
             return res_index
 
-        return self.get_max_vehicle_count_state_index()  # TODO: can do better by adding pollution consumption while waiting and deciding by the vehicles (if do so, add compatible code in Vehicle.move()
+        return self.get_max_vehicle_count_state_index_in_road_lane()
 
     def __str__(self):
         res = f"Junction has {self.size} directions:\n\n"
