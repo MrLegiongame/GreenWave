@@ -406,6 +406,8 @@ class Vehicle(ABC):
         if LaneFacing.IN == self.__last_lane.facing:
             return False
         time = self.get_time_to_next_junction_in_sec()
+        if end - 0.01 > time > start + 0.01:  # TODO: delete later
+            print(f"pos: {self.get_cur_point()}, end: {end}, time: {time}, start: {start}")  # TODO: delete later
         return end - 0.01 > time > start + 0.01
 
     def get_energy_consumption_to_velocity(self, to_velocity):  # returns the kinetic energy in Joule

@@ -168,27 +168,10 @@ class Lane:
         return latest_time_queue_will_be_released >= seconds
 
     def will_stop_or_pass_anyway_in_given_seconds(self, seconds):
-        """
-
-        checks reasons to stop after arriving in 'seconds' seconds to this lane.
-
-        reasons to stop:
-            non-green light
-            existing queue
-
-        :param seconds: exact time in real seconds which right after it's duration - the lane is checked for reasons to stop
-        :param is_to_green: to_turn_green or to_stay_green group flag
-        :param is_to_stay: to_stay_red or to_stay_green group flag
-        :return: (whether or not the lane will be non-green) or (it's queue won't be empty in 'seconds' seconds)
-        """
-        # if will_be_non_green_in_given_seconds(seconds, is_to_green, is_to_stay):
-        #     return True
-        # if self.will_be_there_queue_in_given_seconds(seconds, is_to_green, is_to_stay):
-        #     return True
-
         will_pass_anyway = True
         will_stop_anyway = True
-        for is_to_green, is_to_stay in ((False, False), (False, True), (True, False), (True, True)):
+        # for is_to_green, is_to_stay in ((False, False), (False, True), (True, False), (True, True)):
+        for is_to_green, is_to_stay in ((True, False), (True, True)):
             queue_existence = self.will_be_there_queue_in_given_seconds(seconds, is_to_green, is_to_stay)
             will_pass_anyway = will_pass_anyway and not queue_existence
             will_stop_anyway = will_stop_anyway and queue_existence

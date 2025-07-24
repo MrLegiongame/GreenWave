@@ -43,7 +43,7 @@ def get_filter_value(filter, traffic_lights, is_to_green, is_to_stay, same_state
     end_seconds = 13 if is_to_green else 17
 
     if same_state_check_flag:
-        start_seconds = 0
+        start_seconds = 3
         end_seconds = seconds
 
     for traffic_light in traffic_lights:
@@ -59,12 +59,8 @@ def get_filter_value(filter, traffic_lights, is_to_green, is_to_stay, same_state
                             value = vehicle.get_pollution_to_velocity(to_velocity)
 
                     will_stop, will_pass = lane.will_stop_or_pass_due_to_state_in_given_seconds(vehicle.get_time_to_next_junction_in_sec(), is_to_green, is_to_stay)
-                    if will_stop:
-                        filter_value += value
-                    elif is_to_green or will_pass:
+                    if (is_to_green or will_pass) and (not will_stop):
                         filter_value -= value
-                    else:
-                        filter_value += value
                     filter_changed = True
 
     return filter_value, filter_changed
@@ -315,6 +311,18 @@ class Junction:
             temp_vehicle_count = 0
             for traffic_light in self.available_states[state_index]:
                 for lane in traffic_light.lanes:
+
+                    """
+                    vehicles = lane.road_lane.vehicles
+                    if traffic_light in self.active_state:
+                        start_seconds = 3
+                    else:
+                        start_seconds = 7
+                    for vehicle in vehicles:
+                        if is_vehicle_relevant(vehicle, start_seconds, 13, lane):
+                            temp_vehicle_count += 1
+                    """
+
                     if traffic_light in self.active_state:
                         temp_vehicle_count += len(lane.road_lane.get_list_of_vehicles_which_are_left_with_more_than_one_junction_sorted_by_arrival_time_from_and_to_seconds(3, 13))
                     else:
@@ -344,7 +352,7 @@ class Junction:
             traffic_lights_to_turn_red = tuple(set(self.active_state) - set(next_active_state))  # only vehicles which are left with 3 seconds could cross without stopping
             traffic_lights_to_turn_green = tuple(set(next_active_state) - set(self.active_state))  # only vehicles which are left with 7 to 10 seconds could cross without stopping
             traffic_lights_to_stay_red = tuple(set(traffic_lights_which_are_currently_red) - set(traffic_lights_to_turn_green))  # all vehicles will come to stop up to at least 10 seconds
-            traffic_lights_to_stay_green = tuple(set(self.active_state) - set(traffic_lights_to_turn_red))  # all vehicles will cross without stopping
+            traffic_lights_to_stay_green = tuple(set(self.active_state).intersection(set(next_active_state)))  # all vehicles will cross without stopping
 
             # traffic_lights_group = ((traffic_lights_to_stay_red, False, True), (traffic_lights_to_turn_red, False, False), (traffic_lights_to_stay_green, True, True), (traffic_lights_to_turn_green, True, False))
             traffic_lights_group = ((traffic_lights_to_stay_green, True, True), (traffic_lights_to_turn_green, True, False))
@@ -361,12 +369,12 @@ class Junction:
                 res_index = next_active_index
                 res_index_changed = True
 
-        for seconds in range(3, 17):
+        """
+        for seconds in range(4, 17):
             temp_filter_changed = False
             temp_filter_value = 0
 
-            # Creates relevant traffic lights groups
-            traffic_lights_to_stay_red = traffic_lights_which_are_currently_red  # all vehicles will come to stop up to at least 10 seconds
+            # Creates relevant traffic lights group
             traffic_lights_to_stay_green = self.active_state  # all vehicles will cross without stopping
 
             # traffic_lights_group = (traffic_lights_to_stay_red, False, True), (traffic_lights_to_stay_green, True, True)
@@ -380,6 +388,7 @@ class Junction:
                 min_filter_value = temp_filter_value
                 res_index = self.active_index
                 res_index_changed = True
+        """
 
         if res_index_changed:
             return res_index
