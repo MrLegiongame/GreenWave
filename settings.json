@@ -18,10 +18,10 @@
         "value": "30"
     },
     "Gasoline": {
-        "value": "30"
+        "value": "40"
     },
     "Gas": {
-        "value": "40"
+        "value": "30"
     },
     "Display algorithm": {
         "value": "GREEN_WAVE_ENERGY"

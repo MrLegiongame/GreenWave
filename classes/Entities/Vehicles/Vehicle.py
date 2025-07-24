@@ -82,7 +82,7 @@ class Vehicle(ABC):
         print(f"[Vehicle Init] Vehicle #{self.vehicle_id} - cur_point: {self.cur_point}")
 
     def is_next_lane_the_final_lane(self):  # architecture due to multithreading
-        lanes_passed = self.__lanes_passed
+        lanes_passed = self.__lanes_passed + 1
         if lanes_passed >= len(self.lanes_path):
             return True
         return self.__end_in_lane is self.lanes_path[lanes_passed]
@@ -406,10 +406,10 @@ class Vehicle(ABC):
         if LaneFacing.IN == self.__last_lane.facing:
             return False
         time = self.get_time_to_next_junction_in_sec()
-        return end - 0.1 >= time >= start + 0.1
+        return end - 0.01 > time > start + 0.01
 
     def get_energy_consumption_to_velocity(self, to_velocity):  # returns the kinetic energy in Joule
-        return 0.5 * self.weight * (to_velocity ** 2)
+        return 0.5 * self.weight * ((to_velocity / 3.6) ** 2)
 
     def get_pollution_to_velocity(self, to_velocity):  # CO2 in grams
         if "Electric" == self.energy_type:
@@ -422,7 +422,7 @@ class Vehicle(ABC):
             "Gasoline": 2310,
             "Gas": 2680
         }
-        fuel_in_liters = self.get_energy_consumption_to_velocity(to_velocity) / (0.25 * energy_densities[self.energy_type])
+        fuel_in_liters = self.get_energy_consumption_to_velocity(to_velocity) / (0.25 * energy_densities[self.energy_type] * 1_000_000.0)
         return emission_factors[self.energy_type] * fuel_in_liters
 
     def __str__(self):
