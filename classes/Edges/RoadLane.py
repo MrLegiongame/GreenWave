@@ -46,6 +46,8 @@ class RoadLane:
         return res
 
     def get_list_of_vehicles_sorted_by_arrival_time_from_and_to_seconds(self, from_seconds, to_seconds):
+        lst = sorted(self.vehicles,key=lambda obj: getattr(obj, "is_away_from_next_junction_by_between_start_and_end_seconds")(from_seconds, to_seconds))
+        print(vehicle.get_time_to_next_junction_in_sec() for vehicle in lst)
         return sorted(self.vehicles, key=lambda obj: getattr(obj, "is_away_from_next_junction_by_between_start_and_end_seconds")(from_seconds, to_seconds))
 
     def vehicle_enter_lane(self, vehicle):

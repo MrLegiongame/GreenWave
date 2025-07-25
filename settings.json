@@ -24,6 +24,6 @@
         "value": "GREEN_WAVE_ENERGY"
     },
     "Compared algorithm": {
-        "value": "FIXED_TIMING_CYCLE"
+        "value": "ADAPTIVE_ALG"
     }
 }

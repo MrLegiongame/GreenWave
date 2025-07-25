@@ -27,7 +27,9 @@ class Algorithm:
             case Alg.ADAPTIVE_ALG:
                 next_active_index = self.nodes[index].get_max_vehicle_count_state_index()
             case Alg.GREEN_WAVE_ENERGY:
-                next_active_index = self.nodes[index].get_min_expected_filter_state_index("energy")
+                # TODO: replace between them (done for debug purposes)
+                # next_active_index = self.nodes[index].get_min_expected_filter_state_index("energy")
+                next_active_index = self.nodes[index].get_green_wave_state_index()
             case Alg.GREEN_WAVE_POLLUTION:
                 next_active_index = self.nodes[index].get_min_expected_filter_state_index("pollution")
             case _:

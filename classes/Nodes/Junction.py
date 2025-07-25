@@ -194,15 +194,6 @@ class Junction:
             return None
 
         traffic_lights = list(self.get_traffic_lights())
-
-        """
-        for direction in self.directions:
-            state = []
-            for traffic_light in traffic_lights:
-                if traffic_light.get_direction() is direction:
-                    state.append(traffic_light)
-            states.add(tuple(state))
-        """
         
         for traffic_light in traffic_lights:
             reward, state = solve_custom_knapsack(traffic_lights, traffic_light, self.size, self)
@@ -302,6 +293,30 @@ class Junction:
                 res_index = state_index
         return res_index
 
+    def get_green_wave_state_index(self):
+        max_vehicle_count = 0
+        res_index = self.active_index
+        res_index_changed = False
+
+        for state_index in range(self.states_size):
+            temp_vehicle_count = 0
+            next_active_state = self.available_states[state_index]
+            traffic_lights_to_stay_green = tuple(set(self.active_state).intersection(set(next_active_state)))
+
+            for traffic_light in next_active_state:
+                for lane in traffic_light.lanes:
+                    start_seconds = 3 if traffic_light in traffic_lights_to_stay_green else 7
+                    temp_vehicle_count += len(lane.road_lane.get_list_of_vehicles_which_are_left_with_more_than_one_junction_sorted_by_arrival_time_from_and_to_seconds(start_seconds, 13))
+
+            if temp_vehicle_count > max_vehicle_count:
+                max_vehicle_count = temp_vehicle_count
+                res_index = state_index
+                res_index_changed = True
+
+        if res_index_changed:
+            return res_index
+        return self.get_max_vehicle_count_state_index()
+
     def get_max_vehicle_count_state_index_in_road_lane(self):
         max_vehicle_count = 0
         res_index = self.active_index
@@ -309,24 +324,18 @@ class Junction:
 
         for state_index in range(self.states_size):
             temp_vehicle_count = 0
-            for traffic_light in self.available_states[state_index]:
-                for lane in traffic_light.lanes:
+            next_active_state = self.available_states[state_index]
+            for traffic_light in next_active_state:
+                # traffic_lights_to_turn_green = tuple(set(next_active_state) - set(self.active_state))  # only vehicles which are left with 7 to 10 seconds could cross without stopping
+                traffic_lights_to_stay_green = tuple(set(self.active_state).intersection(set(next_active_state)))  # all vehicles will cross without stopping
 
-                    """
+                for lane in traffic_light.lanes:
                     vehicles = lane.road_lane.vehicles
-                    if traffic_light in self.active_state:
-                        start_seconds = 3
-                    else:
-                        start_seconds = 7
+                    start_seconds = 3 if traffic_light in traffic_lights_to_stay_green else 7
                     for vehicle in vehicles:
                         if is_vehicle_relevant(vehicle, start_seconds, 13, lane):
                             temp_vehicle_count += 1
-                    """
 
-                    if traffic_light in self.active_state:
-                        temp_vehicle_count += len(lane.road_lane.get_list_of_vehicles_which_are_left_with_more_than_one_junction_sorted_by_arrival_time_from_and_to_seconds(3, 13))
-                    else:
-                        temp_vehicle_count += len(lane.road_lane.get_list_of_vehicles_which_are_left_with_more_than_one_junction_sorted_by_arrival_time_from_and_to_seconds(7, 13))
             if temp_vehicle_count > max_vehicle_count:
                 max_vehicle_count = temp_vehicle_count
                 res_index = state_index
