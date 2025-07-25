@@ -205,10 +205,6 @@ class Vehicle(ABC):
                 f"[__is_passed_junction] passed={passed}, setting __last_distance_to_next_junction={current_distance}")
         return passed
 
-    def adapt_out_lanes_to_in_lanes(self):
-        # TODO: complete function
-        pass
-
     def setup_move(self):
         # print(f"[setup_move] Starting with __lanes_passed={self.__lanes_passed}, last_lane={self.__last_lane}")
         if self.creation_time is None:
@@ -383,22 +379,6 @@ class Vehicle(ABC):
             raise
         self.velocity += self.acceleration * dt
 
-    # print(f"[move] end of move: velocity now={self.velocity}")
-    # if self.__last_distance_to_next_junction is None and self.__next_junction_point:
-    #     self.__last_distance_to_next_junction = self.cur_point.get_distance_from_point(self.__next_junction_point)
-    #
-    # if self.__is_passed_junction() or self.cur_point.get_distance_from_point(self.__next_junction_point) < 5:
-    #     if self.nodes_path_index < len(self.nodes_path) - 1:
-    #         self.nodes_path_index += 1
-    #         self.__next_junction_point = self.nodes_path[self.nodes_path_index].point
-    #         self.__last_distance_to_next_junction = self.cur_point.get_distance_from_point(
-    #             self.__next_junction_point)
-    #     else:
-    #         # print(f"[Vehicle] Reached final junction.")
-    #         return
-
-    # print(f"[move] Vehicle new position: {self.cur_point.x:.2f}, {self.cur_point.y:.2f}")
-
     def get_time_to_next_junction_in_sec(self):
         return (self.__last_distance_to_next_junction / self.velocity) * 3600.0
 
@@ -446,13 +426,6 @@ class Vehicle(ABC):
                 return True
         return False
 
-    """
-    def get_energy_consumption(self, distance_in_km):
-        return self.liters_per_100km * distance_in_km / 100.0
-
-    def get_pollution_emissions(self, distance_in_km):  # CO2 in grams
-        return distance_in_km * 2,310  # gasoline prefix (CO2 grams / Liter)
-    """
 
     def get_queue_position(self):
         """Get the vehicle's position in its current lane's queue.
@@ -577,75 +550,6 @@ class Vehicle(ABC):
         emissions_grams = liters_used * emission_factors[self.energy_type]
 
         return emissions_grams
-
-    """
-    def calculate_energy_consumption(self, distance_traveled):
-        # Calculate energy consumption based on vehicle weight, type, distance, and stops
-        # Base consumption per meter based on vehicle type and weight
-        base_consumption = {
-            "Car": 0.0001,  # kWh per meter per kg
-            "Bus": 0.00015,
-            "Truck": 0.0002
-        }
-        
-        # Energy type multipliers
-        energy_multipliers = {
-            "Electric": 1.0,    # Most efficient
-            "Gas": 1.2,         # 20% less efficient than electric
-            "Gasoline": 1.4     # 40% less efficient than electric
-        }
-        
-        # Stop penalty (extra energy for each stop)
-        stop_penalty = self.stops_count * 0.01  # kWh per stop
-        
-        # Calculate base consumption
-        base_energy = base_consumption.get(self.vehicle_type, 0.0001) * self.weight * distance_traveled
-        
-        # Apply energy type multiplier
-        energy_multiplier = energy_multipliers.get(self.energy_type, 1.0)
-        total_energy = (base_energy * energy_multiplier) + stop_penalty
-        
-        return total_energy
-
-    def calculate_pollution(self, distance_traveled):
-        # Calculate pollution based on energy type, distance, and vehicle type
-        # CO2 emissions per kWh/L based on energy type
-        emissions_per_unit = {
-            "Electric": 0.5,    # g CO2 per kWh (assuming grid mix)
-            "Gas": 2.3,         # g CO2 per L
-            "Gasoline": 2.4     # g CO2 per L
-        }
-        
-        # Vehicle type multipliers (heavier vehicles pollute more)
-        vehicle_multipliers = {
-            "Car": 1.0,
-            "Bus": 1.5,
-            "Truck": 2.0
-        }
-        
-        # Calculate energy consumption first
-        energy_consumed = self.calculate_energy_consumption(distance_traveled)
-        
-        # Convert to appropriate units for pollution calculation
-        if self.energy_type == "Electric":
-            # For electric, use kWh directly
-            pollution = energy_consumed * emissions_per_unit["Electric"]
-        else:
-            # For gas/gasoline, convert energy to liters (approximate)
-            # Assuming 10 kWh per liter for fossil fuels
-            liters_consumed = energy_consumed / 10
-            pollution = liters_consumed * emissions_per_unit[self.energy_type]
-        
-        # Apply vehicle type multiplier
-        vehicle_multiplier = vehicle_multipliers.get(self.vehicle_type, 1.0)
-        total_pollution = pollution * vehicle_multiplier
-        
-        return total_pollution
-    """
-
-    def calculate_pollution_in_acceleration(self):
-        # TODO: complete the func
-        pass
 
     @staticmethod
     def print_vehicles_on_map(vehicles):

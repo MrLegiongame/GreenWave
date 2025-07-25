@@ -30,7 +30,7 @@ class Graph:
         self.dt = dt
         self.vehicles_size = None
         self.graph = None  # used for path finding logic
-        if True:  # TODO change boolean statement
+        if True:
             self.nodes = nodes
             self.nodes_size = len(nodes)
             self.edges = edges
@@ -128,18 +128,6 @@ class Graph:
                 out_lane_name = "OutLane" + str(out_lane.index_in_map)
                 in_lane_name = "InLane" + str(in_lane.index_in_map)
                 G.add_edge(out_lane_name, in_lane_name, weight=length)
-                #print(f"  Added edge: {out_lane_name} -> {in_lane_name} (weight={length})")
-
-        # Print final graph structure
-        # print("\n[DEBUG] Final graph structure:")
-        # print(f"Number of nodes: {G.number_of_nodes()}")
-        # print(f"Number of edges: {G.number_of_edges()}")
-        # print("\nAll nodes:")
-        # for node in sorted(G.nodes()):
-        #     print(f"  {node}")
-        # print("\nAll edges:")
-        # for edge in sorted(G.edges(data=True)):
-        #     print(f"  {edge[0]} -> {edge[1]} (weight={edge[2]['weight']})")
 
         self.graph = G
         return G
@@ -179,14 +167,8 @@ class Graph:
         try:
             lane_path = nx.shortest_path(self.graph, source=source, target=target, weight="weight")
             print(f"\nFound path: {lane_path}")
-        # except nx.exception.NetworkXNoPath as e:
         except Exception as e:
             print(f"\nNo path available between {source} and {target}")
-            # print("\nGraph structure:")
-            # print("Nodes:", sorted(self.graph.nodes()))
-            # print("\nEdges:")
-            # for edge in sorted(self.graph.edges(data=True)):
-            #     print(f"  {edge[0]} -> {edge[1]} (weight={edge[2]['weight']})")
             return None, None
 
         # Convert to list of edges (as tuples)
@@ -208,29 +190,3 @@ class Graph:
                     return road_lane
 
         return None
-
-    """
-    def find_road_lanes_by_lanes(self, out_lane, in_lane):
-        for road in self.edges:
-            out_lane_found = False
-            in_lane_found = False
-            for road_lane in road.road_lanes_first_direction:
-                if out_lane is road_lane.source_lane:
-                    out_lane_found = True
-                if in_lane is road_lane.destination_lane:
-                    in_lane_found = True
-            if out_lane_found and in_lane_found:
-                return road.road_lanes_first_direction
-
-            out_lane_found = False
-            in_lane_found = False
-            for road_lane in road.road_lanes_second_direction:
-                if out_lane is road_lane.source_lane:
-                    out_lane_found = True
-                if in_lane is road_lane.destination_lane:
-                    in_lane_found = True
-            if out_lane_found and in_lane_found:
-                return road.road_lanes_second_direction
-
-        return None
-    """
