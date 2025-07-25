@@ -17,9 +17,7 @@ from classes.Entities.Algorithm import Algorithm
 from classes.Entities.Graph import Graph, find_out_lane_by_index_in_junction
 from classes.Entities.Point import Point
 from classes.Entities.Vehicles.Vehicle import Vehicle
-from classes.Enums.Alg import Alg, ALGORITHM_SIZE
 from classes.Enums.Color import Color
-from classes.Entities.Simulation import Simulation
 from classes.Enums.EdgeDensity import EdgeDensity
 from classes.Enums.LaneFacing import LaneFacing
 from classes.Nodes.Direction import Direction
@@ -137,6 +135,22 @@ class SimulationScreen:
                     if self.is_cursor_in_circle(junction.point, 6):
                         self.current_junction = junction
                         print(f"[EVENT] Junction selected at {junction.point}")
+                        
+                        # Print sorted vehicle information for this junction
+                        current_time = self.simulation_time
+                        from_seconds = max(0, current_time - 30)
+                        to_seconds = current_time + 30
+                        sorted_vehicles = self.get_sorted_vehicles_for_junction(junction, from_seconds, to_seconds)
+                        
+                        print(f"\n=== Junction {junction.junction_index} - Sorted Vehicles (Time window: {from_seconds:.1f}s - {to_seconds:.1f}s) ===")
+                        if sorted_vehicles:
+                            for i, vehicle in enumerate(sorted_vehicles):
+                                arrival_time = vehicle.get_time_to_next_junction_in_sec() if hasattr(vehicle, 'get_time_to_next_junction_in_sec') else "N/A"
+                                print(f"{i+1}. Vehicle {vehicle.vehicle_id} - Arrival: {arrival_time}s")
+                        else:
+                            print("No vehicles approaching this junction in the time window")
+                        print("=" * 60)
+                        
                         return
                 for vehicle in self.graph.vehicles:
                     if vehicle.cur_point:
@@ -304,7 +318,6 @@ class SimulationScreen:
         status_text = "Paused" if self.is_stopped else "Running"
         status_surface = status_font.render(status_text, True, Color.GREY.value)
         status_rect = status_surface.get_rect(center=(self.BUTTON_CENTER.x, self.BUTTON_CENTER.y + 40))
-
         self.screen.blit(status_surface, status_rect)
         text_surface = font.render(button_text, True, text_color.value)
         text_rect = text_surface.get_rect(center=(self.BUTTON_CENTER.x, self.BUTTON_CENTER.y))
@@ -328,6 +341,77 @@ class SimulationScreen:
         #lanes_per_direction = [len(direction.in_lanes) + len(direction.out_lanes) for direction in self.current_junction.directions]
         #print("Lanes per direction:" , lanes_per_direction)
         self.draw_regular_polygon(self.screen, center, 90, self.current_junction, self.current_junction.directions)
+        
+        # Draw vehicle information for the selected junction
+        self.draw_junction_vehicle_info()
+
+    def draw_junction_vehicle_info(self):
+        """Draw vehicle information for the selected junction including sorted vehicle list."""
+        if not self.current_junction or not self.graph:
+            return
+            
+        font = pygame.font.SysFont("Arial", 14)
+        x_start = self.MAIN_WIDTH + 10
+        y_start = 10
+        line_height = 20
+        
+        # Get current simulation time for the time window
+        current_time = self.simulation_time
+        from_seconds = max(0, current_time - 30)  # 30 seconds before current time
+        to_seconds = current_time + 30  # 30 seconds after current time
+        
+        # Get sorted vehicles for this junction
+        sorted_vehicles = self.get_sorted_vehicles_for_junction(self.current_junction, from_seconds, to_seconds)
+        
+        # Draw header
+        header_text = f"Junction {self.current_junction.junction_index} - Vehicles (sorted by arrival time)"
+        header_surface = font.render(header_text, True, Color.WHITE.value)
+        self.screen.blit(header_surface, (x_start, y_start))
+        y_start += line_height + 5
+        
+        # Draw time window info
+        time_text = f"Time window: {from_seconds:.1f}s - {to_seconds:.1f}s"
+        time_surface = font.render(time_text, True, Color.WHITE.value)
+        self.screen.blit(time_surface, (x_start, y_start))
+        y_start += line_height + 5
+        
+        # Draw vehicle list
+        if sorted_vehicles:
+            for i, vehicle in enumerate(sorted_vehicles[:10]):  # Show first 10 vehicles
+                if hasattr(vehicle, 'vehicle_id'):
+                    vehicle_text = f"Vehicle {vehicle.vehicle_id}"
+                    if hasattr(vehicle, 'get_time_to_next_junction_in_sec'):
+                        arrival_time = vehicle.get_time_to_next_junction_in_sec()
+                        vehicle_text += f" - Arrival: {arrival_time:.1f}s"
+                    vehicle_surface = font.render(vehicle_text, True, Color.WHITE.value)
+                    self.screen.blit(vehicle_surface, (x_start, y_start + i * line_height))
+        else:
+            no_vehicles_text = "No vehicles in time window"
+            no_vehicles_surface = font.render(no_vehicles_text, True, Color.WHITE.value)
+            self.screen.blit(no_vehicles_surface, (x_start, y_start))
+
+    def get_sorted_vehicles_for_junction(self, junction, from_seconds, to_seconds):
+        """Get vehicles sorted by arrival time for a specific junction."""
+        if not self.graph or not self.graph.vehicles:
+            return []
+            
+        # Find vehicles that are approaching this junction
+        junction_vehicles = []
+        for vehicle in self.graph.vehicles:
+            if hasattr(vehicle, 'cur_road_lane') and vehicle.cur_road_lane and not vehicle.is_next_lane_the_final_lane():
+                # Check if vehicle is heading towards this junction
+                next_junction = vehicle.get_destination_junction()
+                if next_junction and next_junction.junction_index == junction.junction_index:
+                    junction_vehicles.append(vehicle)
+        
+        # Sort vehicles using the same logic as in RoadLane
+        try:
+            sorted_vehicles = sorted(junction_vehicles, 
+                                   key=lambda obj: getattr(obj, "is_away_from_next_junction_by_between_start_and_end_seconds")(from_seconds, to_seconds))
+            return sorted_vehicles
+        except Exception as e:
+            print(f"Error sorting vehicles for junction {junction.junction_index}: {e}")
+            return junction_vehicles
 
     def draw_vehicle(self):
         if not self.graph or not self.graph.vehicles:
@@ -434,6 +518,8 @@ class SimulationScreen:
         #print(f"[DEBUG] Total vehicles in graph: {len(self.graph.vehicles)}")
 
         for vehicle in self.graph.vehicles:
+            if vehicle.is_next_lane_the_final_lane(): #TODO:REMOVE
+                continue
             #print(f"\n[DEBUG] Checking vehicle {id(vehicle)}")
             if hasattr(vehicle, 'cur_point'):
                 vehicle_x = vehicle.cur_point.x
@@ -714,60 +800,6 @@ class SimulationScreen:
         # Start threads
         self.algorithm_thread.start()
         self.algorithm_to_compare_thread.start()
-
-    """
-    def set_random_graph(self):
-        class Direction_Matrix_Row:
-            def __init__(self, junction, size):
-                self.junction = junction
-                self.row = [0] * size
-                self.size = size
-                self.directions_amount = 0
-
-            def fill_row(self):
-                pass
-
-        self.NUM_CARS
-
-        nodes = []
-        edges = []
-        vehicles = []
-        direction_matrix = []
-
-        # set junctions and direction_matrix
-        for index in range(self.NUM_NODES):
-            nodes.append(Junction())
-            direction_matrix.append(Direction_Matrix_Row(nodes[index], self.NUM_NODES))
-
-
-
-        #create direction_matrix
-        for row in direction_matrix:
-
-            first_direction = directions_in_map[road_data["direction1_index_in_map"]]
-            second_direction = directions_in_map[road_data["direction2_index_in_map"]]
-            length = road_data["length"]
-            max_speed = road_data["max_speed"]
-            road = Road(road_name, first_direction, second_direction, length, max_speed)
-            first_direction.set_road(road)
-            second_direction.set_road(road)
-            edges.append(road)
-
-        # apply layout
-        self.force_directed_layout(nodes, edges)
-
-        # create vehicles
-
-
-        # create graph
-        self.graph = Graph(nodes, edges, vehicles)
-
-        # set vehicles' paths
-        for vehicle in self.graph.vehicles:
-            vehicle.set_path(self.graph)
-
-        return self.graph
-    """
 
     def force_directed_layout(self, nodes, edges):
         G = nx.Graph()

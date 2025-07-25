@@ -86,26 +86,6 @@ class Direction:
             return True
         return False
 
-    def add_to_right(self, lane):  # lane: Lane
-        if LaneFacing.IN == lane.type:
-            self.in_lanes.insert(0, lane)
-            self.in_size += 1
-            return True
-        elif LaneFacing.OUT == lane.type:
-            self.out_lanes.insert(0, lane)
-            self.out_size += 1
-            return True
-        return False
-
-    def find_index_by_lane(self, lane):  # lane: Lane
-        if not isinstance(lane, Lane):
-            return None
-        if LaneFacing.IN == lane.facing:
-            return find_obj_index_in_array(lane, self.in_lanes)
-        elif LaneFacing.OUT == lane.facing:
-            return find_obj_index_in_array(lane, self.out_lanes)
-        return None
-
     def set_lane_as_direction_tuple(self, lane, index):  # lane: tuple[Direction], index: int
         if not isinstance(self.direction, tuple):
             raise TypeError(f"Setting lane {index} as tuple[Direction] is invalid: direction not a tuple")
@@ -119,11 +99,6 @@ class Direction:
         self.direction[index].lane = lane
 
     def __str__(self):
-        """
-        if None is self.index_in_junction:
-            return None
-        res = f"Direction {self.index_in_junction}:\nIn Lanes:\n"
-        """
         res = f"Direction:\nIn Lanes:\n"
         for lane in self.in_lanes:
             if isinstance(lane, Lane):

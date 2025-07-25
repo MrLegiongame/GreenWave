@@ -24,14 +24,18 @@ class Algorithm:
         match self.alg:
             case Alg.FIXED_TIMING_CYCLE:
                 next_active_index = (self.nodes[index].active_index + 1) % self.nodes[index].states_size
+                #print(f"Algorithm FIXED_TIMING_CYCLE")
             case Alg.ADAPTIVE_ALG:
                 next_active_index = self.nodes[index].get_max_vehicle_count_state_index()
+                #print(f"Algorithm ADAPTIVE_ALG")
             case Alg.GREEN_WAVE_ENERGY:
                 # TODO: replace between them (done for debug purposes)
                 # next_active_index = self.nodes[index].get_min_expected_filter_state_index("energy")
                 next_active_index = self.nodes[index].get_green_wave_state_index()
+                #print(f"Algorithm GREEN_WAVE_ENERGY")
             case Alg.GREEN_WAVE_POLLUTION:
                 next_active_index = self.nodes[index].get_min_expected_filter_state_index("pollution")
+                #print(f"Algorithm GREEN_WAVE_POLLUTION")
             case _:
                 print(f"Algorithm couldn't update due to invalid Alg")
                 return None

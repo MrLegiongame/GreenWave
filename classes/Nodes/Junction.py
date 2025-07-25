@@ -307,7 +307,7 @@ class Junction:
                 for lane in traffic_light.lanes:
                     start_seconds = 3 if traffic_light in traffic_lights_to_stay_green else 7
                     temp_vehicle_count += len(lane.road_lane.get_list_of_vehicles_which_are_left_with_more_than_one_junction_sorted_by_arrival_time_from_and_to_seconds(start_seconds, 13))
-
+                    #print(f"temp_vehicle_count = {temp_vehicle_count} and max_vehicle_count = {max_vehicle_count}")
             if temp_vehicle_count > max_vehicle_count:
                 max_vehicle_count = temp_vehicle_count
                 res_index = state_index

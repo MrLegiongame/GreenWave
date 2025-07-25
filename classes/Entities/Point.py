@@ -51,7 +51,3 @@ class Point(ABC):
         if destination.x > self.x:
             return math.atan(slope)
         return math.atan(slope) + math.pi
-
-    def get_slope_angle_in_deg(self, destination):
-        rad = self.get_slope_angle_in_rad(destination)
-        return rad * 180 / math.pi
