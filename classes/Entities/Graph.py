@@ -88,7 +88,21 @@ class Graph:
        # print("\n[DEBUG] Adding road connections:")
         for road in self.edges:
             length = road.length
-           # print(f"\nRoad {road.name} (length={length}):")
+
+            for out_lane in road.first_direction.out_lanes:
+                for in_lane in road.second_direction.in_lanes:
+                    out_lane_name = "OutLane" + str(out_lane.index_in_map)
+                    in_lane_name = "InLane" + str(in_lane.index_in_map)
+                    G.add_edge(out_lane_name, in_lane_name, weight=length)
+
+            for out_lane in road.second_direction.out_lanes:
+                for in_lane in road.first_direction.in_lanes:
+                    out_lane_name = "OutLane" + str(out_lane.index_in_map)
+                    in_lane_name = "InLane" + str(in_lane.index_in_map)
+                    G.add_edge(out_lane_name, in_lane_name, weight=length)
+
+            """
+            # print(f"\nRoad {road.name} (length={length}):")
             
             # Get the direction indices from the road
             dir1_idx = road.first_direction.index_in_map
@@ -128,6 +142,19 @@ class Graph:
                 out_lane_name = "OutLane" + str(out_lane.index_in_map)
                 in_lane_name = "InLane" + str(in_lane.index_in_map)
                 G.add_edge(out_lane_name, in_lane_name, weight=length)
+                #print(f"  Added edge: {out_lane_name} -> {in_lane_name} (weight={length})")
+                """
+
+        # Print final graph structure
+        # print("\n[DEBUG] Final graph structure:")
+        # print(f"Number of nodes: {G.number_of_nodes()}")
+        # print(f"Number of edges: {G.number_of_edges()}")
+        # print("\nAll nodes:")
+        # for node in sorted(G.nodes()):
+        #     print(f"  {node}")
+        # print("\nAll edges:")
+        # for edge in sorted(G.edges(data=True)):
+        #     print(f"  {edge[0]} -> {edge[1]} (weight={edge[2]['weight']})")
 
         self.graph = G
         return G
