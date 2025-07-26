@@ -1,9 +1,53 @@
+"""
+Main Menu Screen Module
+
+This module contains the MainMenuScreen class for the main menu interface of the
+GreenWave traffic simulation system. The main menu provides navigation to different
+sections of the application including simulation, settings, and help.
+
+Classes:
+    MainMenuScreen: Main menu interface with navigation buttons and help system.
+"""
+
 import pygame
 import os
 from screens.help import HelpScreen, open_help_window
 
 class MainMenuScreen:
+    """
+    Main menu screen for the GreenWave traffic simulation system.
+    
+    This class manages the main menu interface, including background rendering,
+    button layout, help system integration, and navigation to other screens.
+    The menu provides a clean, professional interface with GreenWave branding.
+    
+    Attributes:
+        screen: Pygame screen surface
+        font: Font for regular text
+        title_font: Font for title text
+        desc_font: Font for description text
+        next_screen: Next screen to navigate to
+        show_help: Flag indicating if help is being shown
+        help_overlay: Help screen overlay
+        help_button_rect: Rectangle for help button
+        help_window_process: Process for help window
+        background: Background image surface
+        bg_offset: Background offset for centering
+        button_color: Primary button color
+        button_hover: Button hover color
+        frame_fill: Frame background color
+        frame_border: Frame border color
+        buttons: Dictionary of button rectangles
+        frame_rect: Rectangle for description frame
+    """
+
     def __init__(self, screen):
+        """
+        Initialize the main menu screen.
+        
+        Args:
+            screen: Pygame screen surface to render on
+        """
         self.screen = screen
         self.font = pygame.font.SysFont("Segoe UI", 24)
         self.title_font = pygame.font.SysFont("Segoe UI", 40, bold=True)
@@ -37,7 +81,12 @@ class MainMenuScreen:
         self.update_button_positions()
 
     def update_button_positions(self):
-        """Update button positions based on current window size"""
+        """
+        Update button positions based on current window size.
+        
+        This method recalculates the positions of all UI elements to ensure
+        proper layout regardless of window size changes.
+        """
         # Button layout
         button_width = 220
         button_height = 50
@@ -61,7 +110,13 @@ class MainMenuScreen:
         self.help_button_rect = pygame.Rect(20, self.screen.get_height() - 60, 120, 40)
 
     def handle_resize(self, new_width, new_height):
-        """Handle window resize"""
+        """
+        Handle window resize events.
+        
+        Args:
+            new_width (int): New window width
+            new_height (int): New window height
+        """
         # Update background scaling
         try:
             raw_bg = pygame.image.load(os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "background.jpg"))
@@ -77,6 +132,17 @@ class MainMenuScreen:
         self.update_button_positions()
 
     def scale_and_center(self, img, target_width, target_height):
+        """
+        Scale and center an image to fit the target dimensions.
+        
+        Args:
+            img: Pygame image surface to scale
+            target_width (int): Target width
+            target_height (int): Target height
+            
+        Returns:
+            tuple: (scaled_image, (offset_x, offset_y))
+        """
         # Calculate scaling factor to cover the entire screen while maintaining aspect ratio
         img_width, img_height = img.get_size()
         width_ratio = target_width / img_width
@@ -97,6 +163,12 @@ class MainMenuScreen:
         return scaled_img, (offset_x, offset_y)
 
     def handle_events(self, event):
+        """
+        Handle pygame events for the main menu.
+        
+        Args:
+            event: Pygame event to handle
+        """
         if self.show_help:
             self.help_overlay.handle_event(event)
             return

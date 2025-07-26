@@ -1,0 +1,29 @@
+Metric,Display Algorithm,Compare Algorithm
+Algorithm,Green Wave (Pollution)
+Algorithm,Adaptive Algorithm
+Total Vehicles,150,150
+Simulation Time (seconds),433.85,337.22
+Private Cars,50,50
+Buses,50,50
+Trucks,50,50
+Electric (%),30,30
+Gasoline (%),40,40
+Gas (%),30,30
+Total Energy (Megajoule),200.79,235.19
+Total Distance (Km),368.6,368.6
+Average Energy Efficiency,0.545,0.638
+Total CO2 (Kg),18.7,25.6
+Average Emission (Kg/km),0.1,0.1
+Stops Count,204,300
+Idle Time (seconds),11254.7,7115.3
+Average Speed (km/h),3.1,3.9
+Electric Energy (Megajoule),67.59,76.79
+Gasoline Energy (Megajoule),76.44,87.26
+Gas Energy (Megajoule),56.76,71.14
+Electric CO2 (Kg),0.0,0.0
+Gasoline CO2 (Kg),10.6,13.6
+Gas CO2 (Kg),8.1,12.0
+Car Consumption,64.47,75.88
+Bus Consumption,70.67,83.58
+Truck Consumption,65.65,75.73
+Final Score (Lower = Better),219.5,260.8

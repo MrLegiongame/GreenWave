@@ -9,7 +9,7 @@ import time
 import pygame
 
 # Add the project root to the Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from classes.Nodes.Lane import Lane
 from classes.Entities.Vehicles.Vehicle import Vehicle
@@ -45,7 +45,6 @@ def test_queue_behavior():
             weight=1500,
             start_node=start_junction,
             end_node=end_junction,
-            image=dummy_surface,
             vehicle_type="Car",
             energy_type="Electric",
             maximum_speed=120

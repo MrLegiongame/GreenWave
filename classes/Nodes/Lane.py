@@ -1,3 +1,23 @@
+"""
+Lane Module
+
+This module contains the Lane class and related functions for managing individual
+lanes within junctions in the traffic simulation system. A Lane represents a
+single traffic lane with queue management, vehicle tracking, and traffic light
+state management.
+
+Classes:
+    Lane: Represents a single traffic lane with queue and state management.
+    
+Enums:
+    TimeToCross: Enumeration of crossing times for different vehicle types.
+    
+Functions:
+    check_lane_validity: Validates a list of lanes for lane creation.
+    get_time_to_cross_by_vehicle_type: Gets crossing time based on vehicle type.
+    update_time_to_free_queue: Updates queue release time based on traffic conditions.
+"""
+
 import time
 
 from itertools import count
@@ -13,6 +33,18 @@ import bisect
 
 
 def check_lane_validity(to_lanes):  # to_lanes: list[Lane]
+    """
+    Validate a list of lanes for lane creation.
+    
+    Args:
+        to_lanes (list of Lane): The list of destination lanes to validate
+        
+    Returns:
+        bool: True if all lanes are valid for lane creation
+        
+    Raises:
+        TypeError: If the list is invalid, empty, or contains non-Lane objects
+    """
     if not isinstance(to_lanes, list):
         raise TypeError("Lane is invalid: Not a list")
     if not len(to_lanes) >= 1:
@@ -25,12 +57,32 @@ def check_lane_validity(to_lanes):  # to_lanes: list[Lane]
     return True
 
 class TimeToCross(Enum):
+    """
+    Enumeration of crossing times for different vehicle types.
+    
+    This enum defines the time required for different vehicle types to cross
+    through a junction, which is used in queue management and traffic light timing.
+    
+    Values:
+        CAR: Time for cars to cross (2 seconds)
+        BUS: Time for buses to cross (3 seconds)
+        TRUCK: Time for trucks to cross (4 seconds)
+    """
     CAR = 2,
     BUS = 3,
     TRUCK = 4
 
 
 def get_time_to_cross_by_vehicle_type(vehicle):
+    """
+    Get the crossing time for a specific vehicle type.
+    
+    Args:
+        vehicle (Vehicle): The vehicle to get crossing time for
+        
+    Returns:
+        float: The crossing time in seconds for the vehicle type
+    """
     match vehicle.vehicle_type:
         case "Car":
             return 2
@@ -43,6 +95,30 @@ def get_time_to_cross_by_vehicle_type(vehicle):
 
 
 def update_time_to_free_queue(latest_time_queue_will_be_released, arrival_time, time_to_cross, is_now_green, is_to_green):
+    """
+    Update the time when a queue will be freed based on traffic light conditions.
+    
+    This function calculates when a vehicle queue will be released based on
+    current traffic light state, arrival time, and crossing time. It handles
+    different scenarios for green light transitions and queue management.
+    
+    Args:
+        latest_time_queue_will_be_released (float): Current latest queue release time
+        arrival_time (float): Vehicle arrival time
+        time_to_cross (float): Time needed to cross the junction
+        is_now_green (bool): Whether traffic light is currently green
+        is_to_green (bool): Whether traffic light will turn green
+        
+    Returns:
+        float: Updated time when queue will be freed, or infinity if unreachable
+        
+    Note:
+        The function handles different traffic light scenarios:
+        - Green for 13 seconds: Normal green light operation
+        - Green in 7-13 seconds: Transition to green light
+        - No green for 17 seconds: Extended red light period
+        - Green for 3 seconds: Short green light period
+    """
     result = latest_time_queue_will_be_released
 
 
