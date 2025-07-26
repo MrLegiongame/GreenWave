@@ -93,6 +93,10 @@ class Vehicle(ABC):
         self.end_node = end
         self.end_point = end.point
 
+    def adapt_lanes_path_to_match_out_lanes_to_in_lanes(self):
+        for index in range(0, len(self.lanes_path), 2):
+            self.lanes_path[index] = self.lanes_path[index+1].road_lane.source_lane
+
     def set_path(self, graph):
         start_out_lane = None
         end_in_lane = None
@@ -113,7 +117,6 @@ class Vehicle(ABC):
             else:
                 end_directions.pop(random_index)
 
-        self.__end_in_lane = end_in_lane
         self.lanes_path, self.roads_path = graph.get_path(start_out_lane, end_in_lane)
 
         # If no path is found, try to find a path to a nearby junction
@@ -131,6 +134,8 @@ class Vehicle(ABC):
 
         print(f"Final path: {self.roads_path}")
 
+        self.__end_in_lane = end_in_lane
+
         self.road_lanes = []
         for lane1, lane2 in self.roads_path:
             if LaneFacing.IN == lane1.facing and LaneFacing.OUT == lane2.facing:
@@ -146,6 +151,8 @@ class Vehicle(ABC):
         if not self.road_lanes:
             print("Warning: No road lanes found for path")
             return
+
+        self.adapt_lanes_path_to_match_out_lanes_to_in_lanes()
 
         self.cur_road_lane = self.road_lanes[self.roads_passed]
         self.cur_road_lane_length = self.cur_road_lane.parent_road.length
@@ -379,6 +386,9 @@ class Vehicle(ABC):
             raise
         self.velocity += self.acceleration * dt
 
+    def __lt__(self, other):
+        return self.get_time_to_next_junction_in_sec() < other.get_time_to_next_junction_in_sec()
+
     def get_time_to_next_junction_in_sec(self):
         return (self.__last_distance_to_next_junction / self.velocity) * 3600.0
 
@@ -386,8 +396,6 @@ class Vehicle(ABC):
         if LaneFacing.IN == self.__last_lane.facing:
             return False
         time = self.get_time_to_next_junction_in_sec()
-        if end - 0.01 > time > start + 0.01:  # TODO: delete later
-            print(f"pos: {self.get_cur_point()}, end: {end}, time: {time}, start: {start}")  # TODO: delete later
         return end - 0.01 > time > start + 0.01
 
     def get_energy_consumption_to_velocity(self, to_velocity):  # returns the kinetic energy in Joule
@@ -504,13 +512,13 @@ class Vehicle(ABC):
         param: distance_km: distance in kilometers
         return: Energy in Joule
         """
-        distance_m = distance_km * 1000  # distance in meters
+        distance_m = distance_km * 1_000.0  # distance in meters
 
         # Rolling Resistance
         F_rr = C_rr * self.weight * g
 
         # Drag or Air Resistance
-        F_drag = 0.5 * air_density * C_d * A * self.velocity ** 2
+        F_drag = 0.5 * air_density * C_d * A * (self.velocity / 3.6) ** 2
 
         # Total force
         F_total = F_rr + F_drag
