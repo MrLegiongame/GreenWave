@@ -25,11 +25,60 @@ def check_junction_validity(directions):  # directions: tuple[Direction]
         raise TypeError("Junction is invalid: Not enough directions")
     return True
 
-def is_vehicle_relevant(vehicle, start_seconds, end_seconds, lane):
+"""
+# TODO: delete later - debug use
+import threading
+
+counter_test_amount = 0
+counter_flag1 = 0
+counter_flag2 = 0
+counter_flag3 = 0
+# Create a mutex lock
+lock = threading.Lock()
+"""
+
+# TODO: delete later - debug use
+import threading
+
+counter_greenwave = 0
+counter_adaptive = 0
+# Create a mutex lock
+lock = threading.Lock()
+
+def is_vehicle_relevant(vehicle, start_seconds, end_seconds, lane, is_now_green, is_to_green):
+    # TODO: return the function to it's normal state
+
+    # global counter_test_amount, counter_flag1, counter_flag2, counter_flag3, lock
+
+
     result = True
+    
     result = result and vehicle.is_away_from_next_junction_by_between_start_and_end_seconds(start_seconds, end_seconds)
     result = result and not vehicle.is_next_lane_the_final_lane()
-    result = result and not lane.will_stop_or_pass_anyway_in_given_seconds(vehicle.get_time_to_next_junction_in_sec())
+    # if is_to_green and result:
+    #     result = result and not lane.will_be_there_queue_in_given_seconds_for_to_green(vehicle.get_time_to_next_junction_in_sec(), is_now_green)
+
+    """
+    flag1 = vehicle.is_away_from_next_junction_by_between_start_and_end_seconds(start_seconds, end_seconds)
+    flag2 = not vehicle.is_next_lane_the_final_lane()
+    # flag3 = not lane.will_stop_or_pass_anyway_in_given_seconds(seconds_to_junction, is_now_green)
+
+    seconds_to_junction = vehicle.get_time_to_next_junction_in_sec()
+
+    condition = seconds_to_junction <= 13 and ((is_now_green and seconds_to_junction >= 3) or (not is_now_green and seconds_to_junction >= 7))
+
+    if condition:
+        flag3 = not lane.will_pass_anyway_in_given_seconds(seconds_to_junction, is_now_green)
+
+    result = flag1 and flag2 and flag3
+
+    with lock:
+        counter_test_amount += 1
+        counter_flag1 += 1 if flag1 else 0
+        counter_flag2 += 1 if flag2 else 0
+        counter_flag3 += 1 if flag3 else 0
+        print(f"GGGGGGGGGGGGGGG, counter_test_amount = {counter_test_amount}, counter_flag1 = {counter_flag1}, counter_flag2 = {counter_flag2}, counter_flag3 = {counter_flag3}, result = {result}")
+    """
 
     return result
 
@@ -40,7 +89,7 @@ def get_filter_value(filter, traffic_lights, is_to_green, is_to_stay, same_state
     filter_value = 0
 
     start_seconds = 3 if (is_to_green and is_to_stay) or (not is_to_green and not is_to_stay) else 7
-    end_seconds = 13 if is_to_green else 17
+    end_seconds = 17  # 13 if is_to_green else 17
 
     if same_state_check_flag:
         start_seconds = 3
@@ -50,7 +99,7 @@ def get_filter_value(filter, traffic_lights, is_to_green, is_to_stay, same_state
         for lane in traffic_light.lanes:
             vehicles = lane.road_lane.vehicles
             for vehicle in vehicles:
-                if is_vehicle_relevant(vehicle, start_seconds, end_seconds, lane):
+                if is_vehicle_relevant(vehicle, start_seconds, end_seconds, lane, is_now_green):
                     to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
                     match filter:
                         case "energy":
@@ -64,6 +113,47 @@ def get_filter_value(filter, traffic_lights, is_to_green, is_to_stay, same_state
                     filter_changed = True
 
     return filter_value, filter_changed
+
+
+def get_score_value(filter, traffic_lights, is_now_green, is_to_green, same_state_check_flag=None, seconds=None):
+    value = 0
+
+    value_changed = False
+    filter_value = 0
+
+    start_seconds = 3 if is_now_green else 7
+    end_seconds = 17  # 13 if is_to_green else 17
+
+    if same_state_check_flag:
+        start_seconds = 3
+        end_seconds = seconds
+
+    for traffic_light in traffic_lights:
+        for lane in traffic_light.lanes:
+            vehicles = lane.road_lane.vehicles
+            for vehicle in vehicles:
+                if is_vehicle_relevant(vehicle, start_seconds, end_seconds, lane, is_now_green, is_to_green):
+                    to_velocity = min(vehicle.roads_path[vehicle.roads_passed][0].road_lane.parent_road.maximum_speed, vehicle.maximum_speed)
+                    match filter:
+                        case "energy":
+                            value = vehicle.get_energy_consumption_to_velocity(to_velocity)
+                        case "pollution":
+                            value = vehicle.get_pollution_to_velocity(to_velocity)
+
+                    # will_stop, will_pass = lane.will_stop_or_pass_due_to_state_in_given_seconds(vehicle.get_time_to_next_junction_in_sec(), is_now_green, is_to_green)
+                    # if will_stop:
+                    #     filter_value += value
+                    # elif is_to_green or will_pass:
+                    #     filter_value -= value
+                    # else:
+                    #     filter_value += value
+
+                    value = -1 * value if is_to_green else value
+                    # value = 0 if is_to_green else value
+                    filter_value += value
+                    value_changed = True
+
+    return filter_value, value_changed
 
 
 class Junction:
@@ -293,6 +383,95 @@ class Junction:
                 res_index = state_index
         return res_index
 
+
+
+
+
+    def calculate_green_wave_switch_score(self, filter, next_active_index, seconds=None):
+        score_changed = False
+        score_value = 0
+
+        next_active_state = self.available_states[next_active_index]
+
+        traffic_lights_currently_red = set(self.traffic_lights) - set(self.active_state)
+        traffic_lights_currently_green = set(self.active_state)
+        traffic_lights_will_be_red = set(self.traffic_lights) - set(next_active_state)
+        traffic_lights_will_be_green = set(next_active_state)
+
+        traffic_lights_to_turn_red = tuple(traffic_lights_currently_green.intersection(traffic_lights_will_be_red))  # only vehicles which are left with 3 seconds could cross without stopping
+        traffic_lights_to_turn_green = tuple(traffic_lights_currently_red.intersection(traffic_lights_will_be_green))  # only vehicles which are left with 7 to 10 seconds could cross without stopping
+        traffic_lights_to_stay_red = tuple(traffic_lights_currently_red.intersection(traffic_lights_will_be_red))  # all vehicles will come to stop up to at least 10 seconds
+        traffic_lights_to_stay_green = tuple(traffic_lights_currently_green.intersection(traffic_lights_will_be_green))  # all vehicles will cross without stopping
+
+        # traffic_lights_group = ((traffic_lights_to_stay_red, False, False), (traffic_lights_to_turn_red, True, False), (traffic_lights_to_stay_green, True, True), (traffic_lights_to_turn_green, False, True))
+        traffic_lights_group = ((traffic_lights_to_stay_green, True, True), (traffic_lights_to_turn_green, False, True))
+
+        for traffic_lights, is_now_green, is_to_green in traffic_lights_group:
+            val, flag = get_score_value(filter, traffic_lights, is_now_green=is_now_green, is_to_green=is_to_green, same_state_check_flag=self.active_index == next_active_index, seconds=seconds)
+            score_value += val
+            score_changed = score_changed or flag
+
+        return score_value, score_changed
+
+    def green_wave_adaptive(self):
+        max_amount, score_index, score_changed = 0, self.active_index, False
+
+        for state_index in range(self.states_size):
+            state = self.available_states[state_index]
+            score = 0
+
+            for traffic_light in state:
+                for lane in traffic_light.lanes:
+                    score += len(lane.road_lane.get_list_of_vehicles_which_are_left_with_more_than_one_junction_sorted_by_arrival_time_from_and_to_seconds(3, 17))
+                    # score += 0.1 * len(lane.vehicles_queue)
+
+            if max_amount < score:
+                max_amount = score
+                score_index = state_index
+                score_changed = True
+
+        if score_changed:
+            return score_index
+        return self.get_max_vehicle_count_state_index()
+
+
+    def get_green_wave_state_index(self, filter):
+        global counter_greenwave, counter_adaptive, lock
+
+        min_score, score_index, score_changed = float("inf"), None, False
+
+        for state_index in range(self.states_size):
+            if state_index != self.active_index:
+                score, changed_flag = self.calculate_green_wave_switch_score(filter, state_index)
+                if min_score > score and changed_flag:
+                    min_score = score
+                    score_index = state_index
+                    score_changed = True
+
+        for seconds in range(4, 18):
+            score, changed_flag = self.calculate_green_wave_switch_score(filter, self.active_index, seconds)
+            if min_score > score and changed_flag:
+                min_score = score
+                score_index = self.active_index
+                score_changed = True
+
+        if score_changed:
+            with lock:
+                counter_greenwave += 1
+            print(f"DEBUG GREEN WAVE, counter_greenwave = {counter_greenwave}, counter_adaptive = {counter_adaptive}")
+            return score_index
+        with lock:
+            counter_adaptive += 1
+        print(f"DEBUG ADAPTIVE, counter_greenwave = {counter_greenwave}, counter_adaptive = {counter_adaptive}")
+        return self.green_wave_adaptive()
+
+
+
+
+
+
+
+    """
     def get_green_wave_state_index(self):
         max_vehicle_count = 0
         res_index = self.active_index
@@ -316,6 +495,7 @@ class Junction:
         if res_index_changed:
             return res_index
         return self.get_max_vehicle_count_state_index()
+    """
 
     def get_max_vehicle_count_state_index_in_road_lane(self):
         max_vehicle_count = 0
@@ -333,7 +513,7 @@ class Junction:
                     vehicles = lane.road_lane.vehicles
                     start_seconds = 3 if traffic_light in traffic_lights_to_stay_green else 7
                     for vehicle in vehicles:
-                        if is_vehicle_relevant(vehicle, start_seconds, 13, lane):
+                        if is_vehicle_relevant(vehicle, start_seconds, 13, lane, is_now_green):
                             temp_vehicle_count += 1
 
             if temp_vehicle_count > max_vehicle_count:

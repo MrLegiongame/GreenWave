@@ -31,10 +31,14 @@ class Algorithm:
             case Alg.GREEN_WAVE_ENERGY:
                 # TODO: replace between them (done for debug purposes)
                 # next_active_index = self.nodes[index].get_min_expected_filter_state_index("energy")
-                next_active_index = self.nodes[index].get_green_wave_state_index()
+                next_active_index = self.nodes[index].get_green_wave_state_index("energy")
+                # next_active_index = self.nodes[index].green_wave_adaptive()
                 #print(f"Algorithm GREEN_WAVE_ENERGY")
             case Alg.GREEN_WAVE_POLLUTION:
-                next_active_index = self.nodes[index].get_min_expected_filter_state_index("pollution")
+                # TODO: replace between them (done for debug purposes)
+                # next_active_index = self.nodes[index].get_min_expected_filter_state_index("pollution")
+                next_active_index = self.nodes[index].get_green_wave_state_index("pollution")
+                # next_active_index = self.nodes[index].green_wave_adaptive()
                 #print(f"Algorithm GREEN_WAVE_POLLUTION")
             case _:
                 print(f"Algorithm couldn't update due to invalid Alg")
