@@ -38,6 +38,7 @@ class SettingsScreen:
         self.screen = screen
         self.ui_manager = ui_manager
         self.next_screen = None
+        self._cleaned_up = False  # Flag to track if cleanup has been called
 
         self.bg_color = (230, 255, 230)
         self.elements = []
@@ -193,10 +194,15 @@ class SettingsScreen:
 
     def cleanup(self):
         """Clean up UI elements before switching screens"""
+        if self._cleaned_up:
+            return  # Already cleaned up
+            
         for element in self.elements:
             element.kill()
         self.elements.clear()
         self.ui_manager.clear_and_reset()
+        
+        self._cleaned_up = True
 
     def update(self, time_delta):
         self.ui_manager.update(time_delta)
@@ -228,8 +234,6 @@ class SettingsScreen:
         self.ui_manager.draw_ui(self.screen)
 
     def get_next_screen(self):
-        if self.next_screen:  # Only cleanup if we're actually switching screens
-            self.cleanup()
         return self.next_screen
 
     def upload_json(self):

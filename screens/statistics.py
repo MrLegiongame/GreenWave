@@ -1,9 +1,22 @@
 import pygame
 import pygame_gui
+import csv
+import os
+from datetime import datetime
 from classes.Enums.Color import Color
 
+def format_algorithm_name(alg_name):
+    """Convert algorithm enum name to a more readable display name."""
+    name_mapping = {
+        'FIXED_TIMING_CYCLE': 'Fixed Timing Cycle',
+        'ADAPTIVE_ALG': 'Adaptive Algorithm',
+        'GREEN_WAVE_ENERGY': 'Green Wave (Energy)',
+        'GREEN_WAVE_POLLUTION': 'Green Wave (Pollution)'
+    }
+    return name_mapping.get(alg_name, alg_name.replace('_', ' ').title())
+
 class StatisticsScreen:
-    def __init__(self, screen, ui_manager, total_vehicles, main_simulation_time, compare_simulation_time, vehicle_stats, display_stats=None, compare_stats=None):
+    def __init__(self, screen, ui_manager, total_vehicles, main_simulation_time, compare_simulation_time, vehicle_stats, display_stats=None, compare_stats=None, display_alg_name=None, compare_alg_name=None):
         self.screen = screen
         self.ui_manager = ui_manager
         self.next_screen = None
@@ -13,6 +26,9 @@ class StatisticsScreen:
         self.vehicle_stats = vehicle_stats
         self.display_stats = display_stats or {}
         self.compare_stats = compare_stats or {}
+        self.display_alg_name = format_algorithm_name(display_alg_name) if display_alg_name else 'Display Algorithm'
+        self.compare_alg_name = format_algorithm_name(compare_alg_name) if compare_alg_name else 'Compare Algorithm'
+        self._cleaned_up = False  # Flag to track if cleanup has been called
         
         # Scroll state
         self.scroll_offset = 0
@@ -60,6 +76,18 @@ class StatisticsScreen:
             object_id='#main_menu_button'
         )
 
+        # Create save to CSV button
+        self.save_csv_button = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(
+                (self.WINDOW_WIDTH//2 - button_width//2 - button_width - int(20 * self.scale_factor), 
+                 self.WINDOW_HEIGHT - int(80 * self.scale_factor)),
+                (button_width, button_height)
+            ),
+            text='Save to CSV',
+            manager=self.ui_manager,
+            object_id='#save_csv_button'
+        )
+
     def handle_resize(self, new_width, new_height):
         """Handle window resize"""
         self.WINDOW_WIDTH = new_width
@@ -77,7 +105,7 @@ class StatisticsScreen:
         total_cards_width = (self.card_width * self.cards_per_row) + (self.margin * (self.cards_per_row - 1))
         self.start_x = (self.WINDOW_WIDTH - total_cards_width) // 2
         
-        # Update button position and size
+        # Update button positions and sizes
         button_width = int(200 * self.scale_factor)
         button_height = int(50 * self.scale_factor)
         self.back_button.set_relative_position(
@@ -85,6 +113,13 @@ class StatisticsScreen:
              self.WINDOW_HEIGHT - int(80 * self.scale_factor))
         )
         self.back_button.set_dimensions((button_width, button_height))
+        
+        # Update save CSV button position and size
+        self.save_csv_button.set_relative_position(
+            (self.WINDOW_WIDTH//2 - button_width//2 - button_width - int(20 * self.scale_factor),
+             self.WINDOW_HEIGHT - int(80 * self.scale_factor))
+        )
+        self.save_csv_button.set_dimensions((button_width, button_height))
 
     def wrap_text(self, text, font, max_width):
         """Wrap text to fit within a given width when rendered with the specified font."""
@@ -149,6 +184,12 @@ class StatisticsScreen:
         elif event.type == pygame_gui.UI_BUTTON_PRESSED:
             if event.ui_element == self.back_button:
                 self.next_screen = "main_menu"
+            elif event.ui_element == self.save_csv_button:
+                saved_file = self.save_statistics_to_csv()
+                if saved_file:
+                    print(f"[SUCCESS] Statistics saved to: {saved_file}")
+                else:
+                    print("[ERROR] Failed to save statistics to CSV")
         elif event.type == pygame.VIDEORESIZE:
             self.handle_resize(event.w, event.h)
         elif event.type == pygame.MOUSEWHEEL:
@@ -158,6 +199,116 @@ class StatisticsScreen:
 
     def update(self, time_delta):
         self.ui_manager.update(time_delta)
+
+    def save_statistics_to_csv(self):
+        """
+        Save all displayed statistics to a CSV file in the results folder.
+        The filename will be: display_alg_name + compare_alg_name + current_date_time.csv
+        """
+        # Create results folder if it doesn't exist
+        results_folder = "results"
+        if not os.path.exists(results_folder):
+            os.makedirs(results_folder)
+        
+        # Generate filename with current date and time
+        current_datetime = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Clean algorithm names for filename (remove special characters)
+        display_alg_clean = self.display_alg_name.replace(" ", "_").replace("(", "").replace(")", "").replace(":", "")
+        compare_alg_clean = self.compare_alg_name.replace(" ", "_").replace("(", "").replace(")", "").replace(":", "")
+        filename = f"{display_alg_clean}_{compare_alg_clean}_{current_datetime}.csv"
+        filepath = os.path.join(results_folder, filename)
+        
+        # Prepare data for CSV
+        csv_data = []
+        
+        # Add algorithm names as rows
+        csv_data.append(["Algorithm", self.display_alg_name])
+        csv_data.append(["Algorithm", self.compare_alg_name])
+        
+        # Add simulation overview data
+        csv_data.append(["Total Vehicles", self.total_vehicles, self.total_vehicles])
+        csv_data.append(["Simulation Time (seconds)", f"{self.main_simulation_time:.2f}", f"{self.compare_simulation_time:.2f}"])
+        
+        # Add vehicle types data
+        csv_data.append(["Private Cars", self.vehicle_stats["Private car amount"], self.vehicle_stats["Private car amount"]])
+        csv_data.append(["Buses", self.vehicle_stats["Buses amount"], self.vehicle_stats["Buses amount"]])
+        csv_data.append(["Trucks", self.vehicle_stats["Trucks amount"], self.vehicle_stats["Trucks amount"]])
+        
+        # Add energy distribution data
+        csv_data.append(["Electric (%)", self.vehicle_stats["Electric"], self.vehicle_stats["Electric"]])
+        csv_data.append(["Gasoline (%)", self.vehicle_stats["Gasoline"], self.vehicle_stats["Gasoline"]])
+        csv_data.append(["Gas (%)", self.vehicle_stats["Gas"], self.vehicle_stats["Gas"]])
+        
+        # Add energy consumption data
+        if self.display_stats and self.compare_stats:
+            display_total_consumption = self.display_stats.get("total_energy_consumed", 0)
+            compare_total_consumption = self.compare_stats.get("total_energy_consumed", 0)
+            csv_data.append(["Total Energy (Megajoule)", f"{display_total_consumption:.2f}", f"{compare_total_consumption:.2f}"])
+            
+            csv_data.append(["Total Distance (Km)", f"{self.display_stats.get('total_distance', 0):.1f}", f"{self.compare_stats.get('total_distance', 0):.1f}"])
+            csv_data.append(["Average Energy Efficiency", f"{self.display_stats.get('average_energy_efficiency', 0):.3f}", f"{self.compare_stats.get('average_energy_efficiency', 0):.3f}"])
+            
+            # Add pollution data
+            display_total_pollution = self.display_stats.get("total_pollution", 0)
+            compare_total_pollution = self.compare_stats.get("total_pollution", 0)
+            csv_data.append(["Total CO2 (Kg)", f"{display_total_pollution:.1f}", f"{compare_total_pollution:.1f}"])
+            csv_data.append(["Average Emission (Kg/km)", f"{self.display_stats.get('average_pollution_efficiency', 0):.1f}", f"{self.compare_stats.get('average_pollution_efficiency', 0):.1f}"])
+            csv_data.append(["Stops Count", self.display_stats.get("total_stops", 0), self.compare_stats.get("total_stops", 0)])
+            
+            # Add traffic behavior data
+            display_idle_time = self.display_stats.get("total_idle_time", 0)
+            compare_idle_time = self.compare_stats.get("total_idle_time", 0)
+            csv_data.append(["Idle Time (seconds)", f"{display_idle_time:.1f}", f"{compare_idle_time:.1f}"])
+            
+            # Calculate average speeds
+            display_total_distance = self.display_stats.get("total_distance", 0)
+            display_total_time = self.display_stats.get("total_time", self.main_simulation_time)
+            display_avg_speed = (display_total_distance / display_total_time * 3.6) if display_total_time > 0 else 0
+            compare_total_distance = self.compare_stats.get("total_distance", 0)
+            compare_total_time = self.compare_stats.get("total_time", self.compare_simulation_time)
+            compare_avg_speed = (compare_total_distance / compare_total_time * 3.6) if compare_total_time > 0 else 0
+            csv_data.append(["Average Speed (km/h)", f"{display_avg_speed:.1f}", f"{compare_avg_speed:.1f}"])
+            
+            # Add energy consumption by type
+            display_energy_consumption = self.display_stats.get("energy_consumption", {})
+            compare_energy_consumption = self.compare_stats.get("energy_consumption", {})
+            csv_data.append(["Electric Energy (Megajoule)", f"{display_energy_consumption.get('Electric', 0):.2f}", f"{compare_energy_consumption.get('Electric', 0):.2f}"])
+            csv_data.append(["Gasoline Energy (Megajoule)", f"{display_energy_consumption.get('Gasoline', 0):.2f}", f"{compare_energy_consumption.get('Gasoline', 0):.2f}"])
+            csv_data.append(["Gas Energy (Megajoule)", f"{display_energy_consumption.get('Gas', 0):.2f}", f"{compare_energy_consumption.get('Gas', 0):.2f}"])
+            
+            # Add pollution by energy type
+            display_energy_pollution = self.display_stats.get("energy_pollution", {})
+            compare_energy_pollution = self.compare_stats.get("energy_pollution", {})
+            csv_data.append(["Electric CO2 (Kg)", f"{display_energy_pollution.get('Electric', 0):.1f}", f"{compare_energy_pollution.get('Electric', 0):.1f}"])
+            csv_data.append(["Gasoline CO2 (Kg)", f"{display_energy_pollution.get('Gasoline', 0):.1f}", f"{compare_energy_pollution.get('Gasoline', 0):.1f}"])
+            csv_data.append(["Gas CO2 (Kg)", f"{display_energy_pollution.get('Gas', 0):.1f}", f"{compare_energy_pollution.get('Gas', 0):.1f}"])
+            
+            # Add consumption by vehicle type
+            display_vehicle_consumption = self.display_stats.get("vehicle_consumption", {})
+            compare_vehicle_consumption = self.compare_stats.get("vehicle_consumption", {})
+            csv_data.append(["Car Consumption", f"{display_vehicle_consumption.get('Car', 0):.2f}", f"{compare_vehicle_consumption.get('Car', 0):.2f}"])
+            csv_data.append(["Bus Consumption", f"{display_vehicle_consumption.get('Bus', 0):.2f}", f"{compare_vehicle_consumption.get('Bus', 0):.2f}"])
+            csv_data.append(["Truck Consumption", f"{display_vehicle_consumption.get('Truck', 0):.2f}", f"{compare_vehicle_consumption.get('Truck', 0):.2f}"])
+            
+            # Add final scores
+            display_score = display_total_consumption + display_total_pollution
+            compare_score = compare_total_consumption + compare_total_pollution
+            csv_data.append(["Final Score (Lower = Better)", f"{display_score:.1f}", f"{compare_score:.1f}"])
+        
+        # Write to CSV file
+        try:
+            with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                # Write header
+                writer.writerow(["Metric", "Display Algorithm", "Compare Algorithm"])
+                # Write data
+                writer.writerows(csv_data)
+            
+            print(f"[INFO] Statistics saved to: {filepath}")
+            return filepath
+        except Exception as e:
+            print(f"[ERROR] Failed to save statistics to CSV: {e}")
+            return None
 
     def draw(self):
         # Calculate total content height (estimate based on cards/sections)
@@ -199,22 +350,17 @@ class StatisticsScreen:
         display_score = calc_score(self.display_stats)
         compare_score = calc_score(self.compare_stats)
 
-        # Get algorithm names (fallback to 'Display'/'Compare')
-        display_alg_name = getattr(self, 'display_alg_name', 'Display Algorithm')
-        compare_alg_name = getattr(self, 'compare_alg_name', 'Compare Algorithm')
-        # Try to get from stats if available
-        if 'alg_name' in self.display_stats:
-            display_alg_name = self.display_stats['alg_name']
-        if 'alg_name' in self.compare_stats:
-            compare_alg_name = self.compare_stats['alg_name']
+        # Get algorithm names from instance variables
+        display_alg_name = self.display_alg_name
+        compare_alg_name = self.compare_alg_name
 
         self.draw_card(
             score_start_x,
             score_y,
             score_card_width,
             self.card_height,
-            display_alg_name,
-            [("Final Score", f"{display_score:.1f}"), ("Goal", "Lower = Better")],
+            "Display Algorithm",
+            [("Final Score", f"{display_score:.1f}"), ("Goal", "Lower = Better") , ("Name", f"{display_alg_name}")],
             surface=scroll_surface
         )
         self.draw_card(
@@ -222,8 +368,8 @@ class StatisticsScreen:
             score_y,
             score_card_width,
             self.card_height,
-            compare_alg_name,
-            [("Final Score", f"{compare_score:.1f}"), ("Goal", "Lower = Better")],
+            "Compare Algorithm",
+            [("Final Score", f"{compare_score:.1f}"), ("Goal", "Lower = Better"), ("Name", f"{compare_alg_name}")],
             surface=scroll_surface
         )
 
@@ -338,22 +484,20 @@ class StatisticsScreen:
             
             # Draw Traffic Behavior Card
             display_idle_time = self.display_stats.get("total_idle_time", 0)
-            display_accel_events = self.display_stats.get("total_acceleration_events", 0)
+            #display_accel_events = self.display_stats.get("total_acceleration_events", 0)
             display_total_distance = self.display_stats.get("total_distance", 0)
             display_total_time = self.display_stats.get("total_time", self.main_simulation_time)
             display_avg_speed = (display_total_distance / display_total_time * 3.6) if display_total_time > 0 else 0
             compare_idle_time = self.compare_stats.get("total_idle_time", 0)
-            compare_accel_events = self.compare_stats.get("total_acceleration_events", 0)
+            #compare_accel_events = self.compare_stats.get("total_acceleration_events", 0)
             compare_total_distance = self.compare_stats.get("total_distance", 0)
             compare_total_time = self.compare_stats.get("total_time", self.compare_simulation_time)
             compare_avg_speed = (compare_total_distance / compare_total_time * 3.6) if compare_total_time > 0 else 0
             behavior_items = [
                 ("Idle Time", f"{display_idle_time:.1f} s"),
-                ("Accel Events", display_accel_events),
                 ("Avg Speed", f"{display_avg_speed:.1f} km/h"),
                 ("", "--- Compare Algorithm ---"),
                 ("Idle Time", f"{compare_idle_time:.1f} s"),
-                ("Accel Events", compare_accel_events),
                 ("Avg Speed", f"{compare_avg_speed:.1f} km/h")
             ]
             self.draw_card(
@@ -443,3 +587,18 @@ class StatisticsScreen:
 
     def get_next_screen(self):
         return self.next_screen
+
+    def cleanup(self):
+        """Clean up UI elements when transitioning away from this screen"""
+        if self._cleaned_up:
+            return  # Already cleaned up
+        
+        if hasattr(self, 'back_button') and self.back_button:
+            self.back_button.kill()
+        if hasattr(self, 'save_csv_button') and self.save_csv_button:
+            self.save_csv_button.kill()
+        # Clear the UI manager to ensure no leftover elements
+        if hasattr(self, 'ui_manager'):
+            self.ui_manager.clear_and_reset()
+        
+        self._cleaned_up = True

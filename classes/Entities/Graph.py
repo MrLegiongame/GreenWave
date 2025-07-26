@@ -1,3 +1,18 @@
+"""
+Graph Module
+
+This module contains the Graph class and related functions for managing the traffic
+network graph in the simulation system. The Graph class represents the complete
+traffic network with nodes (junctions), edges (roads), and vehicles, providing
+pathfinding capabilities and visualization support.
+
+Classes:
+    Graph: Represents the complete traffic network with pathfinding capabilities.
+
+Functions:
+    find_out_lane_by_index_in_junction: Helper function to find output lanes in junctions.
+"""
+
 import json
 from collections import deque
 
@@ -12,6 +27,16 @@ from classes.Nodes.Lane import Lane
 
 
 def find_out_lane_by_index_in_junction(junction, out_lane_index):
+    """
+    Find an output lane in a junction by its index.
+    
+    Args:
+        junction (Junction): The junction to search in
+        out_lane_index (int): The index of the output lane to find
+        
+    Returns:
+        Lane or None: The found output lane, or None if not found
+    """
     for direction in junction.directions:
         for out_lane in direction.out_lanes:
             if out_lane_index == out_lane.index_in_junction:
@@ -20,8 +45,35 @@ def find_out_lane_by_index_in_junction(junction, out_lane_index):
 
 
 class Graph:
-    def __init__(self, nodes, edges, vehicles, dt=0):
+    """
+    Represents the complete traffic network with nodes, edges, and vehicles.
+    
+    The Graph class manages the entire traffic simulation network, including
+    junctions (nodes), roads (edges), and vehicles. It provides pathfinding
+    capabilities using NetworkX for optimal route calculation and supports
+    visualization of the network using Pygame.
+    
+    Attributes:
+        nodes (list): List of junction nodes in the network
+        nodes_size (int): Number of nodes in the network
+        edges (list): List of road edges connecting nodes
+        edges_size (int): Number of edges in the network
+        vehicles (list): List of vehicles in the simulation
+        vehicles_size (int): Number of vehicles in the simulation
+        dt (float): Delta time for simulation updates
+        graph (networkx.DiGraph): NetworkX graph for pathfinding
+    """
 
+    def __init__(self, nodes, edges, vehicles, dt=0):
+        """
+        Initialize a new Graph instance.
+        
+        Args:
+            nodes (list): List of junction nodes
+            edges (list): List of road edges
+            vehicles (list): List of vehicles
+            dt (float, optional): Delta time for simulation updates. Defaults to 0.
+        """
         self.nodes = None
         self.nodes_size = None
         self.edges = None
@@ -40,6 +92,19 @@ class Graph:
             self.set_graph_for_path()
 
     def draw(self, screen, sim):
+        """
+        Draw the traffic network on the provided screen.
+        
+        Args:
+            screen: Pygame screen surface to draw on
+            sim: Simulation object containing current state information
+            
+        Note:
+            This method draws:
+            - White lines for road edges
+            - Grey circles for junctions (green for current junction)
+            - Red circles for vehicles (excluding arrived vehicles)
+        """
         # Draw edges
         for edge in self.edges:
             start_pos = edge.get_first_point()
@@ -61,6 +126,16 @@ class Graph:
             pygame.draw.circle(screen, Color.RED.value, vehicle.get_cur_point().get_point(), 6)
 
     def get(self, node, default=None):
+        """
+        Get neighboring nodes and edge weights for a given node.
+        
+        Args:
+            node: The source node to find neighbors for
+            default: Default value to return if no neighbors found
+            
+        Returns:
+            list or default: List of (neighbor_node, edge_weight) tuples, or default value
+        """
         neighbors = []
         for edge in self.edges:
             src = edge.source_direction.parent_junction
@@ -70,6 +145,21 @@ class Graph:
         return neighbors if neighbors else default
 
     def set_graph_for_path(self):
+        """
+        Create a NetworkX directed graph for pathfinding.
+        
+        This method constructs a NetworkX DiGraph representation of the traffic
+        network, where nodes represent lanes and edges represent connections
+        between lanes. The graph is used for finding optimal routes between
+        any two points in the network.
+        
+        Returns:
+            networkx.DiGraph: The constructed graph for pathfinding
+            
+        Note:
+            The graph includes both junction connections (weight=0) and road
+            connections (weight=road_length) to enable accurate pathfinding.
+        """
         import networkx as nx
 
         # Create a directed graph
@@ -160,6 +250,18 @@ class Graph:
         return G
 
     def find_lane_by_index_in_map_str(self, lane_str):
+        """
+        Find a lane object by its string representation in the graph.
+        
+        Args:
+            lane_str (str): String representation of the lane (e.g., "InLane123", "OutLane456")
+            
+        Returns:
+            Lane or None: The found lane object, or None if not found
+            
+        Note:
+            The lane_str should start with "InLane" or "OutLane" followed by the index.
+        """
         is_in_lane = lane_str.startswith("InLane")
 
         prefixes = ("InLane", "OutLane")
@@ -180,8 +282,25 @@ class Graph:
         return None
 
     def get_path(self, start, end):
+        """
+        Find the optimal path between two lanes using NetworkX shortest path algorithm.
+        
+        Args:
+            start (Lane): The starting lane
+            end (Lane): The destination lane
+            
+        Returns:
+            tuple: (lane_path, edge_path) where:
+                - lane_path: List of Lane objects representing the path
+                - edge_path: List of (lane, lane) tuples representing edges
+                
+        Note:
+            Returns (None, None) if no path is available between the specified lanes.
+            The method uses NetworkX's shortest_path algorithm with edge weights.
+        """
         import networkx as nx
 
+        # Create node identifiers for NetworkX graph
         source = "OutLane" + str(start.index_in_map)
         target = "InLane" + str(end.index_in_map)
         
@@ -190,7 +309,7 @@ class Graph:
         print(f"End lane index: {end.index_in_map}")
         
 
-        # Get node path
+        # Get node path using NetworkX shortest path algorithm
         try:
             lane_path = nx.shortest_path(self.graph, source=source, target=target, weight="weight")
             print(f"\nFound path: {lane_path}")
@@ -198,15 +317,30 @@ class Graph:
             print(f"\nNo path available between {source} and {target}")
             return None, None
 
-        # Convert to list of edges (as tuples)
+        # Convert string node names back to Lane objects
         for lane_str_index in range(len(lane_path)):
             lane_path[lane_str_index] = self.find_lane_by_index_in_map_str(lane_path[lane_str_index])
+        
+        # Create edge path from lane path (consecutive pairs)
         edge_path = list(zip(lane_path[:-1], lane_path[1:]))
         print(f"Final path: {edge_path}")
 
         return lane_path, edge_path
 
     def find_road_lanes_by_lanes(self, in_lane):
+        """
+        Find the road lane that connects to a specific input lane.
+        
+        Args:
+            in_lane (Lane): The input lane to find the connecting road lane for
+            
+        Returns:
+            RoadLane or None: The connecting road lane, or None if not found
+            
+        Note:
+            This method searches through all roads and their lanes to find
+            which road lane serves as the destination for the given input lane.
+        """
         for road in self.edges:
             for road_lane in road.road_lanes_first_direction:
                 if in_lane is road_lane.destination_lane:

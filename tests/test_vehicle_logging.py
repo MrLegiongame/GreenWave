@@ -8,7 +8,7 @@ import os
 import pygame
 
 # Add the project root to the Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from classes.Entities.Vehicles.Vehicle import Vehicle
 from classes.Entities.Point import Point
@@ -41,7 +41,6 @@ def test_vehicle_logging():
         weight=1500,
         start_node=start_junction,
         end_node=end_junction,
-        image=dummy_surface,
         vehicle_type="Car",
         energy_type="Electric",
         maximum_speed=120

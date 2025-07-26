@@ -212,6 +212,7 @@ class SimulationScreen:
     def update(self, delta_time):
         self.dt = delta_time
         if not self.is_stopped:
+            # Update simulation time for both algorithms
             if not self.algorithm.terminate_flag:
                 self.main_simulation_time += delta_time
             if not self.algorithm_to_compare.terminate_flag:
@@ -221,6 +222,7 @@ class SimulationScreen:
             arrived_count_main = 0
             total_count_main = len(self.graph.vehicles)
             if not self.algorithm.terminate_flag:
+                # Move all vehicles in main simulation
                 for vehicle in self.graph.vehicles:
                     vehicle.move(delta_time)
                     if not vehicle.has_arrived():
@@ -233,6 +235,7 @@ class SimulationScreen:
             arrived_count_compare = 0
             if not self.algorithm_to_compare.terminate_flag:
                 total_count_compare = len(self.graph_for_algorithm_to_compare.vehicles)
+                # Move all vehicles in comparison simulation
                 for vehicle in self.graph_for_algorithm_to_compare.vehicles:
                     vehicle.move(delta_time)
                     if not vehicle.has_arrived():
@@ -286,7 +289,9 @@ class SimulationScreen:
                     self.compare_simulation_time,
                     self.vehicle_stats,
                     self.display_stats,
-                    self.compare_stats
+                    self.compare_stats,
+                    self.display_alg.name,
+                    self.compare_alg.name
                 )
                 self.all_vehicles_arrived = True
 
@@ -343,7 +348,7 @@ class SimulationScreen:
         self.draw_regular_polygon(self.screen, center, 90, self.current_junction, self.current_junction.directions)
         
         # Draw vehicle information for the selected junction
-        self.draw_junction_vehicle_info()
+        # self.draw_junction_vehicle_info() # FOR DEBUG
 
     def draw_junction_vehicle_info(self):
         """Draw vehicle information for the selected junction including sorted vehicle list."""
@@ -518,8 +523,8 @@ class SimulationScreen:
         #print(f"[DEBUG] Total vehicles in graph: {len(self.graph.vehicles)}")
 
         for vehicle in self.graph.vehicles:
-            if vehicle.is_next_lane_the_final_lane(): #TODO:REMOVE
-                continue
+            #if vehicle.is_next_lane_the_final_lane(): #DEBUG
+           #     continue
             #print(f"\n[DEBUG] Checking vehicle {id(vehicle)}")
             if hasattr(vehicle, 'cur_point'):
                 vehicle_x = vehicle.cur_point.x
@@ -740,6 +745,7 @@ class SimulationScreen:
         energy_types = ["Electric", "Gasoline", "Gas"]
         energy_distribution = []
 
+        # Create energy type distribution based on percentages
         for energy in energy_types:
             count = int((vehicle_stats[energy] / 100) * total_vehicles)
             energy_distribution.extend([energy] * count)
@@ -748,6 +754,7 @@ class SimulationScreen:
         while len(energy_distribution) < total_vehicles:
             energy_distribution.append(random.choice(energy_types))
 
+        # Shuffle to randomize energy type assignment
         random.shuffle(energy_distribution)
 
         vehicle_types = (
@@ -756,13 +763,15 @@ class SimulationScreen:
             ("Truck", vehicle_stats["Trucks amount"])
         )
 
+        # Create vehicles with random source/destination pairs
         for v_type, amount in vehicle_types:
             for _ in range(amount):
                 if not energy_distribution:
                     break
+                # Randomly select source and destination nodes (must be different)
                 src_node = random.choice(nodes)
                 dst_node = random.choice([n for n in nodes if n != src_node])
-                weight = random.randint(1200, 2400)
+                weight = random.randint(1200, 2400)  # Random vehicle weight
                 energy = energy_distribution.pop()
                 vehicles.append(Vehicle(
                     length=2,
@@ -802,18 +811,26 @@ class SimulationScreen:
         self.algorithm_to_compare_thread.start()
 
     def force_directed_layout(self, nodes, edges):
+        # Create NetworkX graph for layout calculation
         G = nx.Graph()
         node_id_map = {node: idx for idx, node in enumerate(nodes)}
         id_node_map = {idx: node for node, idx in node_id_map.items()}
+        
+        # Add edges to graph (only between different nodes)
         for edge in edges:
             src, dst = edge.first_direction.parent_junction, edge.second_direction.parent_junction
             if src != dst:
                 G.add_edge(node_id_map[src], node_id_map[dst])
+        
+        # Calculate spring layout positions using NetworkX
         pos = nx.spring_layout(G, seed=42)
         padding = 50
         area_width = self.SIMULATION_SCREEN.width - 2 * padding
         area_height = self.SIMULATION_SCREEN.height - 2 * padding
+        
+        # Convert layout coordinates to screen coordinates
         for node_id, (x, y) in pos.items():
+            # Map from [-1,1] range to screen coordinates with padding
             id_node_map[node_id].point = Point(int(padding + (x + 1) / 2 * area_width),
                                                int(padding + (y + 1) / 2 * area_height))
 

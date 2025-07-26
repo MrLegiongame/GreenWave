@@ -1,8 +1,56 @@
+"""
+Help Screen Module
+
+This module contains the HelpScreen class and related functions for providing
+user help and documentation within the GreenWave traffic simulation system.
+The help system includes both overlay and standalone window modes.
+
+Classes:
+    HelpScreen: Help screen interface with scrolling text and navigation.
+
+Functions:
+    run_help_window: Runs a standalone help window process.
+    open_help_window: Opens a standalone help window.
+"""
+
 import pygame
 import multiprocessing
 
 class HelpScreen:
+    """
+    Help screen interface for the GreenWave traffic simulation system.
+    
+    This class provides a comprehensive help interface with scrolling text,
+    navigation controls, and both overlay and standalone window modes.
+    The help screen displays user guidance, controls, and support information.
+    
+    Attributes:
+        font: Font for help text
+        button_font: Font for buttons
+        screen: Pygame screen surface
+        on_close: Callback function for closing the help screen
+        width (int): Screen width
+        height (int): Screen height
+        help_text (list): List of help text lines
+        button_rect: Rectangle for close button
+        line_height (int): Height of each text line
+        text_margin (int): Margin around text
+        scroll_y (int): Current scroll position
+        max_scroll (int): Maximum scroll position
+        scrollbar_width (int): Width of scrollbar
+        scrollbar_color: Color of scrollbar
+        scrollbar_drag (bool): Flag for scrollbar dragging
+        scrollbar_rect: Rectangle for scrollbar
+    """
+
     def __init__(self, screen, on_close=None):
+        """
+        Initialize the help screen.
+        
+        Args:
+            screen: Pygame screen surface to render on
+            on_close (callable, optional): Callback function when help is closed
+        """
         # In __init__, use a monospace font for proper alignment:
         self.font        = pygame.font.SysFont('Consolas', 20)
         self.button_font = pygame.font.SysFont('Consolas', 22)
@@ -53,6 +101,12 @@ class HelpScreen:
         self.update_scrollbar()
 
     def update_scrollbar(self):
+        """
+        Update the scrollbar position and size based on content.
+        
+        This method calculates the scrollbar dimensions and position
+        based on the content height and current scroll position.
+        """
         content_height = len(self.help_text) * self.line_height + self.text_margin * 2
         visible_height = self.height - 80
         if content_height > visible_height:
@@ -65,6 +119,12 @@ class HelpScreen:
             self.scrollbar_rect = pygame.Rect(self.width - self.scrollbar_width - 8, 40, self.scrollbar_width, visible_height)
 
     def draw(self):
+        """
+        Draw the help screen interface.
+        
+        This method renders the help text, close button, and scrollbar
+        with proper positioning and styling.
+        """
         self.screen.fill((240, 240, 240))
         # Draw help text with scrolling
         y = 40 - self.scroll_y
@@ -82,6 +142,12 @@ class HelpScreen:
             pygame.draw.rect(self.screen, self.scrollbar_color, self.scrollbar_rect, border_radius=8)
 
     def handle_event(self, event):
+        """
+        Handle pygame events for the help screen.
+        
+        Args:
+            event: Pygame event to handle
+        """
         if event.type == pygame.QUIT:
             if self.on_close:
                 self.on_close()
@@ -118,6 +184,13 @@ class HelpScreen:
 
 
 def run_help_window():
+    """
+    Run a standalone help window process.
+    
+    This function creates and runs a standalone help window with its own
+    pygame display and event loop. It's designed to be run in a separate
+    process for independent help window functionality.
+    """
     pygame.init()
     width, height = 770, 600
     screen = pygame.display.set_mode((width, height))
@@ -134,6 +207,16 @@ def run_help_window():
     pygame.quit()
 
 def open_help_window():
+    """
+    Open a standalone help window in a separate process.
+    
+    This function creates a new process to run the help window independently
+    from the main application, allowing users to access help while keeping
+    the main application running.
+    
+    Returns:
+        multiprocessing.Process: The process running the help window
+    """
     p = multiprocessing.Process(target=run_help_window)
     p.start()
     return p 
