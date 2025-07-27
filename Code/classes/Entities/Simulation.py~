@@ -1,0 +1,61 @@
+"""
+Simulation Module (Backup)
+
+This module contains the Simulation class for managing traffic simulation instances
+from JSON configuration files. The Simulation class serves as a high-level interface
+for creating and managing traffic network simulations.
+
+Note:
+    This appears to be a backup file (indicated by the ~ suffix) and contains
+    incomplete implementations marked with TODO comments.
+
+Classes:
+    Simulation: Manages traffic simulation instances from JSON configuration.
+
+Functions:
+    check_json_validity: Validates JSON configuration data (TODO implementation).
+"""
+
+from screens.classes.Entities.Graph import Graph
+
+
+def check_json_validity(json):
+    # TODO
+    pass
+
+
+class Simulation:
+    def __init__(self, json):
+        self.graph = None
+        self.current_junction = None
+        self.current_vehicle = None
+        if None is not json:
+            try:
+                check_json_validity(json)
+                self.graph = self.get_graph_from_json(json)
+            except TypeError as e:
+                print(f"Simulation couldn't be created due to this error: {e}")
+
+    def __get_nodes_from_json(self, json):
+        # TODO
+        pass
+
+    def __get_edges_from_json(self, json):
+        # TODO
+        pass
+
+    def __get_vehicles_from_json(self, json):
+        # TODO
+        pass
+
+    def get_graph_from_json(self, json):
+        nodes = self.__get_nodes_from_json(json)
+        edges = self.__get_edges_from_json(json)
+        vehicles = self.__get_vehicles_from_json(json)
+        return Graph(nodes, edges, vehicles)
+
+    def set_current_junction(self, junction):
+        self.current_junction = junction
+
+    def set_current_vehicle(self, vehicle):
+        self.current_vehicle = vehicle

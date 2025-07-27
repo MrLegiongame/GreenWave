@@ -1,0 +1,29 @@
+{
+    "Map for simulation": {
+        "value": "map2"
+    },
+    "Private car amount": {
+        "value": "10"
+    },
+    "Buses amount": {
+        "value": "10"
+    },
+    "Trucks amount": {
+        "value": "10"
+    },
+    "Electric": {
+        "value": "30"
+    },
+    "Gasoline": {
+        "value": "40"
+    },
+    "Gas": {
+        "value": "30"
+    },
+    "Display algorithm": {
+        "value": "GREEN_WAVE_ENERGY"
+    },
+    "Compared algorithm": {
+        "value": "ADAPTIVE_ALG"
+    }
+}
