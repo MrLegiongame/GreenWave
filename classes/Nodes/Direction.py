@@ -110,8 +110,9 @@ class Direction:
                 self.in_size = len(in_lanes)
                 self.size += self.in_size
                 self.__set_lanes(in_lanes)
-            except TypeError as e:
-                print(f"Direction couldn't be created due to this error: {e}")
+            except Exception:
+                # Direction couldn't be created
+                pass
 
         if None is not out_lanes:
             try:
@@ -120,8 +121,9 @@ class Direction:
                 self.out_size = len(out_lanes)
                 self.size += self.out_size
                 self.__set_lanes(out_lanes)
-            except TypeError as e:
-                print(f"Direction couldn't be created due to this error: {e}")
+            except Exception:
+                # Direction couldn't be created
+                pass
 
     def __set_lanes(self, lanes):
         for lane in lanes:
@@ -135,7 +137,6 @@ class Direction:
             parent_junction: The parent Junction object
         """
         self.parent_junction = parent_junction
-        # self.index_in_junction = find_obj_index_in_array(self, parent_junction.directions)
 
     def set_road(self, road):
         """
@@ -193,11 +194,11 @@ class Direction:
         self.direction[index].lane = lane
 
     def __str__(self):
-        res = f"Direction:\nIn Lanes:\n"
+        res = f"Direction #{self.index_in_map}:\n\tIn Lanes:\n"
         for lane in self.in_lanes:
             if isinstance(lane, Lane):
                 res += f"\t\t{lane}\n"
-        res += "\nOut Lanes:\n"
+        res += "\n\tOut Lanes:\n"
         for lane in self.out_lanes:
             if isinstance(lane, Lane):
                 res += f"\t\t{lane}\n"

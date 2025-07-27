@@ -48,18 +48,6 @@ class Algorithm:
         self.threads = [None] * self.nodes_size  # Thread for each node to allow concurrent updates
         self.terminate_flag = False
 
-    def set(self, alg, nodes):
-        """
-        Set the algorithm type and nodes to be controlled.
-        
-        Args:
-            alg (Alg): The algorithm type to use for traffic control
-            nodes (list): List of junction nodes to control
-        """
-        self.alg = alg
-        self.nodes = nodes
-        self.nodes_size = len(nodes)
-
     def get_next_active_index(self, index):
         """
         Determine the next active state index for a specific junction based on the current algorithm.
@@ -77,31 +65,23 @@ class Algorithm:
             - GREEN_WAVE_ENERGY: Optimizes for energy consumption
             - GREEN_WAVE_POLLUTION: Optimizes for pollution reduction
         """
-        next_active_index = None
         match self.alg:
             case Alg.FIXED_TIMING_CYCLE:
                 # Fixed timing: simply cycle to the next state
+                time.sleep(2)
                 next_active_index = (self.nodes[index].active_index + 1) % self.nodes[index].states_size
-                #print(f"Algorithm FIXED_TIMING_CYCLE")
             case Alg.ADAPTIVE_ALG:
                 # Adaptive: choose the state with the most vehicles waiting
                 next_active_index = self.nodes[index].get_max_vehicle_count_state_index()
-                #print(f"Algorithm ADAPTIVE_ALG")
             case Alg.GREEN_WAVE_ENERGY:
-                # TODO: replace between them (done for debug purposes)
-                # next_active_index = self.nodes[index].get_min_expected_filter_state_index("energy")
-                next_active_index = self.nodes[index].get_green_wave_state_index("energy")
-                # next_active_index = self.nodes[index].green_wave_adaptive()
-                #print(f"Algorithm GREEN_WAVE_ENERGY")
+                # GreenWave energy: choose the state with the minimum expected energy consumption prediction
+                next_active_index = self.nodes[index].get_min_expected_filter_state_index("energy")
             case Alg.GREEN_WAVE_POLLUTION:
-                # TODO: replace between them (done for debug purposes)
-                # next_active_index = self.nodes[index].get_min_expected_filter_state_index("pollution")
-                next_active_index = self.nodes[index].get_green_wave_state_index("pollution")
-                # next_active_index = self.nodes[index].green_wave_adaptive()
-                #print(f"Algorithm GREEN_WAVE_POLLUTION")
+                # GreenWave pollution: choose the state with the minimum expected pollution prediction
+                next_active_index = self.nodes[index].get_min_expected_filter_state_index("pollution")
             case _:
-                print(f"Algorithm couldn't update due to invalid Alg")
-                return None
+                # Algorithm couldn't be found
+                next_active_index = self.nodes[index].active_index
 
         self.nodes[index].update_state(next_active_index)
 

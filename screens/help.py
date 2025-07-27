@@ -55,11 +55,11 @@ class HelpScreen:
         self.font        = pygame.font.SysFont('Consolas', 20)
         self.button_font = pygame.font.SysFont('Consolas', 22)
 
+        self.drag_offset = 0
+
         self.screen = screen
         self.on_close = on_close
         self.width, self.height = screen.get_size()
-        #self.font = pygame.font.SysFont('Arial', 20)
-        #self.button_font = pygame.font.SysFont('Arial', 22)
         self.help_text = [
             "╔════════════════════════════════════╗",
             "║        GreenWave User Help        ║",
@@ -211,7 +211,7 @@ def open_help_window():
     Open a standalone help window in a separate process.
     
     This function creates a new process to run the help window independently
-    from the main application, allowing users to access help while keeping
+    of the main application, allowing users to access help while keeping
     the main application running.
     
     Returns:

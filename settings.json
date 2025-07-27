@@ -3,13 +3,13 @@
         "value": "map2"
     },
     "Private car amount": {
-        "value": "1"
+        "value": "10"
     },
     "Buses amount": {
-        "value": "1"
+        "value": "10"
     },
     "Trucks amount": {
-        "value": "1"
+        "value": "10"
     },
     "Electric": {
         "value": "30"
@@ -21,7 +21,7 @@
         "value": "30"
     },
     "Display algorithm": {
-        "value": "GREEN_WAVE_POLLUTION"
+        "value": "GREEN_WAVE_ENERGY"
     },
     "Compared algorithm": {
         "value": "ADAPTIVE_ALG"

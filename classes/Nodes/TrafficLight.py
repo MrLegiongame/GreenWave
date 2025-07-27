@@ -93,8 +93,8 @@ class TrafficLight:
             check_traffic_light_validity(lanes)
             self.lanes = lanes
             self.size = len(lanes)
-        except Exception as e:
-            print(f"Traffic Light couldn't be created due to this error: {e}")
+        except Exception:
+            # Traffic Light couldn't be created
             return False
         return True
 

@@ -131,7 +131,6 @@ class Vehicle(ABC):
         self.vehicle_type = vehicle_type
         self.energy_type = energy_type
         self.maximum_speed = maximum_speed
-        # self.velocity = min(self.cur_road_lane.maximum_speed, self.maximum_speed)
         self.velocity = None
         self.acceleration = acceleration
         self.has_reached_destination = False  # Add flag for destination arrival
@@ -162,11 +161,6 @@ class Vehicle(ABC):
         self.last_stop_time = None
         self.is_stopped = False
         self.last_velocity = 0
-
-        print(
-            f"[Vehicle Init] Vehicle #{self.vehicle_id} - {vehicle_type} with {energy_type} created from {self.start_point} "
-            f"to {self.end_point}")
-        print(f"[Vehicle Init] Vehicle #{self.vehicle_id} - cur_point: {self.cur_point}")
 
     def is_next_lane_the_final_lane(self):  # architecture due to multithreading
         """
@@ -245,18 +239,14 @@ class Vehicle(ABC):
 
         # If no path is found, try to find a path to a nearby junction
         if (not self.lanes_path) or (not self.roads_path):
-            print(f"No path available between {start_out_lane} and {end_in_lane}, trying to find alternative path...")
             # Try to find a path to the next junction
             end_in_lane = start_out_lane.road_lane.destination_lane
             self.lanes_path, self.roads_path = graph.get_path(start_out_lane, end_in_lane)
 
             # If still no path, create a minimal path
             if (not self.lanes_path) or (not self.roads_path):
-                print("No alternative path found, creating minimal path...")
                 self.lanes_path = [start_out_lane, end_in_lane]
                 self.roads_path = [(start_out_lane, end_in_lane)]
-
-        print(f"Final path: {self.roads_path}")
 
         self.__end_in_lane = end_in_lane
 
@@ -264,16 +254,14 @@ class Vehicle(ABC):
         for lane1, lane2 in self.roads_path:
             if LaneFacing.IN == lane1.facing and LaneFacing.OUT == lane2.facing:
                 in_lane = lane1
-                out_lane = lane2
             elif LaneFacing.OUT == lane1.facing and LaneFacing.IN == lane2.facing:
                 in_lane = lane2
-                out_lane = lane1
             else:
                 raise TypeError("set_path method is invalid: Invalid order in path: Lane with facing equals to None")
             self.road_lanes.append(graph.find_road_lanes_by_lanes(in_lane=in_lane))
 
         if not self.road_lanes:
-            print("Warning: No road lanes found for path")
+            # No road lanes found for path
             return
 
         self.adapt_lanes_path_to_match_out_lanes_to_in_lanes()
@@ -281,9 +269,7 @@ class Vehicle(ABC):
         self.cur_road_lane = self.road_lanes[self.roads_passed]
         self.cur_road_lane_length = self.cur_road_lane.parent_road.length
         self.__last_lane = self.lanes_path[self.__lanes_passed]
-        print(f"set_path path len: {len(self.lanes_path)}")
         self.__lanes_passed += 1
-        print(f"[DEBUG] SET PATH After increment __lanes_passed={self.__lanes_passed}")
 
     def get_cur_lane(self):
         """
@@ -341,35 +327,24 @@ class Vehicle(ABC):
         try:
             next_junc = self.lanes_path[self.__lanes_passed].parent_junction.point
             self.to_junction = self.lanes_path[self.__lanes_passed].parent_junction
-            # print(f"[__is_passed_junction] next_junction={next_junc.get_point()}")
         except Exception as e:
-            # print(f"[__is_passed_junction] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
             raise
-
-        current_pt = self.cur_point.get_point()
 
         # Calculate distance along the road path
         self.from_junction = self.__last_lane.parent_junction
         self.from_node = self.from_junction.point
         self.to_node = next_junc
-        road_length = self.cur_road_lane.parent_road.length
-        pixel_length = self.from_node.get_distance_from_point(self.to_node)
-        # print(f"__is_passed_junction path len: {len(self.lanes_path)}")
+
         # Calculate how far along the road we are
         current_distance = self.cur_point.get_distance_from_point(self.from_node)
         total_distance = self.from_node.get_distance_from_point(self.to_node)
         progress = current_distance / total_distance if total_distance > 0 else 0
 
-        # print(f"[__is_passed_junction] current_point={current_pt}, progress={progress:.2f}, total_distance={total_distance:.2f}")
 
         passed = False
         if self.__last_distance_to_next_junction is not None:
             passed = progress > 0.99
-            # print(f"[__is_passed_junction] passed={passed} (progress > 0.95: {progress > 0.95})")
 
-        if passed:
-            print(
-                f"[__is_passed_junction] passed={passed}, setting __last_distance_to_next_junction={current_distance}")
         return passed
 
     def setup_move(self):
@@ -385,7 +360,6 @@ class Vehicle(ABC):
             This method is called before each move operation to ensure
             all necessary parameters are properly initialized.
         """
-        # print(f"[setup_move] Starting with __lanes_passed={self.__lanes_passed}, last_lane={self.__last_lane}")
         if self.creation_time is None:
             self.creation_time = time.time()
             self.track_movement()
@@ -396,17 +370,13 @@ class Vehicle(ABC):
         if self.__last_lane is None:
             try:
                 self.__last_lane = self.lanes_path[self.__lanes_passed]
-                print(f"Setup path len: {len(self.lanes_path)}")
                 self.__lanes_passed += 1
                 self.__last_lane.road_lane.vehicle_enter_lane(self)
-                # print(f"[setup_move] Set last_lane={self.__last_lane} at __lanes_passed={self.__lanes_passed}")
             except Exception as e:
-                print(f"[setup_move] ERROR accessing lanes_path[{self.__lanes_passed}]: {e}")
                 raise
 
         if self.velocity is None:
             self.velocity = min(self.cur_road_lane.parent_road.maximum_speed, self.maximum_speed)
-            # print(f"[setup_move] initialized velocity to {self.velocity}")
 
         if self.__last_distance_to_next_junction is None:
             self.__last_distance_to_next_junction = self.cur_road_lane_length
@@ -457,6 +427,7 @@ class Vehicle(ABC):
             self.cur_road_lane = self.road_lanes[self.roads_passed]
             self.cur_road_lane_length = self.cur_road_lane.parent_road.length
             self.__last_distance_to_next_junction = self.cur_road_lane_length
+
             # Set velocity to road or vehicle maximum, whichever is lower
             self.velocity = min(self.cur_road_lane.parent_road.maximum_speed, self.maximum_speed)
             log_vehicle_event(f"[cross_junction] Vehicle #{self.vehicle_id} entered new lane: {self.__last_lane}")
@@ -586,19 +557,20 @@ class Vehicle(ABC):
         self.__last_move_time_stamp = time.time()
         if self.__lanes_passed >= len(self.lanes_path):
             return
-        try:
-            # Calculate remaining distance to next junction for timing estimates
-            nxt = self.lanes_path[self.__lanes_passed].parent_junction.point
-            last_junction_point = self.__last_lane.parent_junction.point
-            if last_junction_point.get_distance_from_point(nxt) != 0:
-                # Convert pixel distance to road distance for accurate timing
-                dist = self.cur_point.get_distance_from_point(nxt) * self.cur_road_lane_length / last_junction_point.get_distance_from_point(nxt)
-                # self.__last_distance_to_next_junction = dist  # in km
-        except Exception as e:
-            log_vehicle_event(f"[move][EXCEPTION] Vehicle #{self.vehicle_id} in distance calc: {e}")
-            raise
         # Update velocity using physics: v = u + at
         self.velocity += self.acceleration * dt
+
+    def __eq__(self, other):
+        """
+        Compare vehicles based on time to next junction.
+
+        Args:
+            other (Vehicle): Another vehicle to compare with
+
+        Returns:
+            bool: True if this vehicle reaches the next junction at the same time as the other
+        """
+        return self.get_time_to_next_junction_in_sec() == other.get_time_to_next_junction_in_sec()
 
     def __lt__(self, other):
         """
@@ -672,15 +644,6 @@ class Vehicle(ABC):
         fuel_in_liters = self.get_energy_consumption_to_velocity(to_velocity) / (0.25 * energy_densities[self.energy_type] * 1_000_000.0)
         return emission_factors[self.energy_type] * fuel_in_liters
 
-    def __str__(self):
-        """
-        String representation of the vehicle's current position.
-        
-        Returns:
-            str: String showing the vehicle's current coordinates
-        """
-        return f"(x, y) = {self.get_cur_point().get_point()}"
-
     def get_cur_point(self):
         """
         Get the vehicle's current position.
@@ -753,7 +716,6 @@ class Vehicle(ABC):
             self.is_stopped = True
             self.last_stop_time = time.time()
             self.stops_count += 1
-            print(f"[Vehicle #{self.vehicle_id}] Stopped - Total stops: {self.stops_count}")
 
     def track_movement(self):
         """
@@ -766,7 +728,6 @@ class Vehicle(ABC):
             self.is_stopped = False
             if self.last_stop_time:
                 self.idle_time += time.time() - self.last_stop_time
-                print(f"[Vehicle #{self.vehicle_id}] Resumed movement - Idle time: {self.idle_time:.2f}s")
 
     def track_acceleration(self, current_acceleration):
         """
@@ -779,9 +740,8 @@ class Vehicle(ABC):
             This method counts acceleration events when the vehicle
             transitions from zero or negative acceleration to positive acceleration.
         """
-        if current_acceleration > 0 and self.last_velocity <= 0:
+        if current_acceleration > 0 >= self.last_velocity:
             self.acceleration_events += 1
-            print(f"[Vehicle #{self.vehicle_id}] Acceleration event - Total: {self.acceleration_events}")
         self.last_velocity = current_acceleration
 
     def update_total_time(self):
@@ -857,7 +817,7 @@ class Vehicle(ABC):
         if self.energy_type not in energy_densities:
             raise ValueError("Fuel type must be either 'Gasoline' or 'Gas'.")
 
-        # calcuates the consumed energy
+        # calculates the consumed energy
         energy_j = self.calculate_energy_consumption(distance_km)
         energy_mj = energy_j / 1_000_000.0
 
@@ -886,5 +846,14 @@ class Vehicle(ABC):
         print("\n[VEHICLES ON MAP]")
         for v in vehicles:
             if not v.has_arrived():
-                print(f"Vehicle #{v.vehicle_id}: type={v.vehicle_type}, energy={v.energy_type}, cur_point={v.get_cur_point().get_point() if v.get_cur_point() else None}, lane={v.get_cur_lane()}, queue_pos={v.get_queue_position()}")
+                print(v)
         print("[END VEHICLES ON MAP]\n")
+
+    def __str__(self):
+        """
+        String representation of the vehicle's current position.
+
+        Returns:
+            str: String showing several of the vehicle's relevant details
+        """
+        return f"Vehicle #{self.vehicle_id}: type={self.vehicle_type}, energy={self.energy_type}, cur_point={self.get_cur_point().get_point() if self.get_cur_point() else None}, lane={self.get_cur_lane()}, queue_pos={self.get_queue_position()}"

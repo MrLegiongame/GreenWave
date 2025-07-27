@@ -13,6 +13,39 @@ import pygame
 import os
 from screens.help import HelpScreen, open_help_window
 
+
+def scale_and_center(img, target_width, target_height):
+    """
+    Scale and center an image to fit the target dimensions.
+
+    Args:
+        img: Pygame image surface to scale
+        target_width (int): Target width
+        target_height (int): Target height
+
+    Returns:
+        tuple: (scaled_image, (offset_x, offset_y))
+    """
+    # Calculate scaling factor to cover the entire screen while maintaining aspect ratio
+    img_width, img_height = img.get_size()
+    width_ratio = target_width / img_width
+    height_ratio = target_height / img_height
+    scale_factor = max(width_ratio, height_ratio)  # Use max to ensure full coverage
+
+    # Calculate new dimensions
+    new_width = int(img_width * scale_factor)
+    new_height = int(img_height * scale_factor)
+
+    # Scale the image smoothly
+    scaled_img = pygame.transform.smoothscale(img, (new_width, new_height))
+
+    # Calculate offset to center and ensure full coverage
+    offset_x = (target_width - new_width) // 2
+    offset_y = (target_height - new_height) // 2
+
+    return scaled_img, (offset_x, offset_y)
+
+
 class MainMenuScreen:
     """
     Main menu screen for the GreenWave traffic simulation system.
@@ -49,6 +82,8 @@ class MainMenuScreen:
             screen: Pygame screen surface to render on
         """
         self.screen = screen
+        self.buttons = None
+        self.frame_rect = None
         self.font = pygame.font.SysFont("Segoe UI", 24)
         self.title_font = pygame.font.SysFont("Segoe UI", 40, bold=True)
         self.desc_font = pygame.font.SysFont("Segoe UI", 22)
@@ -66,9 +101,7 @@ class MainMenuScreen:
         base_path = os.path.dirname(os.path.dirname(__file__))  # Project root
         img_path = os.path.join(base_path, "assets", "background.jpg")
         raw_bg = pygame.image.load(img_path)
-        self.background, self.bg_offset = self.scale_and_center(
-            raw_bg, screen.get_width(), screen.get_height()
-        )
+        self.background, self.bg_offset = scale_and_center(raw_bg, screen.get_width(), screen.get_height())
 
         # GreenWave theme
         self.button_color = (34, 139, 34)
@@ -120,9 +153,8 @@ class MainMenuScreen:
         # Update background scaling
         try:
             raw_bg = pygame.image.load(os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "background.jpg"))
-            self.background, self.bg_offset = self.scale_and_center(raw_bg, new_width, new_height)
+            self.background, self.bg_offset = scale_and_center(raw_bg, new_width, new_height)
         except Exception as e:
-            print(f"Error loading background: {e}")
             # Fallback to solid color if image loading fails
             self.background = pygame.Surface((new_width, new_height))
             self.background.fill((255, 255, 255))
@@ -131,36 +163,6 @@ class MainMenuScreen:
         # Update button positions
         self.update_button_positions()
 
-    def scale_and_center(self, img, target_width, target_height):
-        """
-        Scale and center an image to fit the target dimensions.
-        
-        Args:
-            img: Pygame image surface to scale
-            target_width (int): Target width
-            target_height (int): Target height
-            
-        Returns:
-            tuple: (scaled_image, (offset_x, offset_y))
-        """
-        # Calculate scaling factor to cover the entire screen while maintaining aspect ratio
-        img_width, img_height = img.get_size()
-        width_ratio = target_width / img_width
-        height_ratio = target_height / img_height
-        scale_factor = max(width_ratio, height_ratio)  # Use max to ensure full coverage
-        
-        # Calculate new dimensions
-        new_width = int(img_width * scale_factor)
-        new_height = int(img_height * scale_factor)
-        
-        # Scale the image smoothly
-        scaled_img = pygame.transform.smoothscale(img, (new_width, new_height))
-        
-        # Calculate offset to center and ensure full coverage
-        offset_x = (target_width - new_width) // 2
-        offset_y = (target_height - new_height) // 2
-        
-        return scaled_img, (offset_x, offset_y)
 
     def handle_events(self, event):
         """
@@ -177,10 +179,8 @@ class MainMenuScreen:
             exit()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if self.buttons["Start Simulation"].collidepoint(event.pos):
-                print("Go to Simulation screen")
                 self.next_screen = "simulation"
             elif self.buttons["Change Parameters"].collidepoint(event.pos):
-                print("Go to Settings screen")
                 self.next_screen = "settings"
             elif self.help_button_rect.collidepoint(event.pos):
                 if self.help_window_process is None or not self.help_window_process.is_alive():
@@ -190,7 +190,7 @@ class MainMenuScreen:
         self.show_help = False
 
     def update(self, time_delta):
-        pass  # or update logic later if needed
+        pass
 
     def draw(self):
         # Draw background
