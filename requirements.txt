@@ -1,0 +1,32 @@
+# GreenWave Traffic Simulation - Requirements
+# This file contains all necessary Python dependencies to run the GreenWave project
+
+# Core GUI and Graphics Framework
+pygame>=2.5.0
+pygame-gui>=0.6.9
+
+# Graph Theory and Network Analysis
+networkx>=3.0
+
+# Standard Library Dependencies (included with Python)
+# These are listed for reference but don't need to be installed separately:
+# - json
+# - os
+# - sys
+# - time
+# - threading
+# - random
+# - math
+# - copy
+# - csv
+# - datetime
+# - enum
+# - collections
+# - itertools
+# - bisect
+# - typing
+# - multiprocessing
+# - tkinter (usually included with Python)
+
+# Optional: For development and testing
+# pytest>=7.0.0  # Uncomment if you want to run tests 

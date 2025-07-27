@@ -21,7 +21,7 @@
         "value": "30"
     },
     "Display algorithm": {
-        "value": "GREEN_WAVE_ENERGY"
+        "value": "GREEN_WAVE_POLLUTION"
     },
     "Compared algorithm": {
         "value": "ADAPTIVE_ALG"
