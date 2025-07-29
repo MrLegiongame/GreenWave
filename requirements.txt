@@ -8,6 +8,8 @@ pygame-gui>=0.6.9
 # Graph Theory and Network Analysis
 networkx>=3.0
 
+numpy
+
 # Standard Library Dependencies (included with Python)
 # These are listed for reference but don't need to be installed separately:
 # - json
