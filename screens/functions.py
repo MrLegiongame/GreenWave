@@ -234,7 +234,7 @@ def solve_custom_knapsack(items, must_include, capacity: int, junction):
         if index == len(items):
             # Check if solution is valid (includes required item and within capacity)
             if must_include in included and total_weight <= capacity:
-                # Update best solution if current is better
+                # Update the best solution if current is better
                 if total_reward > best_reward:
                     best_reward = total_reward
                     best_combination = list(included)

@@ -15,6 +15,25 @@ def format_algorithm_name(alg_name):
     }
     return name_mapping.get(alg_name, alg_name.replace('_', ' ').title())
 
+
+def wrap_text(text, font, max_width):
+    """Wrap text to fit within a given width when rendered with the specified font."""
+    words = text.split(' ')
+    lines = []
+    current_line = ''
+    for word in words:
+        test_line = current_line + (' ' if current_line else '') + word
+        if font.size(test_line)[0] <= max_width:
+            current_line = test_line
+        else:
+            if current_line:
+                lines.append(current_line)
+            current_line = word
+    if current_line:
+        lines.append(current_line)
+    return lines
+
+
 class StatisticsScreen:
     def __init__(self, screen, ui_manager, total_vehicles, main_simulation_time, compare_simulation_time, vehicle_stats, display_stats=None, compare_stats=None, display_alg_name=None, compare_alg_name=None):
         self.screen = screen
@@ -121,23 +140,6 @@ class StatisticsScreen:
         )
         self.save_csv_button.set_dimensions((button_width, button_height))
 
-    def wrap_text(self, text, font, max_width):
-        """Wrap text to fit within a given width when rendered with the specified font."""
-        words = text.split(' ')
-        lines = []
-        current_line = ''
-        for word in words:
-            test_line = current_line + (' ' if current_line else '') + word
-            if font.size(test_line)[0] <= max_width:
-                current_line = test_line
-            else:
-                if current_line:
-                    lines.append(current_line)
-                current_line = word
-        if current_line:
-            lines.append(current_line)
-        return lines
-
     def draw_card(self, x, y, width, height, title, content_items, surface=None):
         if surface is None:
             surface = self.screen
@@ -161,7 +163,7 @@ class StatisticsScreen:
         max_text_width = width - int(30 * self.scale_factor)
         for label, value in content_items:
             text = f"{label}: {value}" if label else f"{value}"
-            wrapped_lines = self.wrap_text(text, content_font, max_text_width)
+            wrapped_lines = wrap_text(text, content_font, max_text_width)
             for line in wrapped_lines:
                 text_surface = content_font.render(line, True, self.TEXT_COLOR)
                 text_rect = text_surface.get_rect(midleft=(x + int(15 * self.scale_factor), y_offset))
@@ -185,11 +187,7 @@ class StatisticsScreen:
             if event.ui_element == self.back_button:
                 self.next_screen = "main_menu"
             elif event.ui_element == self.save_csv_button:
-                saved_file = self.save_statistics_to_csv()
-                if saved_file:
-                    print(f"[SUCCESS] Statistics saved to: {saved_file}")
-                else:
-                    print("[ERROR] Failed to save statistics to CSV")
+                self.save_statistics_to_csv()
         elif event.type == pygame.VIDEORESIZE:
             self.handle_resize(event.w, event.h)
         elif event.type == pygame.MOUSEWHEEL:
@@ -202,7 +200,7 @@ class StatisticsScreen:
 
     def save_statistics_to_csv(self):
         """
-        Save all displayed statistics to a CSV file in the results folder.
+        Save all displayed statistics to a CSV file in the results' folder.
         The filename will be: display_alg_name + compare_alg_name + current_date_time.csv
         """
         # Create results folder if it doesn't exist
@@ -224,21 +222,21 @@ class StatisticsScreen:
         # Add algorithm names as rows
         csv_data.append(["Algorithm", self.display_alg_name])
         csv_data.append(["Algorithm", self.compare_alg_name])
-        
+
         # Add simulation overview data
         csv_data.append(["Total Vehicles", self.total_vehicles, self.total_vehicles])
         csv_data.append(["Simulation Time (seconds)", f"{self.main_simulation_time:.2f}", f"{self.compare_simulation_time:.2f}"])
-        
+
         # Add vehicle types data
         csv_data.append(["Private Cars", self.vehicle_stats["Private car amount"], self.vehicle_stats["Private car amount"]])
         csv_data.append(["Buses", self.vehicle_stats["Buses amount"], self.vehicle_stats["Buses amount"]])
         csv_data.append(["Trucks", self.vehicle_stats["Trucks amount"], self.vehicle_stats["Trucks amount"]])
-        
+
         # Add energy distribution data
         csv_data.append(["Electric (%)", self.vehicle_stats["Electric"], self.vehicle_stats["Electric"]])
         csv_data.append(["Gasoline (%)", self.vehicle_stats["Gasoline"], self.vehicle_stats["Gasoline"]])
         csv_data.append(["Gas (%)", self.vehicle_stats["Gas"], self.vehicle_stats["Gas"]])
-        
+
         # Add energy consumption data
         if self.display_stats and self.compare_stats:
             display_total_consumption = self.display_stats.get("total_energy_consumed", 0)
@@ -303,11 +301,10 @@ class StatisticsScreen:
                 writer.writerow(["Metric", "Display Algorithm", "Compare Algorithm"])
                 # Write data
                 writer.writerows(csv_data)
-            
-            print(f"[INFO] Statistics saved to: {filepath}")
+
             return filepath
-        except Exception as e:
-            print(f"[ERROR] Failed to save statistics to CSV: {e}")
+        except Exception:
+            # Failed to save statistics to CSV
             return None
 
     def draw(self):
@@ -377,8 +374,6 @@ class StatisticsScreen:
         y_row1 = int(130 * self.scale_factor) + self.card_height + self.margin
         y_row2 = y_row1 + self.card_height + self.margin
         y_row3 = y_row2 + self.card_height + self.margin
-        y_section2 = y_row2 - int(30 * self.scale_factor)  # Section title above row 2
-        y_section3 = y_row3 - int(30 * self.scale_factor)  # Section title above row 3
 
         # Draw Simulation Overview section
         self.draw_section_title(self.start_x, int(340 * self.scale_factor), "Simulation Overview", surface=scroll_surface)
@@ -440,7 +435,7 @@ class StatisticsScreen:
             # Draw Total Consumption Card
             display_total_consumption = self.display_stats.get("total_energy_consumed", 0)
             compare_total_consumption = self.compare_stats.get("total_energy_consumed", 0)
-            energy_unit = "Megajoule" #  if any("Electric" in str(v) for v in self.vehicle_stats.values()) else "L"
+            energy_unit = "Megajoule"
             consumption_items = [
                 ("Total Energy", f"{display_total_consumption:.2f} {energy_unit}"),
                 ("Total Distance", f"{self.display_stats.get('total_distance', 0):.1f} Km"),
@@ -484,12 +479,10 @@ class StatisticsScreen:
             
             # Draw Traffic Behavior Card
             display_idle_time = self.display_stats.get("total_idle_time", 0)
-            #display_accel_events = self.display_stats.get("total_acceleration_events", 0)
             display_total_distance = self.display_stats.get("total_distance", 0)
             display_total_time = self.display_stats.get("total_time", self.main_simulation_time)
             display_avg_speed = (display_total_distance / display_total_time * 3.6) if display_total_time > 0 else 0
             compare_idle_time = self.compare_stats.get("total_idle_time", 0)
-            #compare_accel_events = self.compare_stats.get("total_acceleration_events", 0)
             compare_total_distance = self.compare_stats.get("total_distance", 0)
             compare_total_time = self.compare_stats.get("total_time", self.compare_simulation_time)
             compare_avg_speed = (compare_total_distance / compare_total_time * 3.6) if compare_total_time > 0 else 0

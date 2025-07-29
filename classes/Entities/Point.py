@@ -77,7 +77,6 @@ class Point(ABC):
         Note:
             Uses the formula: sqrt((x2-x1)² + (y2-y1)²)
         """
-        # print("point.x: " + str(point.x), "self.x: " + str(self.x), "point.y:" + str(point.y), "self.y:" + str(self.y))
         return math.sqrt(float((point.x - self.x) ** 2) + float((point.y - self.y) ** 2))
 
     def set_point(self, x, y):

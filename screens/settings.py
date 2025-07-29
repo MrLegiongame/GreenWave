@@ -15,7 +15,6 @@ def get_available_maps():
     # Create maps directory if it doesn't exist
     if not os.path.exists(maps_dir):
         os.makedirs(maps_dir)
-        print(f"[DEBUG] Created maps directory: {maps_dir}")
 
     # Get all JSON files in the maps directory
     for file in os.listdir(maps_dir):
@@ -24,11 +23,6 @@ def get_available_maps():
             map_name = os.path.splitext(file)[0]
             available_maps.append(map_name)
 
-    if not available_maps:
-        print("[WARNING] No map files found in maps directory")
-
-
-    print(f"[DEBUG] Available maps: {available_maps}")
     return available_maps
 
 
@@ -119,7 +113,7 @@ class SettingsScreen:
         # Inputs
         # Remove time_input, random_checkbox, density_slider, density_label
         # Initialize dropdown with available maps
-        print(f"[DEBUG] Available maps: {self.available_maps}")
+
         self.map_dropdown = pygame_gui.elements.UIDropDownMenu(
             options_list=self.available_maps,
             starting_option=self.available_maps[0] if self.available_maps else "",
@@ -188,7 +182,6 @@ class SettingsScreen:
                 self.upload_json()
             elif event.ui_element == self.save_button:
                 self.save_to_json()
-                print("[DEBUG] Settings saved!")
             elif event.ui_element == self.cancel_button:
                 self.next_screen = "main_menu"
 
@@ -246,9 +239,7 @@ class SettingsScreen:
 
     def save_to_json(self):
         if self.loaded_from_file:
-            print("[DEBUG] Settings already loaded from file.")
             return  # Do not overwrite manually loaded settings
-        print("[DEBUG] Saving settings...")
         
         # Get the selected map and ensure it's a single value
         selected_map = self.map_dropdown.selected_option
@@ -257,7 +248,6 @@ class SettingsScreen:
             selected_map = selected_map[0]  # Take first value from tuple
         elif isinstance(selected_map, list):
             selected_map = selected_map[0] if selected_map else ""
-        print(f"[DEBUG] Saving map: {selected_map}")
         
         # Get selected algorithms
         selected_display_alg = self.display_alg_dropdown.selected_option
@@ -267,13 +257,11 @@ class SettingsScreen:
             selected_display_alg = selected_display_alg[0]
         elif isinstance(selected_display_alg, list):
             selected_display_alg = selected_display_alg[0] if selected_display_alg else ""
-        print(f"[DEBUG] Saving display algorithm: {selected_display_alg}")
         # Handle different types of selected_compared_alg
         if isinstance(selected_compared_alg, tuple):
             selected_compared_alg = selected_compared_alg[0]
         elif isinstance(selected_compared_alg, list):
             selected_compared_alg = selected_compared_alg[0] if selected_compared_alg else ""
-        print(f"[DEBUG] Saving compared algorithm: {selected_compared_alg}")
         
         data = {
             "Map for simulation": {"value": selected_map},
@@ -289,16 +277,12 @@ class SettingsScreen:
         # Clear the file by opening in 'w' mode and then write new data
         with open("settings.json", "w") as f:
             json.dump(data, f, indent=4)
-        print("[DEBUG] Settings saved successfully!")
 
     def load_from_json(self, file_path):
         try:
             with open(file_path, 'r') as f:
                 data = json.load(f)
-                # Remove time_input reference
-                select_map = None
-                display_alg = None
-                compared_alg = None
+
                 # Get the map value from JSON and ensure it's a string
                 map_value = data.get("Map for simulation", {}).get("value", "")
                 # Handle case where map_value might be a list
@@ -310,9 +294,9 @@ class SettingsScreen:
                     select_map = map_value
                 elif self.available_maps:  # If map not found but we have other maps
                     select_map = self.available_maps[0]
-                    print(f"[WARNING] Map {map_value} not found, using {self.available_maps[0]} instead")
                 else:
-                    print("[WARNING] No maps available")
+                    # No maps available
+                    select_map = None
                 
                 self.car_input.set_text(data.get("Private car amount", {}).get("value", ""))
                 self.bus_input.set_text(data.get("Buses amount", {}).get("value", ""))
@@ -327,14 +311,10 @@ class SettingsScreen:
                     display_alg = display_alg_value
                 else:
                     display_alg = self.available_algorithms[1]
-                    print(f"[WARNING] Display algorithm {display_alg_value} not found, using {self.available_algorithms[0]} instead")
                 if compared_alg_value in self.available_algorithms:
                     compared_alg = compared_alg_value
                 else:
                     compared_alg = self.available_algorithms[0]
-                    print(f"[WARNING] Compared algorithm {compared_alg_value} not found, using {self.available_algorithms[0]} instead")
-
-                print(f"[DEBUG] Loaded settings from {file_path}")
 
                 self.map_dropdown = pygame_gui.elements.UIDropDownMenu(
                     options_list=self.available_maps,
@@ -359,5 +339,6 @@ class SettingsScreen:
                     manager=self.ui_manager,
                     object_id='#compared_alg_dropdown'
                 )
-        except Exception as e:
-            print(f"[ERROR] Failed to load JSON: {e}")
+        except Exception:
+            # Failed to load JSON
+            pass

@@ -36,9 +36,91 @@ def get_map_from_settings():
             if isinstance(map_name, (tuple, list)):
                 map_name = map_name[0]
             return map_name
-    except Exception as e:
-        print(f"[ERROR] Failed to read settings.json: {e}")
+    except Exception:
+        # Failed to read settings.json
         return "map1"  # Default to map1 if there's an error
+
+
+def is_cursor_in_circle(center_point, radius):
+    mouse_pos = pygame.mouse.get_pos()
+    dx = mouse_pos[0] - center_point.x
+    dy = mouse_pos[1] - center_point.y
+    return (dx ** 2 + dy ** 2) <= radius ** 2
+
+
+def draw_arrow(surface, color, start, end, width=2, head_size=5):
+    # Draw the shaft
+    pygame.draw.line(surface, color, start, end, width)
+
+    # Calculate direction of the arrow
+    dx = end[0] - start[0]
+    dy = end[1] - start[1]
+    angle = math.atan2(dy, dx)
+
+    # Compute coordinates for arrowhead
+    x, y = end
+    left = (x - head_size * math.cos(angle - math.pi / 6),
+            y - head_size * math.sin(angle - math.pi / 6))
+    right = (x - head_size * math.cos(angle + math.pi / 6),
+             y - head_size * math.sin(angle + math.pi / 6))
+
+    # Draw the arrowhead as a filled triangle
+    pygame.draw.polygon(surface, color, [end, left, right])
+
+
+def collect_consumption_statistics(graph):
+    """
+    Collect consumption and pollution statistics from all vehicles in the given graph
+    """
+    total_energy_consumed = 0
+    total_pollution = 0
+    total_distance = 0
+    total_stops = 0
+    total_acceleration_events = 0
+    total_idle_time = 0
+
+    # Energy type breakdown
+    energy_consumption_by_energy_type = {"Electric": 0, "Gasoline": 0, "Gas": 0}
+    vehicles_pollution_by_energy_type = {"Electric": 0, "Gasoline": 0, "Gas": 0}
+
+    # Vehicle type breakdown
+    energy_consumption_by_vehicle_type = {"Car": 0, "Bus": 0, "Truck": 0}
+    vehicles_pollution_by_vehicle_type = {"Car": 0, "Bus": 0, "Truck": 0}
+
+    for vehicle in graph.vehicles:
+        # Get consumption summary for this vehicle
+        summary = vehicle.get_consumption_summary()
+
+        # Add to totals
+        total_energy_consumed += summary["total_energy_consumed"]
+        total_pollution += summary["total_pollution"]
+        total_distance += summary["total_distance"]
+        total_stops += summary["stops_count"]
+        total_acceleration_events += summary["acceleration_events"]
+        total_idle_time += summary["idle_time"]
+
+        # Add to energy type breakdown
+        energy_consumption_by_energy_type[vehicle.energy_type] += summary["total_energy_consumed"]
+        vehicles_pollution_by_energy_type[vehicle.energy_type] += summary["total_pollution"]
+
+        # Add to vehicle type breakdown
+        energy_consumption_by_vehicle_type[vehicle.vehicle_type] += summary["total_energy_consumed"]
+        vehicles_pollution_by_vehicle_type[vehicle.vehicle_type] += summary["total_pollution"]
+
+    return {
+        "total_energy_consumed": total_energy_consumed,
+        "total_pollution": total_pollution,
+        "total_distance": total_distance,
+        "total_stops": total_stops,
+        "total_acceleration_events": total_acceleration_events,
+        "total_idle_time": total_idle_time,
+        "energy_consumption": energy_consumption_by_energy_type,
+        "energy_pollution": vehicles_pollution_by_energy_type,
+        "vehicle_consumption": energy_consumption_by_vehicle_type,
+        "vehicle_pollution": vehicles_pollution_by_vehicle_type,
+        "average_energy_efficiency": total_energy_consumed / total_distance if total_distance > 0 else 0,
+        "average_pollution_efficiency": total_pollution / total_distance if total_distance > 0 else 0
+    }
 
 
 class SimulationScreen:
@@ -72,7 +154,9 @@ class SimulationScreen:
         self.show_loading_screen = False
         self.loading_angle = 0  # For spinner animation
         self.loading_screen_started = False
-        # self.loading_thread = None  # No longer needed
+        self._printed_vehicles_on_map = None
+        self.display_stats = None
+        self.compare_stats = None
 
         root = tk.Tk()
         root.withdraw()
@@ -110,7 +194,6 @@ class SimulationScreen:
         # Get map name from settings and load the corresponding map file
         map_name = get_map_from_settings()
         map_path = os.path.join("maps", f"{map_name}.json")
-        print(f"[DEBUG] Loading map from: {map_path}")
         json_data = json.load(open(map_path, "r"))
         self.set_graph(json_data, 0.01)
 
@@ -119,43 +202,22 @@ class SimulationScreen:
 
     def handle_events(self, event):
         if event.type == pygame.QUIT:
-            print("[EVENT] Quit event received.")
             self.running = False
             pygame.quit()
             sys.exit()
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mouse_pos = pygame.mouse.get_pos()
-            print(f"[DEBUG] Mouse clicked at {mouse_pos}")
-            if self.is_cursor_in_circle(self.BUTTON_CENTER, self.BUTTON_RADIUS):
-                print(f"[DEBUG] Pause button clicked. is_stopped was: {self.is_stopped}")
+            if is_cursor_in_circle(self.BUTTON_CENTER, self.BUTTON_RADIUS):
                 self.is_stopped = not self.is_stopped
-                print(f"[DEBUG] is_stopped is now: {self.is_stopped}")
             else:
                 for junction in self.graph.nodes:
-                    if self.is_cursor_in_circle(junction.point, 6):
+                    if is_cursor_in_circle(junction.point, 6):
                         self.current_junction = junction
-                        print(f"[EVENT] Junction selected at {junction.point}")
-                        
-                        # Print sorted vehicle information for this junction
-                        current_time = self.simulation_time
-                        from_seconds = max(0, current_time - 30)
-                        to_seconds = current_time + 30
-                        sorted_vehicles = self.get_sorted_vehicles_for_junction(junction, from_seconds, to_seconds)
-                        
-                        print(f"\n=== Junction {junction.junction_index} - Sorted Vehicles (Time window: {from_seconds:.1f}s - {to_seconds:.1f}s) ===")
-                        if sorted_vehicles:
-                            for i, vehicle in enumerate(sorted_vehicles):
-                                arrival_time = vehicle.get_time_to_next_junction_in_sec() if hasattr(vehicle, 'get_time_to_next_junction_in_sec') else "N/A"
-                                print(f"{i+1}. Vehicle {vehicle.vehicle_id} - Arrival: {arrival_time}s")
-                        else:
-                            print("No vehicles approaching this junction in the time window")
-                        print("=" * 60)
-                        
                         return
+
                 for vehicle in self.graph.vehicles:
                     if vehicle.cur_point:
                         x, y = int(vehicle.cur_point.x), int(vehicle.cur_point.y)
-                        print(f"[DRAW] Vehicle at ({x}, {y})")
+
                         # Draw vehicle as a red dot
                         pygame.draw.circle(
                             self.screen,
@@ -163,12 +225,6 @@ class SimulationScreen:
                             (x, y),
                             5
                         )
-                    else:
-                        print("[DRAW] Vehicle has no cur_point!")
-                    # if self.is_cursor_in_circle(vehicle.cur_point, 5):
-                    #     self.sim.set_current_vehicle(vehicle)
-                    #     print(f"[EVENT] Vehicle selected at {vehicle.cur_point}")
-                    #     return
 
     def loading_screen(self):
         # Use the simulation screen area for the loading overlay
@@ -187,7 +243,6 @@ class SimulationScreen:
             # Draw a large background over the simulation area
             pygame.draw.rect(self.screen, Color.LIGHT_GREY.value, rect)
             pygame.display.flip()
-            print("background printed")  # TODO: delete later - for test purposes only
 
             # draw spinner centered in the simulation screen
             for i in range(num_dots):
@@ -198,16 +253,9 @@ class SimulationScreen:
                 pygame.draw.circle(self.screen, (shade, shade, shade), (x, y), 5)
                 pygame.display.flip()
 
-            print("spinner printed")  # TODO: delete later - for test purposes only
             angle += speed
             pygame.display.flip()
             time.sleep(0.05)  # Add a small sleep to avoid 100% CPU
-
-    def is_cursor_in_circle(self, center_point, radius):
-        mouse_pos = pygame.mouse.get_pos()
-        dx = mouse_pos[0] - center_point.x
-        dy = mouse_pos[1] - center_point.y
-        return (dx ** 2 + dy ** 2) <= radius ** 2
 
     def update(self, delta_time):
         self.dt = delta_time
@@ -234,7 +282,6 @@ class SimulationScreen:
             all_arrived_compare = True
             arrived_count_compare = 0
             if not self.algorithm_to_compare.terminate_flag:
-                total_count_compare = len(self.graph_for_algorithm_to_compare.vehicles)
                 # Move all vehicles in comparison simulation
                 for vehicle in self.graph_for_algorithm_to_compare.vehicles:
                     vehicle.move(delta_time)
@@ -243,7 +290,6 @@ class SimulationScreen:
                     else:
                         arrived_count_compare += 1
 
-            # Print vehicles on map after 50% have arrived (main sim)
             if not hasattr(self, '_printed_vehicles_on_map'):
                 self._printed_vehicles_on_map = False
             if not self._printed_vehicles_on_map and arrived_count_main >= total_count_main // 2:
@@ -253,7 +299,6 @@ class SimulationScreen:
             # --- Stop main algorithm if done ---
             if all_arrived_main and not self.algorithm.terminate_flag:
                 self.algorithm.terminate_flag = True
-                print(f"[DEBUG] Main algorithm time {self.main_simulation_time}")
                 self.algorithm_thread.join()
                 self.all_vehicles_arrived_main = True
                 # Start loading screen thread if not already started
@@ -264,7 +309,6 @@ class SimulationScreen:
             # --- Stop compare algorithm if done ---
             if all_arrived_compare and not self.algorithm_to_compare.terminate_flag:
                 self.algorithm_to_compare.terminate_flag = True
-                print(f"[DEBUG] Compare algorithm time {self.compare_simulation_time}")
                 self.algorithm_to_compare_thread.join()
                 self.all_vehicles_arrived_compare = True
 
@@ -276,8 +320,8 @@ class SimulationScreen:
             ):
                 self.show_loading_screen = False
                 # Collect stats
-                self.display_stats = self.collect_consumption_statistics(self.graph)
-                self.compare_stats = self.collect_consumption_statistics(self.graph_for_algorithm_to_compare)
+                self.display_stats = collect_consumption_statistics(self.graph)
+                self.compare_stats = collect_consumption_statistics(self.graph_for_algorithm_to_compare)
 
                 # Transition to statistics screen
                 from screens.statistics import StatisticsScreen
@@ -300,7 +344,6 @@ class SimulationScreen:
             self.draw_loading_spinner()
             return
 
-        #print("[DRAW] Redrawing screen...")
         self.screen.fill(Color.WHITE.value)
 
         pygame.draw.rect(self.screen, Color.VERY_DARK_GREY.value, self.SIMULATION_SCREEN)
@@ -312,8 +355,8 @@ class SimulationScreen:
         pygame.draw.line(self.screen, Color.LIGHT_GREY.value, (self.MAIN_WIDTH, 0), (self.MAIN_WIDTH, self.WINDOW_HEIGHT), self.DIVIDER_WIDTH)
         pygame.draw.line(self.screen, Color.LIGHT_GREY.value, (self.MAIN_WIDTH, self.SIDE_HEIGHT), (self.WINDOW_WIDTH, self.SIDE_HEIGHT), self.DIVIDER_WIDTH)
 
-        current_button_color = Color.DARK_RED if self.is_cursor_in_circle(self.BUTTON_CENTER, self.BUTTON_RADIUS) else Color.RED
-        text_color = Color.GREY if self.is_cursor_in_circle(self.BUTTON_CENTER, self.BUTTON_RADIUS) else Color.WHITE
+        current_button_color = Color.DARK_RED if is_cursor_in_circle(self.BUTTON_CENTER, self.BUTTON_RADIUS) else Color.RED
+        text_color = Color.GREY if is_cursor_in_circle(self.BUTTON_CENTER, self.BUTTON_RADIUS) else Color.WHITE
 
         pygame.draw.circle(self.screen, current_button_color.value, (self.BUTTON_CENTER.x, self.BUTTON_CENTER.y), self.BUTTON_RADIUS)
         font = pygame.font.SysFont("Arial", 30)
@@ -342,13 +385,7 @@ class SimulationScreen:
             return
 
         center = (self.WINDOW_WIDTH - (self.SIDE_WIDTH // 2), self.SIDE_HEIGHT // 2)
-        num_sides = self.current_junction.size
-        #lanes_per_direction = [len(direction.in_lanes) + len(direction.out_lanes) for direction in self.current_junction.directions]
-        #print("Lanes per direction:" , lanes_per_direction)
         self.draw_regular_polygon(self.screen, center, 90, self.current_junction, self.current_junction.directions)
-        
-        # Draw vehicle information for the selected junction
-        # self.draw_junction_vehicle_info() # FOR DEBUG
 
     def draw_junction_vehicle_info(self):
         """Draw vehicle information for the selected junction including sorted vehicle list."""
@@ -414,13 +451,12 @@ class SimulationScreen:
             sorted_vehicles = sorted(junction_vehicles, 
                                    key=lambda obj: getattr(obj, "is_away_from_next_junction_by_between_start_and_end_seconds")(from_seconds, to_seconds))
             return sorted_vehicles
-        except Exception as e:
-            print(f"Error sorting vehicles for junction {junction.junction_index}: {e}")
+        except Exception:
+            # Error sorting vehicles for junction #{junction.junction_index}
             return junction_vehicles
 
     def draw_vehicle(self):
         if not self.graph or not self.graph.vehicles:
-            print("[DRAW] No vehicle data to display.")
             return
         
         font = pygame.font.SysFont("Arial", 18)
@@ -457,8 +493,6 @@ class SimulationScreen:
 
             if v_type in stats and energy in stats[v_type]:
                 stats[v_type][energy] += 1
-            else:
-                print(f"[WARNING] Unexpected vehicle type or energy: {v_type}, {energy}")
 
             total_vehicles += 1
             if hasattr(v, "has_arrived") and v.has_arrived():
@@ -480,25 +514,6 @@ class SimulationScreen:
         counter_surface = counter_font.render(counter_text, True, Color.WHITE.value)
         self.screen.blit(counter_surface, (x_start, y + 10))
 
-    def draw_arrow(self, surface, color, start, end, width=2, head_size=5):
-        # Draw the shaft
-        pygame.draw.line(surface, color, start, end, width)
-
-        # Calculate direction of the arrow
-        dx = end[0] - start[0]
-        dy = end[1] - start[1]
-        angle = math.atan2(dy, dx)
-
-        # Compute coordinates for arrowhead
-        x, y = end
-        left = (x - head_size * math.cos(angle - math.pi / 6),
-                y - head_size * math.sin(angle - math.pi / 6))
-        right = (x - head_size * math.cos(angle + math.pi / 6),
-                 y - head_size * math.sin(angle + math.pi / 6))
-
-        # Draw the arrowhead as a filled triangle
-        pygame.draw.polygon(surface, color, [end, left, right])
-
     def draw_regular_polygon(self, surface, center, radius, current_junction, directions, width=0, lane_spacing=10,
                              lane_length=100):
         num_sides = current_junction.size
@@ -518,61 +533,33 @@ class SimulationScreen:
 
         # Find nearby vehicles
         nearby_vehicles = []
-        #print(f"\n[DEBUG] Checking vehicles for junction {current_junction.junction_index}")
-        #print(f"[DEBUG] Junction center: ({center[0]}, {center[1]})")
-        #print(f"[DEBUG] Total vehicles in graph: {len(self.graph.vehicles)}")
 
         for vehicle in self.graph.vehicles:
-            #if vehicle.is_next_lane_the_final_lane(): #DEBUG
-           #     continue
-            #print(f"\n[DEBUG] Checking vehicle {id(vehicle)}")
             if hasattr(vehicle, 'cur_point'):
                 vehicle_x = vehicle.cur_point.x
                 vehicle_y = vehicle.cur_point.y
-                #print(f"[DEBUG] Vehicle position: ({vehicle_x}, {vehicle_y})")
 
                 dx_to_center = vehicle_x - center[0]
                 dy_to_center = vehicle_y - center[1]
                 distance_to_center = math.sqrt(dx_to_center * dx_to_center + dy_to_center * dy_to_center)
-                #print(f"[DEBUG] Distance to center: {distance_to_center}")
 
                 # Check if vehicle is near this junction - increased threshold to 1000
                 if distance_to_center < 1000:  # Increased from 500 to 1000
-                    #print("[DEBUG] Vehicle is within range")
                     if hasattr(vehicle, 'cur_road_lane') and vehicle.get_source_junction():
-                        #print(f"[DEBUG] Vehicle has road lane: {vehicle.cur_road_lane}")
                         # Get the junction this vehicle is currently in
-                        current_vehicle_junction = None
-                        next_vehicle_junction = None
 
                         # Get current junction from source lane
                         current_vehicle_junction = vehicle.get_source_junction()
-                        #print(f"[DEBUG] Vehicle source lane junction: {current_vehicle_junction.junction_index if current_vehicle_junction else 'None'}")
 
                         # Get next junction from destination lane
                         next_vehicle_junction = vehicle.get_destination_junction()
-                        #print(f"[DEBUG] Vehicle destination lane junction: {next_vehicle_junction.junction_index if next_vehicle_junction else 'None'}")
 
-                        
-                        #print(f"[DEBUG] Vehicle junctions: {current_vehicle_junction.junction_index}, {next_vehicle_junction.junction_index if next_vehicle_junction else 'None'}")
-                        #print(f"[DEBUG] Current junction being drawn: {current_junction.junction_index}")
-                        
                         # Check if vehicle is near this junction
                         is_near_current = current_vehicle_junction and current_vehicle_junction.junction_index == current_junction.junction_index
                         is_near_next = next_vehicle_junction and next_vehicle_junction.junction_index == current_junction.junction_index
-                       # print(f"[DEBUG] Is near current junction: {is_near_current}, Is near next junction: {is_near_next}")
                         
                         if is_near_current or is_near_next:
                             nearby_vehicles.append((vehicle, distance_to_center))
-                            # print(f"[DEBUG] Added vehicle to nearby_vehicles list")
-                    else:
-                        print("[DEBUG] Vehicle has no road lane")
-                else:
-                    print("[DEBUG] Vehicle is too far from junction")
-            else:
-                print("[DEBUG] Vehicle has no cur_point")
-
-        # print(f"\n[DEBUG] Found {len(nearby_vehicles)} nearby vehicles")
 
         # Draw lanes and vehicles
         for i in range(min(num_sides, len(directions))):  # Ensure we don't exceed the number of directions
@@ -593,7 +580,7 @@ class SimulationScreen:
                 end_y = p1[1] + dir_y * offset
                 start_x = end_x + ortho_x * lane_length  # Start away from junction
                 start_y = end_y + ortho_y * lane_length
-                self.draw_arrow(surface, lane.get_lane_color().value, (start_x, start_y), (end_x, end_y))
+                draw_arrow(surface, lane.get_lane_color().value, (start_x, start_y), (end_x, end_y))
 
                 # Draw vehicles on this lane
                 for vehicle, distance in nearby_vehicles:
@@ -601,42 +588,30 @@ class SimulationScreen:
                         continue  # Skip drawing if vehicle reached destination
                     if hasattr(vehicle, 'cur_road_lane') and vehicle.get_cur_lane():
                         # For IN lanes, check if this is the destination lane
-                        # print(f"[DEBUG] Checked lane: {lane} for vehicle: {vehicle.get_cur_lane()}")
                         if vehicle.get_next_lane() == lane:
                             # Calculate progress based on time
                             if hasattr(vehicle, 'velocity') and vehicle.velocity is not None:
-                                # Get the road properties
-                                # road = vehicle.get_cur_lane().parent_road
-
                                 # Get source and destination nodes from the current road lane
                                 from_node = vehicle.get_source_junction().point
                                 to_node = vehicle.get_destination_junction().point
-                                # road_length = road.length
-                                pixel_length = from_node.get_distance_from_point(to_node)
 
                                 # Calculate current distance from start of road
                                 current_distance = vehicle.cur_point.get_distance_from_point(from_node)
                                 total_distance = from_node.get_distance_from_point(to_node)
                                 progress = current_distance / total_distance if total_distance > 0 else 0
 
-                                # Check traffic light state for this lane
-                                light_state = getattr(lane, 'cur_state', None)
-                                should_wait = light_state not in [State.GREEN, State.GREEN_FLICKERING]
-
-                                # Only draw if progress is less than 0.95 or light is green
-                                if progress < 0.95 and progress != 0:
+                                # Only draw if progress is less than 0.99 or light is green
+                                if progress < 0.99 and progress != 0:
                                     lane_x = start_x + (end_x - start_x) * progress
                                     lane_y = start_y + (end_y - start_y) * progress
                                     pygame.draw.circle(surface, Color.RED.value, (int(lane_x), int(lane_y)), 3)
-                                elif (progress >= 0.95 or progress == 0) and (
+                                elif (progress >= 0.99 or progress == 0) and (
                                         lane.get_lane_color() == Color.YELLOW or lane.get_lane_color() == Color.RED or lane.get_lane_color() == Color.ORANGE):
-                                    print(f"[DEBUG] Progress is {progress} with color {lane.get_lane_color()}")
                                     vehicle.need_to_stop = True
-                                    lane_x = start_x + (end_x - start_x) * 0.95
-                                    lane_y = start_y + (end_y - start_y) * 0.95
+                                    lane_x = start_x + (end_x - start_x) * 0.99
+                                    lane_y = start_y + (end_y - start_y) * 0.99
                                     pygame.draw.circle(surface, Color.SKY_BLUE.value, (int(lane_x), int(lane_y)), 3)
                                 else:
-                                    print(f"[DEBUG] need_to_stop Flase with color {lane.get_lane_color()}")
                                     vehicle.need_to_stop = False
             # Draw OUT lanes
             for lane_index, lane in enumerate(direction.out_lanes):
@@ -645,7 +620,7 @@ class SimulationScreen:
                 start_y = p1[1] + dir_y * offset
                 end_x = start_x + ortho_x * lane_length  # End away from junction
                 end_y = start_y + ortho_y * lane_length
-                self.draw_arrow(surface, lane.get_lane_color().value, (start_x, start_y), (end_x, end_y))
+                draw_arrow(surface, lane.get_lane_color().value, (start_x, start_y), (end_x, end_y))
 
                 # Draw vehicles on this lane
                 for vehicle, distance in nearby_vehicles:
@@ -656,29 +631,24 @@ class SimulationScreen:
                         if vehicle.get_cur_lane() == lane:
                             # Calculate progress based on time
                             if hasattr(vehicle, 'velocity') and vehicle.velocity is not None:
-                                # Get the road properties
-                                #road = vehicle.get_cur_lane().parent_road
                                 
                                 # Get source and destination nodes from the current road lane
                                 from_node = vehicle.get_source_junction().point
                                 to_node = vehicle.get_destination_junction().point
-                                #road_length = road.length
-                                pixel_length = from_node.get_distance_from_point(to_node)
-                                
+
                                 # Calculate current distance from start of road
                                 current_distance = vehicle.cur_point.get_distance_from_point(from_node)
                                 total_distance = from_node.get_distance_from_point(to_node)
                                 progress = current_distance / total_distance if total_distance > 0 else 0
 
-                                # Only draw if progress is less than 0.95 or light is green
-                                if progress < 0.95:
+                                # Only draw if progress is less than 0.99 or light is green
+                                if progress < 0.99:
                                     lane_x = start_x + (end_x - start_x) * progress
                                     lane_y = start_y + (end_y - start_y) * progress
                                     pygame.draw.circle(surface, Color.RED.value, (int(lane_x), int(lane_y)), 3)
-                                elif progress >= 0.95 and (lane.get_lane_color() == Color.YELLOW or lane.get_lane_color() == Color.RED or lane.get_lane_color() == Color.ORANGE):
-                                    print(f"[DEBUG] Progress is {progress} with color {lane.get_lane_color()}")
-                                    lane_x = start_x + (end_x - start_x) * 0.95
-                                    lane_y = start_y + (end_y - start_y) * 0.95
+                                elif progress >= 0.99 and (lane.get_lane_color() == Color.YELLOW or lane.get_lane_color() == Color.RED or lane.get_lane_color() == Color.ORANGE):
+                                    lane_x = start_x + (end_x - start_x) * 0.99
+                                    lane_y = start_y + (end_y - start_y) * 0.99
                                     pygame.draw.circle(surface, Color.SKY_BLUE.value, (int(lane_x), int(lane_y)), 3)
 
     def set_graph(self, json_data, dt):
@@ -812,7 +782,7 @@ class SimulationScreen:
 
     def force_directed_layout(self, nodes, edges):
         # Create NetworkX graph for layout calculation
-        G = nx.Graph()
+        graph = nx.Graph()
         node_id_map = {node: idx for idx, node in enumerate(nodes)}
         id_node_map = {idx: node for node, idx in node_id_map.items()}
         
@@ -820,10 +790,10 @@ class SimulationScreen:
         for edge in edges:
             src, dst = edge.first_direction.parent_junction, edge.second_direction.parent_junction
             if src != dst:
-                G.add_edge(node_id_map[src], node_id_map[dst])
+                graph.add_edge(node_id_map[src], node_id_map[dst])
         
         # Calculate spring layout positions using NetworkX
-        pos = nx.spring_layout(G, seed=42)
+        pos = nx.spring_layout(graph, seed=42)
         padding = 50
         area_width = self.SIMULATION_SCREEN.width - 2 * padding
         area_height = self.SIMULATION_SCREEN.height - 2 * padding
@@ -844,11 +814,11 @@ class SimulationScreen:
                 self.vehicle_stats["Electric"] = int(data.get("Electric", {}).get("value", 0))
                 self.vehicle_stats["Gasoline"] = int(data.get("Gasoline", {}).get("value", 0))
                 self.vehicle_stats["Gas"] = int(data.get("Gas", {}).get("value", 0))
-                print(f"[DEBUG] Vehicle data loaded from {file_path}")
-        except Exception as e:
-            print(f"[ERROR] Failed to load vehicle data from JSON: {e}")
+        except Exception:
+            # Failed to load vehicle data from JSON
+            pass
 
-    def get_dominant_energy_type(self, vehicle_kind):
+    def get_dominant_energy_type(self):
         # Just an example heuristic: you can adjust this logic
         # Assign energy types based on percentages or even split rules
         electric = self.vehicle_stats.get("Electric", 0)
@@ -858,60 +828,6 @@ class SimulationScreen:
         energies = {"Electric": electric, "Gasoline": gasoline, "Gas": gas}
         dominant = max(energies.items(), key=lambda x: x[1])[0]
         return dominant
-
-    def collect_consumption_statistics(self, graph):
-        """
-        Collect consumption and pollution statistics from all vehicles in the given graph
-        """
-        total_energy_consumed = 0
-        total_pollution = 0
-        total_distance = 0
-        total_stops = 0
-        total_acceleration_events = 0
-        total_idle_time = 0
-        
-        # Energy type breakdown
-        energy_consumption_by_energy_type = {"Electric": 0, "Gasoline": 0, "Gas": 0}
-        vehicles_pollution_by_energy_type = {"Electric": 0, "Gasoline": 0, "Gas": 0}
-        
-        # Vehicle type breakdown
-        energy_consumption_by_vehicle_type = {"Car": 0, "Bus": 0, "Truck": 0}
-        vehicles_pollution_by_vehicle_type = {"Car": 0, "Bus": 0, "Truck": 0}
-        
-        for vehicle in graph.vehicles:
-            # Get consumption summary for this vehicle
-            summary = vehicle.get_consumption_summary()
-            
-            # Add to totals
-            total_energy_consumed += summary["total_energy_consumed"]
-            total_pollution += summary["total_pollution"]
-            total_distance += summary["total_distance"]
-            total_stops += summary["stops_count"]
-            total_acceleration_events += summary["acceleration_events"]
-            total_idle_time += summary["idle_time"]
-            
-            # Add to energy type breakdown
-            energy_consumption_by_energy_type[vehicle.energy_type] += summary["total_energy_consumed"]
-            vehicles_pollution_by_energy_type[vehicle.energy_type] += summary["total_pollution"]
-            
-            # Add to vehicle type breakdown
-            energy_consumption_by_vehicle_type[vehicle.vehicle_type] += summary["total_energy_consumed"]
-            vehicles_pollution_by_vehicle_type[vehicle.vehicle_type] += summary["total_pollution"]
-        
-        return {
-            "total_energy_consumed": total_energy_consumed,
-            "total_pollution": total_pollution,
-            "total_distance": total_distance,
-            "total_stops": total_stops,
-            "total_acceleration_events": total_acceleration_events,
-            "total_idle_time": total_idle_time,
-            "energy_consumption": energy_consumption_by_energy_type,
-            "energy_pollution": vehicles_pollution_by_energy_type,
-            "vehicle_consumption": energy_consumption_by_vehicle_type,
-            "vehicle_pollution": vehicles_pollution_by_vehicle_type,
-            "average_energy_efficiency": total_energy_consumed / total_distance if total_distance > 0 else 0,
-            "average_pollution_efficiency": total_pollution / total_distance if total_distance > 0 else 0
-        }
 
     def draw_loading_spinner(self):
         rect = self.SIMULATION_SCREEN

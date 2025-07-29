@@ -92,8 +92,9 @@ class RoadLane:
             self.destination_lane = destination_lane
             self.destination_lane.road_lane = self
             self.length = length
-        except TypeError as e:
-            print(f"RoadLane couldn't be created due to this error: {e}")
+        except Exception:
+            # RoadLane couldn't be created
+            pass
 
     def get_list_of_vehicles_which_are_left_with_more_than_one_junction_sorted_by_arrival_time_from_and_to_seconds(self, from_seconds, to_seconds):
         """
@@ -130,15 +131,6 @@ class RoadLane:
             This method filters vehicles based on their distance from the next junction
             and sorts them by arrival time. The commented code shows the original implementation
             that was replaced with a more efficient lambda-based sorting approach.
-        """
-        """
-        res = []
-        for vehicle in self.vehicles:
-            if vehicle.is_away_from_next_junction_by_between_start_and_end_seconds(from_seconds, to_seconds):
-                res.append(vehicle)
-        if not res:
-            return res
-        return res.sort()
         """
         return sorted(self.vehicles, key=lambda obj: getattr(obj, "is_away_from_next_junction_by_between_start_and_end_seconds")(from_seconds, to_seconds))
 

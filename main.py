@@ -91,9 +91,6 @@ def main():
     theme_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "theme.json"))
     ui_manager = pygame_gui.UIManager((1100, 600), theme_path=theme_path)
 
-    print("Theme path:", theme_path)
-    print("Theme loaded:", os.path.exists(theme_path))
-
     current_screen = MainMenuScreen(screen)
     clock = pygame.time.Clock()
     running = True
@@ -146,8 +143,9 @@ def main():
                         compare_alg_str = settings.get("Compared algorithm", {}).get("value", "FIXED_TIMING_CYCLE")
                         display_alg = Alg[display_alg_str] if display_alg_str in Alg.__members__ else Alg.ADAPTIVE_ALG
                         compare_alg = Alg[compare_alg_str] if compare_alg_str in Alg.__members__ else Alg.FIXED_TIMING_CYCLE
-                except Exception as e:
-                    print(f"[ERROR] Failed to read algorithms from settings.json: {e}")
+                except Exception:
+                    # Failed to read algorithms from settings.json
+                    pass
 
                 # Create the simulation screen
                 current_screen = SimulationScreen(screen, ui_manager, display_alg, compare_alg)

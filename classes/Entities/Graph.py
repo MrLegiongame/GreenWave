@@ -81,7 +81,7 @@ class Graph:
         self.vehicles = None
         self.dt = dt
         self.vehicles_size = None
-        self.graph = None  # used for path finding logic
+        self.graph_for_path_finding = None  # used for path finding logic
         if True:
             self.nodes = nodes
             self.nodes_size = len(nodes)
@@ -163,7 +163,7 @@ class Graph:
         import networkx as nx
 
         # Create a directed graph
-        G = nx.DiGraph()
+        graph = nx.DiGraph()
 
         # Add edges (automatically adds nodes too)
         for junction in self.nodes:
@@ -172,10 +172,8 @@ class Graph:
                     in_lane_name = "InLane" + str(in_lane.index_in_map)
                     for to_lane in in_lane.to_lanes:
                         out_lane_name = "OutLane" + str(to_lane.index_in_map)
-                        G.add_edge(in_lane_name, out_lane_name, weight=0)
-                       # print(f"  Added edge: {in_lane_name} -> {out_lane_name} (weight=0)")
+                        graph.add_edge(in_lane_name, out_lane_name, weight=0)
 
-       # print("\n[DEBUG] Adding road connections:")
         for road in self.edges:
             length = road.length
 
@@ -183,71 +181,16 @@ class Graph:
                 for in_lane in road.second_direction.in_lanes:
                     out_lane_name = "OutLane" + str(out_lane.index_in_map)
                     in_lane_name = "InLane" + str(in_lane.index_in_map)
-                    G.add_edge(out_lane_name, in_lane_name, weight=length)
+                    graph.add_edge(out_lane_name, in_lane_name, weight=length)
 
             for out_lane in road.second_direction.out_lanes:
                 for in_lane in road.first_direction.in_lanes:
                     out_lane_name = "OutLane" + str(out_lane.index_in_map)
                     in_lane_name = "InLane" + str(in_lane.index_in_map)
-                    G.add_edge(out_lane_name, in_lane_name, weight=length)
+                    graph.add_edge(out_lane_name, in_lane_name, weight=length)
 
-            """
-            # print(f"\nRoad {road.name} (length={length}):")
-            
-            # Get the direction indices from the road
-            dir1_idx = road.first_direction.index_in_map
-            dir2_idx = road.second_direction.index_in_map
-            
-            # Find the OUT lane from first direction and IN lane from second direction
-            out_lane = None
-            in_lane = None
-            for direction in road.first_direction.parent_junction.directions:
-                if direction.index_in_map == dir1_idx:
-                    out_lane = direction.out_lanes[0]  # Each direction has one OUT lane
-                    break
-            for direction in road.second_direction.parent_junction.directions:
-                if direction.index_in_map == dir2_idx:
-                    in_lane = direction.in_lanes[0]  # Each direction has one IN lane
-                    break
-            
-            if out_lane and in_lane:
-                out_lane_name = "OutLane" + str(out_lane.index_in_map)
-                in_lane_name = "InLane" + str(in_lane.index_in_map)
-                G.add_edge(out_lane_name, in_lane_name, weight=length)
-                #print(f"  Added edge: {out_lane_name} -> {in_lane_name} (weight={length})")
-            
-            # Find the OUT lane from second direction and IN lane from first direction
-            out_lane = None
-            in_lane = None
-            for direction in road.second_direction.parent_junction.directions:
-                if direction.index_in_map == dir2_idx:
-                    out_lane = direction.out_lanes[0]  # Each direction has one OUT lane
-                    break
-            for direction in road.first_direction.parent_junction.directions:
-                if direction.index_in_map == dir1_idx:
-                    in_lane = direction.in_lanes[0]  # Each direction has one IN lane
-                    break
-            
-            if out_lane and in_lane:
-                out_lane_name = "OutLane" + str(out_lane.index_in_map)
-                in_lane_name = "InLane" + str(in_lane.index_in_map)
-                G.add_edge(out_lane_name, in_lane_name, weight=length)
-                #print(f"  Added edge: {out_lane_name} -> {in_lane_name} (weight={length})")
-                """
-
-        # Print final graph structure
-        # print("\n[DEBUG] Final graph structure:")
-        # print(f"Number of nodes: {G.number_of_nodes()}")
-        # print(f"Number of edges: {G.number_of_edges()}")
-        # print("\nAll nodes:")
-        # for node in sorted(G.nodes()):
-        #     print(f"  {node}")
-        # print("\nAll edges:")
-        # for edge in sorted(G.edges(data=True)):
-        #     print(f"  {edge[0]} -> {edge[1]} (weight={edge[2]['weight']})")
-
-        self.graph = G
-        return G
+        self.graph_for_path_finding = graph
+        return graph
 
     def find_lane_by_index_in_map_str(self, lane_str):
         """
@@ -303,18 +246,12 @@ class Graph:
         # Create node identifiers for NetworkX graph
         source = "OutLane" + str(start.index_in_map)
         target = "InLane" + str(end.index_in_map)
-        
-        print(f"\n[DEBUG] Finding path from {source} to {target}")
-        print(f"Start lane index: {start.index_in_map}")
-        print(f"End lane index: {end.index_in_map}")
-        
 
         # Get node path using NetworkX shortest path algorithm
         try:
-            lane_path = nx.shortest_path(self.graph, source=source, target=target, weight="weight")
-            print(f"\nFound path: {lane_path}")
-        except Exception as e:
-            print(f"\nNo path available between {source} and {target}")
+            lane_path = nx.shortest_path(self.graph_for_path_finding, source=source, target=target, weight="weight")
+        except Exception:
+            # No path available between source and target
             return None, None
 
         # Convert string node names back to Lane objects
@@ -323,7 +260,6 @@ class Graph:
         
         # Create edge path from lane path (consecutive pairs)
         edge_path = list(zip(lane_path[:-1], lane_path[1:]))
-        print(f"Final path: {edge_path}")
 
         return lane_path, edge_path
 

@@ -113,8 +113,9 @@ class Road:
             for lane in range(self.lanes_second_direction_size):
                 self.road_lanes_second_direction.append(RoadLane(self, source_lane=first_direction.out_lanes[lane], destination_lane=second_direction.in_lanes[lane], length=length))
 
-        except Exception as e:
-            print(f"RoadLane couldn't be created due to this error: {e}")
+        except Exception:
+            # RoadLane couldn't be created
+            pass
 
     def get_first_point(self):
         """
