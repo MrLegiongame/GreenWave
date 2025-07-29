@@ -36,8 +36,13 @@ A Python-based traffic simulation system that implements various traffic light c
 
 3. **Install dependencies**:
    ```bash
+   python -m pip install --upgrade pip setuptools wheel
    pip install -r requirements.txt
    ```
+   
+4. **Open the IDE and Press Install requesments**
+
+5. **Run main.py in folder Code/**
 
 ## Usage
 
