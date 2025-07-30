@@ -40,7 +40,7 @@ A Python-based traffic simulation system that implements various traffic light c
    pip install -r requirements.txt
    ```
    
-4. **Open the IDE and Press Install requesments**
+4. **Open the IDE and Press Install requesments OR Use IDE setting to install the modules manually**
 
 5. **Run main.py in folder Code/**
 
