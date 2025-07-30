@@ -12,7 +12,7 @@ A Python-based traffic simulation system that implements various traffic light c
 
 ## Prerequisites
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - pip (Python package installer)
 
 ## Installation
